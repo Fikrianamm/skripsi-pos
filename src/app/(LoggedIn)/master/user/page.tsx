@@ -125,7 +125,7 @@ export default function Page() {
   const [page, setPage] = React.useState(1);
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/list-user?page=${page}&role=${Array.from(selectedRole).join(",")}&search=${debouncedSearch}`,
+    `/api/admin/user?page=${page}&role=${Array.from(selectedRole).join(",")}&search=${debouncedSearch}`,
     fetcher,
     {
       keepPreviousData: true,

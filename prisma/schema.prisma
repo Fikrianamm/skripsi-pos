@@ -1,7 +1,6 @@
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider      = "prisma-client"
+  output        = "../generated/prisma"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -12,36 +11,34 @@ datasource db {
 model User {
   id            String    @id
   name          String    @db.Text
-  email         String
+  email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?   @db.Text
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  role          String?   @db.Text
-  banned        Boolean?  @default(false)
-  banReason     String?   @db.Text
   banExpires    DateTime?
-  sessions      Session[]
+  banReason     String?   @db.Text
+  banned        Boolean?  @default(false)
+  role          String?   @db.Text
   accounts      Account[]
+  sessions      Session[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
   id             String   @id
   expiresAt      DateTime
-  token          String
+  token          String   @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   ipAddress      String?  @db.Text
   userAgent      String?  @db.Text
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   impersonatedBy String?  @db.Text
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
-  @@index([userId(length: 191)])
+  @@index([userId])
   @@map("session")
 }
 
@@ -50,7 +47,6 @@ model Account {
   accountId             String    @db.Text
   providerId            String    @db.Text
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?   @db.Text
   refreshToken          String?   @db.Text
   idToken               String?   @db.Text
@@ -60,8 +56,9 @@ model Account {
   password              String?   @db.Text
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId(length: 191)])
+  @@index([userId])
   @@map("account")
 }
 
@@ -75,4 +72,100 @@ model Verification {
 
   @@index([identifier(length: 191)])
   @@map("verification")
+}
+
+model Category {
+  id         String   @id
+  nama       String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  products   Product[]
+
+  @@index([nama(length: 191)])
+  @@map("category")
+}
+
+model Unit{
+  id         String   @id
+  nama       String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  products   Product[]
+
+  @@index([nama(length: 191)])
+  @@map("unit")
+}
+
+model Product {
+  id         String   @id
+  categoryId String
+  unitId     String
+  sku        String   @unique
+  nama       String   @db.Text
+  image      String?   @db.Text
+  hpp        Decimal  @db.Decimal(10, 2)
+  hargaJual  Decimal  @db.Decimal(10, 2)
+  stok       Decimal?  @db.Decimal(10, 2)
+  minStok    Decimal?  @db.Decimal(10, 2)
+  isService  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([sku(length: 191)])
+  @@index([nama(length: 191)])
+  @@map("product")
+}
+
+model CostCategory {
+  id         String   @id
+  nama       String   @db.Text
+  jenisBeban String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  costs      Cost[]
+
+  @@index([nama(length: 191)])
+  @@map("cost_category")
+}
+
+model Cost {
+  id         String   @id
+  costCategoryId String
+  nama       String   @db.Text
+  nominal    Decimal  @db.Decimal(10, 2)
+  keterangan String   @db.Text
+  buktiNota  String   @db.Text
+  tanggal    DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  costCategory CostCategory @relation(fields: [costCategoryId], references: [id], onDelete: Cascade)
+
+  @@index([nama(length: 191)])
+  @@map("cost")
+}
+
+model Customer {
+  id         String   @id
+  nama       String   @db.Text
+  nomorHp    String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([nama(length: 191)])
+  @@map("customer")
+}
+
+model Supplier {
+  id           String   @id
+  nama         String   @db.Text
+  nomorHp      String   @db.Text
+  alamat       String?  @db.Text
+  keterangan   String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([nama(length: 191)])
+  @@map("supplier")
 }

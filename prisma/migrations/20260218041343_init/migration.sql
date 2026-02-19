@@ -7,6 +7,10 @@ CREATE TABLE `user` (
     `image` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `banExpires` DATETIME(3) NULL,
+    `banReason` TEXT NULL,
+    `banned` BOOLEAN NULL DEFAULT false,
+    `role` TEXT NULL,
 
     UNIQUE INDEX `user_email_key`(`email`),
     PRIMARY KEY (`id`)
@@ -22,9 +26,10 @@ CREATE TABLE `session` (
     `ipAddress` TEXT NULL,
     `userAgent` TEXT NULL,
     `userId` VARCHAR(191) NOT NULL,
+    `impersonatedBy` TEXT NULL,
 
-    INDEX `session_userId_idx`(`userId`(191)),
     UNIQUE INDEX `session_token_key`(`token`),
+    INDEX `session_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -44,7 +49,7 @@ CREATE TABLE `account` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    INDEX `account_userId_idx`(`userId`(191)),
+    INDEX `account_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

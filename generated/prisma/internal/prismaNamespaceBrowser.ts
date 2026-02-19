@@ -54,7 +54,14 @@ export const ModelName = {
   User: 'User',
   Session: 'Session',
   Account: 'Account',
-  Verification: 'Verification'
+  Verification: 'Verification',
+  Category: 'Category',
+  Unit: 'Unit',
+  Product: 'Product',
+  CostCategory: 'CostCategory',
+  Cost: 'Cost',
+  Customer: 'Customer',
+  Supplier: 'Supplier'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -63,12 +70,12 @@ export type ModelName = (typeof ModelName)[keyof typeof ModelName]
  * Enums
  */
 
-export const TransactionIsolationLevel = {
+export const TransactionIsolationLevel = runtime.makeStrictEnum({
   ReadUncommitted: 'ReadUncommitted',
   ReadCommitted: 'ReadCommitted',
   RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
-} as const
+} as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
@@ -81,10 +88,10 @@ export const UserScalarFieldEnum = {
   image: 'image',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  role: 'role',
-  banned: 'banned',
+  banExpires: 'banExpires',
   banReason: 'banReason',
-  banExpires: 'banExpires'
+  banned: 'banned',
+  role: 'role'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -136,6 +143,95 @@ export const VerificationScalarFieldEnum = {
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
 
 
+export const CategoryScalarFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CategoryScalarFieldEnum = (typeof CategoryScalarFieldEnum)[keyof typeof CategoryScalarFieldEnum]
+
+
+export const UnitScalarFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UnitScalarFieldEnum = (typeof UnitScalarFieldEnum)[keyof typeof UnitScalarFieldEnum]
+
+
+export const ProductScalarFieldEnum = {
+  id: 'id',
+  categoryId: 'categoryId',
+  unitId: 'unitId',
+  sku: 'sku',
+  nama: 'nama',
+  image: 'image',
+  hpp: 'hpp',
+  hargaJual: 'hargaJual',
+  stok: 'stok',
+  minStok: 'minStok',
+  isService: 'isService',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const CostCategoryScalarFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  jenisBeban: 'jenisBeban',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CostCategoryScalarFieldEnum = (typeof CostCategoryScalarFieldEnum)[keyof typeof CostCategoryScalarFieldEnum]
+
+
+export const CostScalarFieldEnum = {
+  id: 'id',
+  costCategoryId: 'costCategoryId',
+  nama: 'nama',
+  nominal: 'nominal',
+  keterangan: 'keterangan',
+  buktiNota: 'buktiNota',
+  tanggal: 'tanggal',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CostScalarFieldEnum = (typeof CostScalarFieldEnum)[keyof typeof CostScalarFieldEnum]
+
+
+export const CustomerScalarFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  nomorHp: 'nomorHp',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const SupplierScalarFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  nomorHp: 'nomorHp',
+  alamat: 'alamat',
+  keterangan: 'keterangan',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SupplierScalarFieldEnum = (typeof SupplierScalarFieldEnum)[keyof typeof SupplierScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -157,8 +253,8 @@ export const UserOrderByRelevanceFieldEnum = {
   name: 'name',
   email: 'email',
   image: 'image',
-  role: 'role',
-  banReason: 'banReason'
+  banReason: 'banReason',
+  role: 'role'
 } as const
 
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
@@ -198,4 +294,72 @@ export const VerificationOrderByRelevanceFieldEnum = {
 } as const
 
 export type VerificationOrderByRelevanceFieldEnum = (typeof VerificationOrderByRelevanceFieldEnum)[keyof typeof VerificationOrderByRelevanceFieldEnum]
+
+
+export const CategoryOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nama: 'nama'
+} as const
+
+export type CategoryOrderByRelevanceFieldEnum = (typeof CategoryOrderByRelevanceFieldEnum)[keyof typeof CategoryOrderByRelevanceFieldEnum]
+
+
+export const UnitOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nama: 'nama'
+} as const
+
+export type UnitOrderByRelevanceFieldEnum = (typeof UnitOrderByRelevanceFieldEnum)[keyof typeof UnitOrderByRelevanceFieldEnum]
+
+
+export const ProductOrderByRelevanceFieldEnum = {
+  id: 'id',
+  categoryId: 'categoryId',
+  unitId: 'unitId',
+  sku: 'sku',
+  nama: 'nama',
+  image: 'image'
+} as const
+
+export type ProductOrderByRelevanceFieldEnum = (typeof ProductOrderByRelevanceFieldEnum)[keyof typeof ProductOrderByRelevanceFieldEnum]
+
+
+export const CostCategoryOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  jenisBeban: 'jenisBeban'
+} as const
+
+export type CostCategoryOrderByRelevanceFieldEnum = (typeof CostCategoryOrderByRelevanceFieldEnum)[keyof typeof CostCategoryOrderByRelevanceFieldEnum]
+
+
+export const CostOrderByRelevanceFieldEnum = {
+  id: 'id',
+  costCategoryId: 'costCategoryId',
+  nama: 'nama',
+  keterangan: 'keterangan',
+  buktiNota: 'buktiNota'
+} as const
+
+export type CostOrderByRelevanceFieldEnum = (typeof CostOrderByRelevanceFieldEnum)[keyof typeof CostOrderByRelevanceFieldEnum]
+
+
+export const CustomerOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  nomorHp: 'nomorHp'
+} as const
+
+export type CustomerOrderByRelevanceFieldEnum = (typeof CustomerOrderByRelevanceFieldEnum)[keyof typeof CustomerOrderByRelevanceFieldEnum]
+
+
+export const SupplierOrderByRelevanceFieldEnum = {
+  id: 'id',
+  nama: 'nama',
+  nomorHp: 'nomorHp',
+  alamat: 'alamat',
+  keterangan: 'keterangan'
+} as const
+
+export type SupplierOrderByRelevanceFieldEnum = (typeof SupplierOrderByRelevanceFieldEnum)[keyof typeof SupplierOrderByRelevanceFieldEnum]
 

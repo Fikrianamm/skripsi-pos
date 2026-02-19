@@ -1,6 +1,6 @@
 import { GalleryVerticalEnd } from "lucide-react";
 
 export const COMPANY = {
-  name: "Acme Inc",
+  name: "Haqi Koleksi",
   logo: GalleryVerticalEnd,
 };
