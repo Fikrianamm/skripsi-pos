@@ -30,7 +30,7 @@ export async function PUT(
     const { id } = await params;
 
     const body = await request.json();
-    const { nama, nomorHp, alamat, keterangan } = body;
+    const { nama, nomorHp, email, alamat, keterangan, isActive, image } = body;
 
     const missingFields: string[] = [];
 
@@ -38,7 +38,11 @@ export async function PUT(
       missingFields.push("nama");
     }
 
-    if (!nomorHp || typeof nomorHp !== "string" || nomorHp.trim().length === 0) {
+    if (
+      !nomorHp ||
+      typeof nomorHp !== "string" ||
+      nomorHp.trim().length === 0
+    ) {
       missingFields.push("nomorHp");
     }
 
@@ -79,15 +83,14 @@ export async function PUT(
 
     const updatedSupplier = await prisma.supplier.update({
       where: { id },
-      data: { nama: trimmedNama, nomorHp, alamat, keterangan },
-      select: {
-        id: true,
-        nama: true,
-        nomorHp: true,
-        alamat: true,
-        keterangan: true,
-        createdAt: true,
-        updatedAt: true,
+      data: {
+        nama: trimmedNama,
+        nomorHp,
+        email: email ?? existingSupplier.email,
+        alamat,
+        keterangan,
+        isActive: isActive !== undefined ? isActive : existingSupplier.isActive,
+        image: image !== undefined ? image : existingSupplier.image,
       },
     });
 

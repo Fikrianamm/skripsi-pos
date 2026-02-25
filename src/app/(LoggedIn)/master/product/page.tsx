@@ -1,5 +1,216 @@
 "use client";
+import React from "react";
+import { TableCell, TableRow } from "@heroui/table";
+import { Button } from "@heroui/button";
+import { Chip, Image, type Selection } from "@heroui/react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { MoreVertical, PenLine, Package, Trash2 } from "lucide-react";
+import { fetcher, getInitialName } from "@/lib/func";
+import useSWR from "swr";
+import { Product as ProductType, Category } from "@/types/types";
+import AddUserModal from "./components/add-user-modal";
+import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useContextMenu } from "@/hooks/use-context-menu";
+import { PageHeader } from "@/components/page-header";
+import { SearchInput } from "@/components/search-input";
+import { FilterDropdown, type FilterItem } from "@/components/filter-dropdown";
+import { ContextMenu } from "@/components/data-table/context-menu";
+import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
+import { DataTable } from "@/components/data-table/data-table";
+import { TablePagination } from "@/components/data-table/table-pagination";
+import { columns } from "./components/columns";
+
+type StockStatus = {
+  label: string;
+  color: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
+};
+
+function getStockStatus(product: ProductType): StockStatus {
+  const stok = Number(product.stok ?? 0);
+  const minStok = Number(product.minStok ?? 0);
+  if (stok <= 0) return { label: "Habis", color: "danger" };
+  if (stok <= minStok) return { label: "Menipis", color: "warning" };
+  return { label: "Aman", color: "success" };
+}
+
+const ROWS_PER_PAGE = 10;
 
 export default function Page() {
-  return <div>product</div>;
+  const { selectionMode } = useTableMultipleSelection(true);
+  const [search, setSearch] = React.useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [selectedKeys, setSelectedKeys] = React.useState<Selection>(
+    new Set([""]),
+  );
+  const [selectedCategory, setSelectedCategory] = React.useState<Selection>(
+    new Set(["all"]),
+  );
+  const [page, setPage] = React.useState(1);
+
+  const { contextMenu, openMenu, openMenuFromButton, closeMenu } =
+    useContextMenu<ProductType>();
+
+  const categoryKey = Array.from(selectedCategory)[0] as string;
+
+  const { data, isLoading, mutate } = useSWR(
+    `/api/admin/product?page=${page}&search=${debouncedSearch}${categoryKey !== "all" ? `&categoryId=${categoryKey}` : ""}`,
+    fetcher,
+    { keepPreviousData: true },
+  );
+
+  const { data: categoryData } = useSWR(`/api/category?limit=100`, fetcher);
+
+  const pages = React.useMemo(
+    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
+    [data?.count],
+  );
+
+  const selectedIds = React.useMemo(() => {
+    if (selectedKeys === "all")
+      return (data?.results ?? []).map((u: ProductType) => u.id);
+    return Array.from(selectedKeys).filter((k) => k !== "");
+  }, [selectedKeys, data?.results]);
+
+  const categoryFilterItems: FilterItem[] = [
+    { key: "all", label: "Semua" },
+    ...(categoryData?.results ?? []).map((c: Category) => ({
+      key: c.id,
+      label: c.nama,
+    })),
+  ];
+
+  const selectedCategoryLabel = React.useMemo(() => {
+    if (categoryKey === "all") return "Semua";
+    const found = categoryFilterItems.find((i) => i.key === categoryKey);
+    return found?.label ?? "Semua";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, categoryFilterItems.length]);
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
+      <PageHeader
+        title="Manajemen Produk"
+        description="Kelola produk, kategori, dan harga produk."
+      />
+
+      <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
+        <SearchInput
+          value={search}
+          placeholder="Cari produk"
+          onChange={setSearch}
+          onClear={() => setSearch("")}
+        />
+        <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full">
+          <FilterDropdown
+            label="Kategori"
+            icon={<Package size={16} />}
+            items={categoryFilterItems}
+            selectedKeys={selectedCategory}
+            selectedLabel={selectedCategoryLabel}
+            onSelectionChange={(keys) => {
+              if (keys === "all") return;
+              const sel = Array.from(keys)[0] as string;
+              setSelectedCategory(new Set([sel || "all"]));
+            }}
+            onReset={() => {
+              setSelectedCategory(new Set(["all"]));
+              setSearch("");
+            }}
+          />
+          <AddUserModal onUserCreated={() => mutate()} />
+        </div>
+      </div>
+
+      <BulkSelectionBar count={selectedIds.length} label="produk dipilih" />
+
+      <DataTable<ProductType>
+        columns={columns}
+        items={(data?.results ?? []) as ProductType[]}
+        isLoading={isLoading}
+        selectionMode={selectionMode}
+        selectedKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
+        renderRow={(product) => {
+          const status = getStockStatus(product);
+          return (
+            <TableRow
+              key={product.id}
+              onContextMenu={(e) => openMenu(e, product)}
+              className="cursor-context-menu"
+            >
+              <TableCell>
+                <div className="flex items-center gap-2 font-medium">
+                  <Image
+                    alt={product.nama}
+                    src={product.image}
+                    fallbackSrc="https://placehold.co/50x50?text=.png"
+                    width={50}
+                    height={50}
+                  />
+                  {product.nama}
+                </div>
+              </TableCell>
+              <TableCell>{product.sku}</TableCell>
+              <TableCell>{product.category?.nama ?? "-"}</TableCell>
+              <TableCell>
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={product.isService ? "secondary" : "default"}
+                >
+                  {product.isService ? "Jasa" : "Produk"}
+                </Chip>
+              </TableCell>
+              <TableCell>{String(product.hpp)}</TableCell>
+              <TableCell>{String(product.hargaJual)}</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell>
+                <Chip color={status.color} size="sm" variant="flat">
+                  {status.label}
+                </Chip>
+              </TableCell>
+              <TableCell className="md:hidden">
+                <Button
+                  className="p-1.5 rounded-md hover:bg-accent"
+                  onClick={(e) => openMenuFromButton(e, product)}
+                  isIconOnly
+                  variant="light"
+                >
+                  <MoreVertical size={16} />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        }}
+      />
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          actions={[
+            {
+              label: "Edit",
+              icon: <PenLine size={16} />,
+              variant: "primary",
+              onClick: () => {
+                closeMenu();
+              },
+            },
+            {
+              label: "Hapus",
+              icon: <Trash2 size={16} />,
+              variant: "destructive",
+              onClick: () => {
+                closeMenu();
+              },
+            },
+          ]}
+        />
+      )}
+
+      <TablePagination page={page} total={pages} onChange={setPage} />
+    </div>
+  );
 }

@@ -105,7 +105,7 @@ export default function SecuritySection() {
     <>
       <h2 className="text-xl font-semibold mb-0">Keamanan</h2>
       <p className="text-muted-foreground">
-        Kelola password dan keamanan akun Anda.
+        Perbarui kata sandi dan pantau metode login yang terhubung ke akun Anda.
       </p>
       <Divider />
       <div className="overflow-y-auto max-h-[calc(100vh-300px)] w-full px-1">

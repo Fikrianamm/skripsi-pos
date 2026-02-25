@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Script from "next/script";
 import { authClient } from "@/lib/auth-client";
+import { addToast } from "@heroui/toast";
 
 export function GoogleOneTap() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +28,14 @@ export function GoogleOneTap() {
       // Cek apakah ada error dari Backend Better-Auth
       if (error) {
         console.error("Server menolak login:", error);
-        alert("Login Gagal: " + error.message || error.statusText);
+        addToast({
+          title: "Login Gagal",
+          description:
+            error.message ||
+            error.statusText ||
+            "Akun anda tidak terdaftar. Hubungi Administrator.",
+          color: "danger",
+        });
         return; // Jangan redirect kalau error
       }
 

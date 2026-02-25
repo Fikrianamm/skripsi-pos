@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {};
 
+    const isActiveParam = searchParams.get("isActive");
+    if (isActiveParam && isActiveParam !== "all") {
+      where.isActive = isActiveParam === "true";
+    }
+
     if (search) {
       where.nama = { contains: search };
     }
@@ -40,15 +45,6 @@ export async function GET(request: NextRequest) {
     const [results, count] = await Promise.all([
       prisma.supplier.findMany({
         where,
-        select: {
-          id: true,
-          nama: true,
-          nomorHp: true,
-          alamat: true,
-          keterangan: true,
-          createdAt: true,
-          updatedAt: true,
-        },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
@@ -94,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nama, nomorHp, alamat, keterangan } = body;
+    const { nama, nomorHp, email, alamat, keterangan, image } = body;
 
     const missingFields: string[] = [];
 
@@ -102,7 +98,11 @@ export async function POST(request: NextRequest) {
       missingFields.push("nama");
     }
 
-    if (!nomorHp || typeof nomorHp !== "string" || nomorHp.trim().length === 0) {
+    if (
+      !nomorHp ||
+      typeof nomorHp !== "string" ||
+      nomorHp.trim().length === 0
+    ) {
       missingFields.push("nomorHp");
     }
 
@@ -137,16 +137,10 @@ export async function POST(request: NextRequest) {
         id: supplierId,
         nama: trimmedNama,
         nomorHp,
+        email,
         alamat,
         keterangan,
-      },
-      select: {
-        id: true,
-        nama: true,
-        nomorHp:true,
-        alamat:true,
-        keterangan:true,
-        createdAt: true,
+        image: image || null,
       },
     });
 
@@ -159,6 +153,51 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[ADMIN CREATE SUPPLIER ERROR]", error);
+    return NextResponse.json(
+      { error: "Terjadi kesalahan internal server." },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE /api/admin/supplier — Bulk delete suppliers
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized. Silakan login terlebih dahulu." },
+        { status: 401 },
+      );
+    }
+
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden. Anda tidak memiliki akses." },
+        { status: 403 },
+      );
+    }
+
+    const body = await request.json();
+    const { ids } = body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: "IDs supplier wajib disertakan." },
+        { status: 400 },
+      );
+    }
+
+    await prisma.supplier.deleteMany({ where: { id: { in: ids } } });
+
+    return NextResponse.json({
+      message: `${ids.length} supplier berhasil dihapus.`,
+    });
+  } catch (error) {
+    console.error("[ADMIN BULK DELETE SUPPLIER ERROR]", error);
     return NextResponse.json(
       { error: "Terjadi kesalahan internal server." },
       { status: 500 },

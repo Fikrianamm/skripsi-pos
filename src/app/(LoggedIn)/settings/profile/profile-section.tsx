@@ -104,7 +104,9 @@ export default function ProfileSection() {
   return (
     <>
       <h2 className="text-xl font-semibold mb-0">Profil</h2>
-      <p className="text-muted-foreground">Perbarui detail profil Anda.</p>
+      <p className="text-muted-foreground">
+        Perbarui foto, nama tampilan, dan informasi identitas akun Anda.
+      </p>
       <Divider />
       <div className="overflow-y-auto max-h-[calc(100vh-300px)] w-full px-1">
         {isPending ? (

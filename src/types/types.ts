@@ -10,3 +10,54 @@ export interface User {
     providerId: string;
   }[];
 }
+
+export interface Supplier {
+  id?: string;
+  nama: string;
+  email: string;
+  nomorHp: string;
+  image?: string | null;
+  alamat: string;
+  isActive: boolean;
+  keterangan?: string;
+  createdAt?: Date;
+}
+
+export interface Customer {
+  id?: string;
+  nama: string;
+  nomorHp: string;
+  image?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Product {
+  id?: string;
+  sku: string;
+  nama: string;
+  image: string;
+  hpp: number;
+  hargaJual: number;
+  stok: number;
+  minStok: number;
+  isService: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  category: Category;
+  unit: Unit;
+}
+
+export interface Category {
+  id?: string;
+  nama: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Unit {
+  id?: string;
+  nama: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}

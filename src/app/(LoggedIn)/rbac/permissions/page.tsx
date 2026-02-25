@@ -103,9 +103,9 @@ export default function PermissionsPage() {
     <div className="flex flex-col gap-6 pb-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Permissions</h1>
+        <h1 className="text-2xl font-bold">Matriks Izin Akses</h1>
         <p className="text-muted-foreground">
-          Matriks hak akses per role terhadap setiap modul
+          Gambaran lengkap hak akses setiap peran terhadap seluruh modul sistem.
         </p>
       </div>
 

@@ -150,6 +150,7 @@ model Customer {
   id         String   @id
   nama       String   @db.Text
   nomorHp    String   @db.Text
+  image      String?  @db.Text
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -161,8 +162,11 @@ model Supplier {
   id           String   @id
   nama         String   @db.Text
   nomorHp      String   @db.Text
+  email        String?  @db.Text
+  image        String?  @db.Text
   alamat       String?  @db.Text
   keterangan   String?  @db.Text
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

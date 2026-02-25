@@ -1,397 +1,303 @@
-/* eslint-disable react-hooks/preserve-manual-memoization */
 "use client";
-import { Input } from "@heroui/input";
+import React from "react";
+import { TableCell, TableRow } from "@heroui/table";
+import { Button } from "@heroui/button";
+import { type Selection } from "@heroui/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableColumn,
-  TableRow,
-  TableCell,
-} from "@heroui/table";
-import {
-  ChevronDown,
-  ChevronUp,
   Factory,
-  Info,
   KeyRound,
-  Mail,
+  MoreVertical,
   PencilRuler,
-  Search,
+  PenLine,
   ShieldUser,
+  Trash2,
   User,
   Warehouse,
-  X,
 } from "lucide-react";
 import { ROLES } from "@/config/roles";
-import {
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-} from "@heroui/dropdown";
-import { Button } from "@heroui/button";
-import React from "react";
-import { Pagination, Spinner, Tooltip, type Selection } from "@heroui/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetcher, getInitialName } from "@/lib/func";
 import useSWR from "swr";
 import { User as UserType } from "@/types/types";
-import AddUserModal from "@/app/(LoggedIn)/master/user/components/add-user-modal";
+import AddUserModal from "./components/add-user-modal";
 import EditUserModal from "./components/edit-user-modal";
-import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
-import GoogleIcon from "@/components/google-icon";
-import { useDebounce } from "@/hooks/use-debounce";
 import DeleteUserModal from "./components/delete-user-modal";
 import BulkDeleteModal from "./components/bulk-delete-modal";
+import GoogleIcon from "@/components/google-icon";
+import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useContextMenu } from "@/hooks/use-context-menu";
+import { PageHeader } from "@/components/page-header";
+import { SearchInput } from "@/components/search-input";
+import { FilterDropdown, type FilterItem } from "@/components/filter-dropdown";
+import { ContextMenu } from "@/components/data-table/context-menu";
+import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
+import { DataTable } from "@/components/data-table/data-table";
+import { TablePagination } from "@/components/data-table/table-pagination";
+import { columns } from "./components/columns";
 
-const columns = [
-  {
-    key: "name",
-    label: (
-      <div className="flex items-center gap-2">
-        <User size={16} />
-        <span>NAME</span>
-      </div>
-    ),
+const ROLE_CONFIG: Record<
+  string,
+  { icon: React.ReactNode; label: string; bg: string; text: string }
+> = {
+  admin: {
+    icon: <ShieldUser size={14} />,
+    label: "Administrator",
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-400",
   },
-  {
-    key: "email",
-    label: (
-      <div className="flex items-center gap-2">
-        <Mail size={16} />
-        <span>EMAIL</span>
-      </div>
-    ),
+  kasir: {
+    icon: <User size={14} />,
+    label: "Kasir",
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-400",
   },
-  {
-    key: "providerId",
-    label: (
-      <div className="flex items-center gap-2">
-        <KeyRound size={16} />
-        <span>PROVIDER</span>
-        <Tooltip content="Provider adalah metode autentikasi yang digunakan untuk membuat account tersebut">
-          <Info size={16} />
-        </Tooltip>
-      </div>
-    ),
+  designer: {
+    icon: <PencilRuler size={14} />,
+    label: "Designer",
+    bg: "bg-purple-100 dark:bg-purple-900/30",
+    text: "text-purple-700 dark:text-purple-400",
   },
-  {
-    key: "role",
-    label: (
-      <div className="flex items-center gap-2">
-        <ShieldUser size={16} />
-        <span>ROLE</span>
-      </div>
-    ),
+  produksi: {
+    icon: <Factory size={14} />,
+    label: "Produksi",
+    bg: "bg-amber-100 dark:bg-amber-900/30",
+    text: "text-amber-700 dark:text-amber-400",
   },
-  {
-    key: "action",
-    label: "ACTION",
+  gudang: {
+    icon: <Warehouse size={14} />,
+    label: "Gudang",
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+    text: "text-emerald-700 dark:text-emerald-400",
   },
+};
+
+const ROLE_FILTER_ITEMS: FilterItem[] = [
+  { key: "all", label: "Semua" },
+  ...ROLES.map((r) => ({ key: r.key, label: r.label })),
 ];
+
+const ROWS_PER_PAGE = 10;
 
 export default function Page() {
   const { selectionMode } = useTableMultipleSelection(true);
-
   const [search, setSearch] = React.useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(
     new Set([""]),
   );
-  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [selectedRole, setSelectedRole] = React.useState<Selection>(
     new Set(["all"]),
   );
-
-  const handleSelectionChange = (keys: Selection) => {
-    if (keys === "all") return;
-    const selected = Array.from(keys)[0] as string;
-    setSelectedRole(new Set([selected || "all"]));
-  };
-
-  const selectedValue = React.useMemo(() => {
-    const key = Array.from(selectedRole)[0];
-    if (key === "all") return "Semua";
-    const found = ROLES.find((r) => r.key === key);
-    return found?.label ?? "Semua";
-  }, [selectedRole]);
-
-  const handleResetFilter = () => {
-    setSelectedRole(new Set(["all"]));
-    setSearch("");
-  };
-
   const [page, setPage] = React.useState(1);
 
+  const [editUser, setEditUser] = React.useState<UserType | null>(null);
+  const [deleteUser, setDeleteUser] = React.useState<UserType | null>(null);
+  const { contextMenu, openMenu, openMenuFromButton, closeMenu } =
+    useContextMenu<UserType>();
+
+  const roleKey = Array.from(selectedRole)[0] as string;
+
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/user?page=${page}&role=${Array.from(selectedRole).join(",")}&search=${debouncedSearch}`,
+    `/api/admin/user?page=${page}&role=${roleKey}&search=${debouncedSearch}`,
     fetcher,
-    {
-      keepPreviousData: true,
-    },
+    { keepPreviousData: true },
   );
 
-  const rowsPerPage = 10;
-
-  const pages = React.useMemo(() => {
-    return data?.count ? Math.ceil(data.count / rowsPerPage) : 0;
-  }, [data?.count, rowsPerPage]);
-
-  const loadingState = isLoading ? "loading" : "idle";
+  const pages = React.useMemo(
+    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
+    [data?.count],
+  );
 
   const selectedUserIds = React.useMemo(() => {
-    if (selectedKeys === "all") {
+    if (selectedKeys === "all")
       return (data?.results ?? []).map((u: UserType) => u.id);
-    }
-    return Array.from(selectedKeys).filter((key) => key !== "");
+    return Array.from(selectedKeys).filter((k) => k !== "");
   }, [selectedKeys, data?.results]);
 
-  const handleBulkDeleted = () => {
-    setSelectedKeys(new Set([""]));
-    mutate();
-  };
+  const selectedRoleLabel = React.useMemo(() => {
+    if (roleKey === "all") return "Semua";
+    return ROLES.find((r) => r.key === roleKey)?.label ?? "Semua";
+  }, [roleKey]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
-      <div>
-        <h1 className="text-2xl font-bold">Daftar Pengguna</h1>
-        <p className="text-muted-foreground">
-          Daftar pengguna yang terdaftar di sistem
-        </p>
-      </div>
+      <PageHeader
+        title="Manajemen Pengguna"
+        description="Kelola akun, peran, dan hak akses seluruh pengguna sistem."
+      />
+
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
-        <Input
-          placeholder="Cari pengguna"
-          startContent={<Search size={14} className="text-slate-500" />}
-          variant="bordered"
-          isClearable
-          classNames={{
-            inputWrapper: "border-1",
-          }}
-          className="lg:w-1/3 w-full"
+        <SearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari pengguna"
+          onChange={setSearch}
           onClear={() => setSearch("")}
         />
         <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full">
-          <div className="flex flex-row gap-2 items-center">
-            <Dropdown isOpen={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-              <DropdownTrigger>
-                <Button
-                  className="capitalize border-1"
-                  variant="bordered"
-                  endContent={
-                    isDropdownOpen ? (
-                      <ChevronUp size={14} className="text-slate-500" />
-                    ) : (
-                      <ChevronDown size={14} className="text-slate-500" />
-                    )
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <User size={16} className="text-slate-500" />
-                    Role
-                    <span className="text-slate-300">|</span>
-                    <span className="text-primary font-medium">
-                      {selectedValue}
-                    </span>
-                  </div>
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Single selection example"
-                selectedKeys={selectedRole}
-                selectionMode="single"
-                variant="flat"
-                onSelectionChange={handleSelectionChange}
-              >
-                {[
-                  { key: "all", label: "Semua", icon: undefined },
-                  ...ROLES.map((role) => ({
-                    key: role.key,
-                    label: role.label,
-                    icon: (
-                      {
-                        admin: <ShieldUser size={16} />,
-                        kasir: <User size={16} />,
-                        designer: <PencilRuler size={16} />,
-                        produksi: <Factory size={16} />,
-                        gudang: <Warehouse size={16} />,
-                      } as Record<string, React.ReactNode>
-                    )[role.key],
-                  })),
-                ].map((item) => (
-                  <DropdownItem key={item.key} startContent={item.icon}>
-                    {item.label}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            {selectedValue !== "Semua" && (
-              <Button
-                variant="bordered"
-                startContent={<X size={16} />}
-                onClick={handleResetFilter}
-              >
-                Reset
-              </Button>
-            )}
-          </div>
+          <FilterDropdown
+            label="Role"
+            icon={<ShieldUser size={16} />}
+            items={ROLE_FILTER_ITEMS}
+            selectedKeys={selectedRole}
+            selectedLabel={selectedRoleLabel}
+            onSelectionChange={(keys) => {
+              if (keys === "all") return;
+              const sel = Array.from(keys)[0] as string;
+              setSelectedRole(new Set([sel || "all"]));
+            }}
+            onReset={() => {
+              setSelectedRole(new Set(["all"]));
+              setSearch("");
+            }}
+          />
           <AddUserModal onUserCreated={() => mutate()} />
         </div>
       </div>
-      {selectedUserIds.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-primary-50 border border-primary-200">
-          <span className="text-sm font-medium text-primary">
-            {selectedUserIds.length} pengguna dipilih
-          </span>
-          <BulkDeleteModal
-            userIds={selectedUserIds as string[]}
-            onDeleted={handleBulkDeleted}
-          />
-        </div>
-      )}
-      <div className="w-full max-w-full overflow-x-auto flex-1">
-        <Table
-          aria-label="Example static collection table"
-          selectionMode={selectionMode}
-          color="primary"
-          onSelectionChange={setSelectedKeys}
-          selectedKeys={selectedKeys}
-          removeWrapper
-        >
-          <TableHeader columns={columns}>
-            {(column) => (
-              <TableColumn key={column.key}>{column.label}</TableColumn>
-            )}
-          </TableHeader>
-          <TableBody
-            emptyContent={"Tidak ada data"}
-            items={data?.results ?? []}
-            loadingContent={<Spinner />}
-            loadingState={loadingState}
-          >
-            {(user: UserType) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2 font-medium">
-                    <Avatar>
-                      <AvatarImage src={user.image || ""} alt={user.name} />
-                      <AvatarFallback>
-                        {getInitialName(user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {user.name}
-                  </div>
-                </TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-2">
-                    {user.accounts.map((account, index) =>
-                      account.providerId === "google" ? (
-                        <div
-                          key={index}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 w-max"
-                        >
-                          <GoogleIcon />
-                          <span>Google</span>
-                        </div>
-                      ) : account.providerId === "credential" ? (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 w-max">
-                          <KeyRound size={16} />
-                          <span>Email & Password</span>
-                        </div>
-                      ) : null,
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {(() => {
-                    const roleConfig: Record<
-                      string,
-                      {
-                        icon: React.ReactNode;
-                        label: string;
-                        bg: string;
-                        text: string;
-                      }
-                    > = {
-                      admin: {
-                        icon: <ShieldUser size={14} />,
-                        label: "Administrator",
-                        bg: "bg-red-100 dark:bg-red-900/30",
-                        text: "text-red-700 dark:text-red-400",
-                      },
-                      kasir: {
-                        icon: <User size={14} />,
-                        label: "Kasir",
-                        bg: "bg-blue-100 dark:bg-blue-900/30",
-                        text: "text-blue-700 dark:text-blue-400",
-                      },
-                      designer: {
-                        icon: <PencilRuler size={14} />,
-                        label: "Designer",
-                        bg: "bg-purple-100 dark:bg-purple-900/30",
-                        text: "text-purple-700 dark:text-purple-400",
-                      },
-                      produksi: {
-                        icon: <Factory size={14} />,
-                        label: "Produksi",
-                        bg: "bg-amber-100 dark:bg-amber-900/30",
-                        text: "text-amber-700 dark:text-amber-400",
-                      },
-                      gudang: {
-                        icon: <Warehouse size={14} />,
-                        label: "Gudang",
-                        bg: "bg-emerald-100 dark:bg-emerald-900/30",
-                        text: "text-emerald-700 dark:text-emerald-400",
-                      },
-                    };
-                    const cfg = roleConfig[user.role as string] ?? {
-                      icon: null,
-                      label: user.role,
-                      bg: "bg-slate-100 dark:bg-slate-800",
-                      text: "text-slate-600 dark:text-slate-400",
-                    };
-                    return (
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}
+
+      <BulkSelectionBar count={selectedUserIds.length} label="pengguna dipilih">
+        <BulkDeleteModal
+          userIds={selectedUserIds as string[]}
+          onDeleted={() => {
+            setSelectedKeys(new Set([""]));
+            mutate();
+          }}
+        />
+      </BulkSelectionBar>
+
+      <DataTable<UserType>
+        columns={columns}
+        items={(data?.results ?? []) as UserType[]}
+        isLoading={isLoading}
+        selectionMode={selectionMode}
+        selectedKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
+        renderRow={(user) => {
+          const cfg = ROLE_CONFIG[user.role as string] ?? {
+            icon: null,
+            label: user.role,
+            bg: "bg-slate-100 dark:bg-slate-800",
+            text: "text-slate-600 dark:text-slate-400",
+          };
+          return (
+            <TableRow
+              key={user.id}
+              onContextMenu={(e) => openMenu(e, user)}
+              className="cursor-context-menu"
+            >
+              <TableCell>
+                <div className="flex items-center gap-2 font-medium">
+                  <Avatar>
+                    <AvatarImage src={user.image || ""} alt={user.name} />
+                    <AvatarFallback>{getInitialName(user.name)}</AvatarFallback>
+                  </Avatar>
+                  {user.name}
+                </div>
+              </TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  {user.accounts.map((account, i) =>
+                    account.providerId === "google" ? (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 w-max"
                       >
-                        {cfg.icon}
-                        {cfg.label}
-                      </span>
-                    );
-                  })()}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-row gap-2">
-                    <EditUserModal onUserEdited={() => mutate()} user={user} />
-                    <DeleteUserModal
-                      onUserDeleted={() => mutate()}
-                      user={user}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {pages > 0 ? (
-        <div className="flex w-full justify-center">
-          <Pagination
-            isCompact
-            showControls
-            showShadow
-            color="primary"
-            page={page}
-            total={pages}
-            onChange={(page) => setPage(page)}
-          />
-        </div>
-      ) : null}
+                        <GoogleIcon />
+                        <span>Google</span>
+                      </div>
+                    ) : account.providerId === "credential" ? (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 w-max"
+                      >
+                        <KeyRound size={16} />
+                        <span>Email & Password</span>
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}
+                >
+                  {cfg.icon}
+                  {cfg.label}
+                </span>
+              </TableCell>
+              <TableCell className="md:hidden">
+                <Button
+                  className="p-1.5 rounded-md hover:bg-accent"
+                  onClick={(e) => openMenuFromButton(e, user)}
+                  isIconOnly
+                  variant="light"
+                >
+                  <MoreVertical size={16} />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        }}
+      />
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          actions={[
+            {
+              label: "Edit",
+              icon: <PenLine size={16} />,
+              variant: "primary",
+              onClick: () => {
+                setEditUser(contextMenu.item);
+                closeMenu();
+              },
+            },
+            {
+              label: "Hapus",
+              icon: <Trash2 size={16} />,
+              variant: "destructive",
+              onClick: () => {
+                setDeleteUser(contextMenu.item);
+                closeMenu();
+              },
+            },
+          ]}
+        />
+      )}
+
+      {editUser && (
+        <EditUserModal
+          key={`edit-${editUser.id}`}
+          user={editUser}
+          onUserEdited={() => {
+            mutate();
+            setEditUser(null);
+          }}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setEditUser(null);
+          }}
+        />
+      )}
+      {deleteUser && (
+        <DeleteUserModal
+          key={`delete-${deleteUser.id}`}
+          user={deleteUser}
+          onUserDeleted={() => {
+            mutate();
+            setDeleteUser(null);
+          }}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setDeleteUser(null);
+          }}
+        />
+      )}
+
+      <TablePagination page={page} total={pages} onChange={setPage} />
     </div>
   );
 }

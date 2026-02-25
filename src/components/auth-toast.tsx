@@ -11,6 +11,7 @@ export function AuthToast() {
 
   useEffect(() => {
     const unauthorized = searchParams.get("unauthorized");
+    const authError = searchParams.get("authError");
 
     if (unauthorized === "true" && !hasShownToast.current) {
       hasShownToast.current = true;
@@ -22,9 +23,22 @@ export function AuthToast() {
         color: "warning",
       });
 
-      // Remove query param from URL without reload
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("unauthorized");
+      router.replace(newUrl.pathname + newUrl.search, { scroll: false });
+    }
+
+    if (authError && !hasShownToast.current) {
+      hasShownToast.current = true;
+
+      addToast({
+        title: "Login Gagal",
+        description: authError,
+        color: "danger",
+      });
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("authError");
       router.replace(newUrl.pathname + newUrl.search, { scroll: false });
     }
   }, [searchParams, router]);

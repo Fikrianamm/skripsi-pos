@@ -36,7 +36,7 @@ export default function Page() {
       <div>
         <h1 className="text-2xl font-bold">Pengaturan</h1>
         <p className="text-muted-foreground">
-          Kelola pengaturan akun dan preferensi Anda
+          Sesuaikan informasi akun, keamanan, dan preferensi pribadi Anda.
         </p>
       </div>
 

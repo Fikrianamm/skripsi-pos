@@ -132,8 +132,10 @@ export default function RolesPage() {
     <div className="flex flex-col gap-6 pb-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Roles</h1>
-        <p className="text-muted-foreground">Daftar role dan deskripsi tugas</p>
+        <h1 className="text-2xl font-bold">Manajemen Role</h1>
+        <p className="text-muted-foreground">
+          Daftar peran beserta tanggung jawab dan cakupan aksesnya.
+        </p>
       </div>
 
       {/* Role Cards */}

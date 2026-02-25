@@ -51,17 +51,28 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          // Cek apakah user sudah membawa image (misal dari Google/GitHub Login)
-          // Jika sudah ada, jangan ditimpa.
-          if (user.image) {
-            return;
+          // Bedakan antara social login (Google/OneTap) dengan admin createUser:
+          // - Google OAuth/OneTap: emailVerified = true (Google selalu memverifikasi email)
+          // - Admin createUser: emailVerified = false (default, belum diverifikasi)
+          if (user.emailVerified) {
+            // Ini adalah social login (Google/OneTap)
+            // Cek apakah email sudah terdaftar oleh admin di database
+            const existingUser = await prisma.user.findUnique({
+              where: { email: user.email },
+            });
+            if (!existingUser) {
+              throw new APIError("FORBIDDEN", {
+                message: "Akun anda tidak terdaftar. Hubungi Administrator.",
+              });
+            }
           }
 
-          // Jika tidak ada image (misal register email biasa), assign random avatar
+          // Assign random avatar jika tidak punya image
+          if (user.image) return;
           return {
             data: {
               ...user,
-              image: getRandomAvatar(), // Masukkan path avatar random
+              image: getRandomAvatar(),
             },
           };
         },

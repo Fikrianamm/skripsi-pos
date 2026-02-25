@@ -46,10 +46,13 @@ export function LoginForm({
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     try {
-      await authClient.signIn.social({
+      const { error } = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard", // Redirect ke dashboard setelah login
       });
+      if(error){
+        setGlobalError(error.message as string)
+      }
     } catch (error) {
       setGlobalError(error as string);
     } finally {
