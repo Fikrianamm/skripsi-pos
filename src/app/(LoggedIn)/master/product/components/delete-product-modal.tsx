@@ -8,23 +8,21 @@ import {
   useDisclosure,
 } from "@heroui/modal";
 import { Trash2 } from "lucide-react";
-import { useForm } from "react-hook-form";
 import { Alert } from "@heroui/alert";
 import { Tooltip } from "@heroui/react";
 import { addToast } from "@heroui/toast";
-import { authClient } from "@/lib/auth-client";
-import { User } from "@/types/types";
+import { Product } from "@/types/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitialName } from "@/lib/func";
+import { useState } from "react";
 
-export default function DeleteUserModal({
-  onUserDeleted,
-  user,
+export default function DeleteProductModal({
+  product,
+  onProductDeleted,
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
 }: {
-  onUserDeleted?: () => void;
-  user: User;
+  product: Product;
+  onProductDeleted?: () => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -33,26 +31,26 @@ export default function DeleteUserModal({
     onOpen,
     onOpenChange: internalOnOpenChange,
   } = useDisclosure();
+
   const isOpen =
     controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const onOpenChange = controlledOnOpenChange ?? internalOnOpenChange;
 
-  const form = useForm({
-    defaultValues: {
-      userId: user.id,
-    },
-  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  async function onSubmit(data: { userId: string }, onClose: () => void) {
+  async function handleDelete(onClose: () => void) {
+    setIsDeleting(true);
     try {
-      const { error } = await authClient.admin.removeUser({
-        userId: data.userId,
+      const res = await fetch(`/api/admin/product/${product.id}`, {
+        method: "DELETE",
       });
 
-      if (error) {
+      const json = await res.json();
+
+      if (!res.ok) {
         addToast({
           title: "Gagal",
-          description: error.message || "Terjadi kesalahan.",
+          description: json.error || "Terjadi kesalahan.",
           color: "danger",
         });
         return;
@@ -60,25 +58,26 @@ export default function DeleteUserModal({
 
       addToast({
         title: "Berhasil",
-        description: "Pengguna berhasil dihapus.",
+        description: "Produk berhasil dihapus.",
         color: "success",
       });
-
       onClose();
-      onUserDeleted?.();
+      onProductDeleted?.();
     } catch {
       addToast({
         title: "Gagal",
         description: "Terjadi kesalahan jaringan.",
         color: "danger",
       });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
   return (
     <>
       {controlledIsOpen === undefined && (
-        <Tooltip content="Delete User">
+        <Tooltip content="Hapus Produk">
           <Button
             color="danger"
             variant="light"
@@ -98,41 +97,38 @@ export default function DeleteUserModal({
       >
         <ModalContent>
           {(onClose) => (
-            <form
-              onSubmit={form.handleSubmit((data) =>
-                onSubmit(data as { userId: string }, onClose),
-              )}
-            >
+            <>
               <ModalHeader className="flex flex-col gap-2">
-                Delete Pengguna
+                Hapus Produk
                 <span className="flex items-center gap-2 font-medium text-base text-slate-500">
-                  <Avatar className="size-6">
-                    <AvatarImage src={user.image || ""} alt={user.name} />
-                    <AvatarFallback>{getInitialName(user.name)}</AvatarFallback>
+                  <Avatar className="size-6 rounded-sm">
+                    <AvatarImage src={product.image || ""} alt={product.nama} />
+                    <AvatarFallback className="rounded-sm text-[10px]">
+                      {product.sku.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
-                  {user.name}
+                  {product.nama}
                 </span>
               </ModalHeader>
               <ModalBody>
                 <Alert color="danger" title="Peringatan">
-                  menghapus pengguna ini akan menghapus semua data yang terkait
-                  dengannya
+                  Menghapus produk ini tidak dapat dibatalkan.
                 </Alert>
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="flat" onPress={onClose}>
+                <Button color="default" variant="flat" onPress={onClose}>
                   Batal
                 </Button>
                 <Button
-                  color="primary"
-                  type="submit"
-                  isDisabled={form.formState.isSubmitting}
-                  isLoading={form.formState.isSubmitting}
+                  color="danger"
+                  onPress={() => handleDelete(onClose)}
+                  isDisabled={isDeleting}
+                  isLoading={isDeleting}
                 >
                   Hapus
                 </Button>
               </ModalFooter>
-            </form>
+            </>
           )}
         </ModalContent>
       </Modal>

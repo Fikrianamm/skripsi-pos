@@ -3,12 +3,10 @@ import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, Image, type Selection } from "@heroui/react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MoreVertical, PenLine, Package, Trash2 } from "lucide-react";
-import { fetcher, getInitialName } from "@/lib/func";
+import { MoreVertical, PenLine, Package, Trash2, Eye } from "lucide-react";
+import { fetcher } from "@/lib/func";
 import useSWR from "swr";
 import { Product as ProductType, Category } from "@/types/types";
-import AddUserModal from "./components/add-user-modal";
 import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useContextMenu } from "@/hooks/use-context-menu";
@@ -20,6 +18,11 @@ import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
 import { DataTable } from "@/components/data-table/data-table";
 import { TablePagination } from "@/components/data-table/table-pagination";
 import { columns } from "./components/columns";
+import AddProductModal from "./components/add-product-modal";
+import EditProductModal from "./components/edit-product-modal";
+import DeleteProductModal from "./components/delete-product-modal";
+import BulkDeleteProductModal from "./components/bulk-delete-modal";
+import ViewProductModal from "./components/view-product-modal";
 
 type StockStatus = {
   label: string;
@@ -48,6 +51,15 @@ export default function Page() {
   );
   const [page, setPage] = React.useState(1);
 
+  const [editProduct, setEditProduct] = React.useState<ProductType | null>(
+    null,
+  );
+  const [deleteProduct, setDeleteProduct] = React.useState<ProductType | null>(
+    null,
+  );
+  const [viewProduct, setViewProduct] = React.useState<ProductType | null>(
+    null,
+  );
   const { contextMenu, openMenu, openMenuFromButton, closeMenu } =
     useContextMenu<ProductType>();
 
@@ -118,11 +130,19 @@ export default function Page() {
               setSearch("");
             }}
           />
-          <AddUserModal onUserCreated={() => mutate()} />
+          <AddProductModal onProductCreated={() => mutate()} />
         </div>
       </div>
 
-      <BulkSelectionBar count={selectedIds.length} label="produk dipilih" />
+      <BulkSelectionBar count={selectedIds.length} label="produk dipilih">
+        <BulkDeleteProductModal
+          productIds={selectedIds as string[]}
+          onDeleted={() => {
+            mutate();
+            setSelectedKeys(new Set([""]));
+          }}
+        />
+      </BulkSelectionBar>
 
       <DataTable<ProductType>
         columns={columns}
@@ -147,6 +167,7 @@ export default function Page() {
                     fallbackSrc="https://placehold.co/50x50?text=.png"
                     width={50}
                     height={50}
+                    className="object-contain"
                   />
                   {product.nama}
                 </div>
@@ -191,10 +212,20 @@ export default function Page() {
           y={contextMenu.y}
           actions={[
             {
+              label: "Lihat Detail",
+              icon: <Eye size={16} />,
+              variant: "default",
+              onClick: () => {
+                setViewProduct(contextMenu.item);
+                closeMenu();
+              },
+            },
+            {
               label: "Edit",
               icon: <PenLine size={16} />,
               variant: "primary",
               onClick: () => {
+                setEditProduct(contextMenu.item);
                 closeMenu();
               },
             },
@@ -203,10 +234,51 @@ export default function Page() {
               icon: <Trash2 size={16} />,
               variant: "destructive",
               onClick: () => {
+                setDeleteProduct(contextMenu.item);
                 closeMenu();
               },
             },
           ]}
+        />
+      )}
+
+      {editProduct && (
+        <EditProductModal
+          key={`edit-${editProduct.id}`}
+          product={editProduct}
+          onProductUpdated={() => {
+            mutate();
+            setEditProduct(null);
+          }}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setEditProduct(null);
+          }}
+        />
+      )}
+      {deleteProduct && (
+        <DeleteProductModal
+          key={`delete-${deleteProduct.id}`}
+          product={deleteProduct}
+          onProductDeleted={() => {
+            mutate();
+            setDeleteProduct(null);
+          }}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setDeleteProduct(null);
+          }}
+        />
+      )}
+
+      {viewProduct && (
+        <ViewProductModal
+          key={`view-${viewProduct.id}`}
+          product={viewProduct}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setViewProduct(null);
+          }}
         />
       )}
 

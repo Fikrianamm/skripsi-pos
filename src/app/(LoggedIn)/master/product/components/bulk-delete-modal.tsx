@@ -13,13 +13,12 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@heroui/alert";
 import { addToast } from "@heroui/toast";
-import { authClient } from "@/lib/auth-client";
 
-export default function BulkDeleteModal({
-  userIds,
+export default function BulkDeleteProductModal({
+  productIds,
   onDeleted,
 }: {
-  userIds: string[];
+  productIds: string[];
   onDeleted?: () => void;
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -30,25 +29,25 @@ export default function BulkDeleteModal({
 
     try {
       const results = await Promise.allSettled(
-        userIds.map((userId) => authClient.admin.removeUser({ userId })),
+        productIds.map((id) =>
+          fetch(`/api/admin/product/${id}`, { method: "DELETE" }).then((r) =>
+            r.ok ? r : Promise.reject(r),
+          ),
+        ),
       );
 
-      const failed = results.filter(
-        (r) =>
-          r.status === "rejected" ||
-          (r.status === "fulfilled" && r.value.error),
-      );
+      const failed = results.filter((r) => r.status === "rejected");
 
       if (failed.length > 0) {
         addToast({
           title: "Sebagian gagal",
-          description: `${userIds.length - failed.length} berhasil dihapus, ${failed.length} gagal.`,
+          description: `${productIds.length - failed.length} berhasil dihapus, ${failed.length} gagal.`,
           color: "warning",
         });
       } else {
         addToast({
           title: "Berhasil",
-          description: `${userIds.length} pengguna berhasil dihapus.`,
+          description: `${productIds.length} produk berhasil dihapus.`,
           color: "success",
         });
       }
@@ -75,7 +74,7 @@ export default function BulkDeleteModal({
         onPress={onOpen}
         size="sm"
       >
-        Hapus {userIds.length} Pengguna
+        Hapus {productIds.length} Produk
       </Button>
       <Modal
         isOpen={isOpen}
@@ -86,11 +85,11 @@ export default function BulkDeleteModal({
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Hapus Pengguna</ModalHeader>
+              <ModalHeader>Hapus Produk</ModalHeader>
               <ModalBody>
                 <Alert color="danger" title="Peringatan">
-                  Anda akan menghapus {userIds.length} pengguna beserta semua
-                  data yang terkait. Tindakan ini tidak dapat dibatalkan.
+                  Anda akan menghapus {productIds.length} produk. Tindakan ini
+                  tidak dapat dibatalkan.
                 </Alert>
               </ModalBody>
               <ModalFooter>
@@ -103,7 +102,7 @@ export default function BulkDeleteModal({
                   isDisabled={isDeleting}
                   isLoading={isDeleting}
                 >
-                  Hapus {userIds.length} Pengguna
+                  Hapus {productIds.length} Produk
                 </Button>
               </ModalFooter>
             </>

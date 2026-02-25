@@ -18,6 +18,7 @@ import { addToast } from "@heroui/toast";
 import { z } from "zod";
 import { InlineAvatarPicker } from "@/components/inline-avatar-picker";
 import { getRandomAvatar } from "@/lib/avatars";
+import { UserPlus } from "lucide-react";
 
 const schema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
@@ -72,8 +73,13 @@ export default function AddCustomerModal({
 
   return (
     <>
-      <Button color="primary" size="sm" onPress={onOpen}>
-        + Tambah Customer
+      <Button
+        color="primary"
+        size="sm"
+        startContent={<UserPlus size={16} />}
+        onPress={onOpen}
+      >
+        Tambah Customer
       </Button>
 
       <Modal
