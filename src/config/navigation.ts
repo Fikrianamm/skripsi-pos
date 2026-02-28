@@ -41,18 +41,18 @@ export const NAV_ITEMS: NavGroup[] = [
         // semua role bisa akses
       },
       {
-        title: "Transaksi",
+        title: "Pesanan",
         url: "#",
         icon: ShoppingCart,
         roles: ["admin", "kasir"],
         items: [
           {
             title: "Input Pesanan (POS)",
-            url: "/transaction/pos",
+            url: "/order/pos",
           },
           {
-            title: "Daftar Transaksi",
-            url: "/transaction/list",
+            title: "Daftar Pesanan",
+            url: "/order/list",
           },
         ],
       },

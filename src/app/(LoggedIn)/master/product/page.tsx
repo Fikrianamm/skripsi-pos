@@ -4,7 +4,7 @@ import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, Image, type Selection } from "@heroui/react";
 import { MoreVertical, PenLine, Package, Trash2, Eye } from "lucide-react";
-import { fetcher } from "@/lib/func";
+import { fetcher, getStockStatus } from "@/lib/func";
 import useSWR from "swr";
 import { Product as ProductType, Category } from "@/types/types";
 import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
@@ -23,19 +23,7 @@ import EditProductModal from "./components/edit-product-modal";
 import DeleteProductModal from "./components/delete-product-modal";
 import BulkDeleteProductModal from "./components/bulk-delete-modal";
 import ViewProductModal from "./components/view-product-modal";
-
-type StockStatus = {
-  label: string;
-  color: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
-};
-
-function getStockStatus(product: ProductType): StockStatus {
-  const stok = Number(product.stok ?? 0);
-  const minStok = Number(product.minStok ?? 0);
-  if (stok <= 0) return { label: "Habis", color: "danger" };
-  if (stok <= minStok) return { label: "Menipis", color: "warning" };
-  return { label: "Aman", color: "success" };
-}
+import DrawerManageCategory from "../customer/components/drawer-category";
 
 const ROWS_PER_PAGE = 10;
 
@@ -107,30 +95,35 @@ export default function Page() {
       />
 
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
-        <SearchInput
-          value={search}
-          placeholder="Cari produk"
-          onChange={setSearch}
-          onClear={() => setSearch("")}
-        />
-        <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full">
-          <FilterDropdown
-            label="Kategori"
-            icon={<Package size={16} />}
-            items={categoryFilterItems}
-            selectedKeys={selectedCategory}
-            selectedLabel={selectedCategoryLabel}
-            onSelectionChange={(keys) => {
-              if (keys === "all") return;
-              const sel = Array.from(keys)[0] as string;
-              setSelectedCategory(new Set([sel || "all"]));
-            }}
-            onReset={() => {
-              setSelectedCategory(new Set(["all"]));
-              setSearch("");
-            }}
-          />
-          <AddProductModal onProductCreated={() => mutate()} />
+        <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full flex-wrap">
+          <div className="flex gap-2 items-center justify-start flex-1">
+            <SearchInput
+              value={search}
+              placeholder="Cari produk"
+              onChange={setSearch}
+              onClear={() => setSearch("")}
+            />
+            <FilterDropdown
+              label="Kategori"
+              icon={<Package size={16} />}
+              items={categoryFilterItems}
+              selectedKeys={selectedCategory}
+              selectedLabel={selectedCategoryLabel}
+              onSelectionChange={(keys) => {
+                if (keys === "all") return;
+                const sel = Array.from(keys)[0] as string;
+                setSelectedCategory(new Set([sel || "all"]));
+              }}
+              onReset={() => {
+                setSelectedCategory(new Set(["all"]));
+                setSearch("");
+              }}
+            />
+          </div>
+          <div className="flex flex-row gap-2">
+            <DrawerManageCategory />
+            <AddProductModal onProductCreated={() => mutate()} />
+          </div>
         </div>
       </div>
 

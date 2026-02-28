@@ -1,10 +1,12 @@
-export function normalizeName(name: string) {
+import { Product, StockStatus } from "@/types/types";
+
+export const normalizeName = (name: string) => {
   return name
     .trim()
     .replace(/\s+/g, " ")
     .replace(/[^a-zA-Z\s'-]/g, "")
     .replace(/\b\w/g, (char) => char.toUpperCase());
-}
+};
 
 export const VALID_DOMAINS = () => {
   const domains = ["gmail.com", "yahoo.com", "outlook.com"];
@@ -22,3 +24,11 @@ export const getInitialName = (name: string) => {
 };
 
 export const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export const getStockStatus = (product: Product): StockStatus => {
+  const stok = Number(product.stok ?? 0);
+  const minStok = Number(product.minStok ?? 0);
+  if (stok <= 0) return { label: "Habis", color: "danger" };
+  if (stok <= minStok) return { label: "Menipis", color: "warning" };
+  return { label: "Aman", color: "success" };
+};

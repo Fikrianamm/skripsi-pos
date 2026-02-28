@@ -82,6 +82,7 @@ export function FilterDropdown({
           variant="bordered"
           startContent={<X size={16} />}
           onClick={onReset}
+          className="hidden lg:flex"
         >
           Reset
         </Button>

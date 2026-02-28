@@ -10,7 +10,7 @@ import {
 } from "@heroui/modal";
 import { PenLine, ImagePlus, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { editProductSchema, type EditProductFormData } from "@/lib/schemas";
 import { useRef, useState } from "react";
 import { Alert } from "@heroui/alert";
@@ -68,6 +68,8 @@ export default function EditProductModal({
       image: product.image || "",
     },
   });
+
+  const isService = useWatch({ control: form.control, name: "isService" });
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -342,10 +344,7 @@ export default function EditProductModal({
                           value={field.value}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
-                          isDisabled={
-                            form.formState.isSubmitting ||
-                            form.watch("isService")
-                          }
+                          isDisabled={form.formState.isSubmitting || isService}
                           isInvalid={!!form.formState.errors.stok}
                           errorMessage={form.formState.errors.stok?.message}
                         />
@@ -361,10 +360,7 @@ export default function EditProductModal({
                           value={field.value}
                           onChange={field.onChange}
                           onBlur={field.onBlur}
-                          isDisabled={
-                            form.formState.isSubmitting ||
-                            form.watch("isService")
-                          }
+                          isDisabled={form.formState.isSubmitting || isService}
                           isInvalid={!!form.formState.errors.minStok}
                           errorMessage={form.formState.errors.minStok?.message}
                         />

@@ -61,3 +61,8 @@ export interface Unit {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+export type StockStatus = {
+  label: string;
+  color: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
+};
