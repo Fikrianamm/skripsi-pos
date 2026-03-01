@@ -88,7 +88,7 @@ export default function Page() {
   }, [selectedCategory, categoryFilterItems.length]);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-5 mb-4">
       <PageHeader
         title="Manajemen Produk"
         description="Kelola produk, kategori, dan harga produk."
@@ -102,6 +102,7 @@ export default function Page() {
               placeholder="Cari produk"
               onChange={setSearch}
               onClear={() => setSearch("")}
+              className="w-full max-w-xs"
             />
             <FilterDropdown
               label="Kategori"
@@ -176,8 +177,8 @@ export default function Page() {
                   {product.isService ? "Jasa" : "Produk"}
                 </Chip>
               </TableCell>
-              <TableCell>{String(product.hpp)}</TableCell>
-              <TableCell>{String(product.hargaJual)}</TableCell>
+              <TableCell>{`Rp.${String(product.hpp)}`}</TableCell>
+              <TableCell>{`Rp.${String(product.hargaJual)}`}</TableCell>
               <TableCell>-</TableCell>
               <TableCell>
                 <Chip color={status.color} size="sm" variant="flat">

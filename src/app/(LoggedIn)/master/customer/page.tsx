@@ -4,12 +4,7 @@ import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, type Selection } from "@heroui/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Eye,
-  MoreVertical,
-  PenLine,
-  Trash2,
-} from "lucide-react";
+import { Eye, MoreVertical, PenLine, Trash2 } from "lucide-react";
 import { fetcher, getInitialName } from "@/lib/func";
 import useSWR from "swr";
 import { Customer as CustomerType } from "@/types/types";
@@ -75,12 +70,13 @@ export default function Page() {
         description="Kelola data pelanggan dan informasi kontak mereka."
       />
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
+      <div className="flex flex-row gap-3 items-center justify-between">
         <SearchInput
           value={search}
           placeholder="Cari customer"
           onChange={setSearch}
           onClear={() => setSearch("")}
+          className="w-full max-w-sm"
         />
         <AddCustomerModal onCustomerAdded={() => mutate()} />
       </div>

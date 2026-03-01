@@ -17,13 +17,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (session.user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden. Anda tidak memiliki akses." },
-        { status: 403 },
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");

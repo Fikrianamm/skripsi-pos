@@ -1,12 +1,12 @@
 import {
   LayoutDashboard,
-  ShoppingCart,
   Factory,
   Warehouse,
   Database,
   FileText,
   Shield,
   Settings,
+  ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { RoleKey } from "@/config/roles";
@@ -43,11 +43,11 @@ export const NAV_ITEMS: NavGroup[] = [
       {
         title: "Pesanan",
         url: "#",
-        icon: ShoppingCart,
+        icon: ShoppingBag,
         roles: ["admin", "kasir"],
         items: [
           {
-            title: "Input Pesanan (POS)",
+            title: "Input Pesanan",
             url: "/order/pos",
           },
           {

@@ -32,3 +32,12 @@ export const getStockStatus = (product: Product): StockStatus => {
   if (stok <= minStok) return { label: "Menipis", color: "warning" };
   return { label: "Aman", color: "success" };
 };
+
+export const formatRupiah = (value: number): string => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};

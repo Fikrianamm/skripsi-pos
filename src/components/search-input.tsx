@@ -6,6 +6,7 @@ interface SearchInputProps {
   placeholder?: string;
   onChange: (value: string) => void;
   onClear: () => void;
+  className?: string;
 }
 
 export function SearchInput({
@@ -13,6 +14,7 @@ export function SearchInput({
   placeholder = "Cari...",
   onChange,
   onClear,
+  className,
 }: SearchInputProps) {
   return (
     <Input
@@ -21,7 +23,7 @@ export function SearchInput({
       variant="bordered"
       isClearable
       classNames={{ inputWrapper: "border-1" }}
-      className="lg:w-1/3 w-full"
+      className={className ?? "w-full max-w-xs"}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onClear={onClear}

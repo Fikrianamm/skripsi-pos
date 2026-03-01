@@ -150,12 +150,14 @@ export default function SearchFeature() {
     <>
       <Button
         onPress={onOpen}
-        startContent={<Search size={16} />}
         variant="light"
-        endContent={<Kbd className="hidden sm:flex">Ctrl + K</Kbd>}
-        className="border border-gray-200 hover:text-slate-900 text-slate-600 sm:w-48 w-auto sm:justify-start"
+        className="border border-gray-200 hover:text-slate-900 text-slate-600 sm:w-48 w-auto sm:justify-between"
       >
-        <span>Cari</span>
+        <div className="flex items-center gap-2">
+          <Search size={16} />
+          <span>Cari</span>
+        </div>
+        <Kbd>Ctrl + K</Kbd>
       </Button>
       <Modal
         isOpen={isOpen}

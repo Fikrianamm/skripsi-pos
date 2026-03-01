@@ -32,7 +32,7 @@ export default async function Layout({
     <SidebarProvider>
       <AppSidebar user={session.user} />
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sticky top-0 bg-white/20 backdrop-blur-lg border-b">
+        <header className="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sticky top-0 bg-white/20 backdrop-blur-lg border-b z-50">
           <div className="flex justify-between w-full">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
