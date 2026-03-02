@@ -1,3 +1,22 @@
+export interface SPKDetail {
+  id: string;
+  orderId: string;
+  karyawanId: string;
+  tahapProduksi: string;
+  model: string | null;
+  tali: string | null;
+  ukuran: string | null;
+  jumlah: number;
+  catatan: string | null;
+  tanggalSetor: string | null;
+  accCetak: boolean;
+  accCetakAt: string | null;
+  accCetakOleh: string | null;
+  statusSPK: string;
+  createdAt: string;
+  karyawan: { id: string; nama: string; posisi: string | null };
+}
+
 // Types for order detail page
 
 export interface OrderDetail {
@@ -18,6 +37,7 @@ export interface OrderDetail {
   customer: { id: string; nama: string; nomorHp: string; image: string | null };
   items: OrderItem[];
   designFiles: DesignFile[];
+  spk: SPKDetail | null;
 }
 
 export interface OrderItem {

@@ -14,12 +14,15 @@ import { OrderInfoCard } from "./components/order-info-card";
 import { OrderItemsTable } from "./components/order-items-table";
 import { DesignFilesCard } from "./components/design-files-card";
 import { PaymentSummary } from "./components/payment-summary";
+import { SpkFormModal } from "./components/spk-form-modal";
+import { SpkCard } from "./components/spk-card";
 
 export default function Page() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSpkForm, setShowSpkForm] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(`/api/order/${orderId}`, fetcher);
   const order: OrderDetail | null = data?.order ?? null;
@@ -125,6 +128,7 @@ export default function Page() {
             currentStatus={order.statusProduksi}
             currentStatusBayar={order.statusPembayaran}
             onUpdated={() => mutate()}
+            onNeedSPK={() => setShowSpkForm(true)}
           />
           <Tooltip content="Hapus pesanan (admin only)">
             <Button
@@ -160,8 +164,60 @@ export default function Page() {
         {/* Right sidebar */}
         <div className="flex flex-col gap-5">
           <PaymentSummary order={order} />
+
+          {/* SPK — muncul saat status JAHIT */}
+          {order.statusProduksi === "JAHIT" && (
+            <>
+              {order.spk ? (
+                <SpkCard
+                  orderId={order.id}
+                  spk={order.spk}
+                  onUpdated={() => mutate()}
+                />
+              ) : (
+                /* SPK belum dibuat — tampilkan card placeholder */
+                <Card
+                  shadow="sm"
+                  className="border border-warning-200 bg-warning-50/40"
+                >
+                  <CardBody className="flex flex-col items-center gap-3 py-5 text-center">
+                    <div className="text-warning-600 text-sm font-medium">
+                      SPK Belum Dibuat
+                    </div>
+                    <p className="text-xs text-default-500 leading-relaxed">
+                      Pesanan ini sudah di tahap Jahit tetapi belum memiliki
+                      SPK.
+                    </p>
+                    <Button
+                      color="warning"
+                      variant="flat"
+                      size="sm"
+                      onPress={() => setShowSpkForm(true)}
+                    >
+                      Buat SPK
+                    </Button>
+                  </CardBody>
+                </Card>
+              )}
+            </>
+          )}
         </div>
       </div>
+
+      {/* SPK Form Modal — terbuka ketika user memilih status JAHIT */}
+      {showSpkForm && (
+        <SpkFormModal
+          isOpen={showSpkForm}
+          onOpenChange={(open) => setShowSpkForm(open)}
+          orderId={order.id}
+          nomorOrder={order.nomorOrder}
+          items={order.items}
+          onSuccess={() => {
+            setShowSpkForm(false);
+            mutate();
+          }}
+        />
+      )}
     </div>
   );
 }

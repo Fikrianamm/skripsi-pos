@@ -33,6 +33,7 @@ interface UpdateStatusModalProps {
   currentStatus: string;
   currentStatusBayar: string;
   onUpdated: () => void;
+  onNeedSPK?: () => void; // dipanggil saat user mau pindah ke JAHIT
 }
 
 export function UpdateStatusModal({
@@ -41,6 +42,7 @@ export function UpdateStatusModal({
   currentStatus,
   currentStatusBayar,
   onUpdated,
+  onNeedSPK,
 }: UpdateStatusModalProps) {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const [selectedProduksi, setSelectedProduksi] = useState<StatusProduksiKey>(
@@ -66,6 +68,14 @@ export function UpdateStatusModal({
       onClose();
       return;
     }
+
+    // Intercept: jika user memilih JAHIT (dan belum di-JAHIT), wajib isi SPK
+    if (produksiChanged && selectedProduksi === "JAHIT" && onNeedSPK) {
+      onClose();
+      onNeedSPK();
+      return;
+    }
+
     setIsLoading(true);
     try {
       const body: Record<string, string> = {};

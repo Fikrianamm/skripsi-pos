@@ -196,6 +196,7 @@ model Order {
   customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
   items            OrderItem[]
   designFiles      DesignFile[]
+  spk              SPK?
 
   @@index([customerId])
   @@index([nomorOrder])
@@ -236,7 +237,55 @@ model DesignFile {
   @@map("design_file")
 }
 
+model Karyawan {
+  id        String   @id
+  nama      String   @db.Text
+  nomorHp   String?  @db.Text
+  posisi    String?  @db.Text       // ex: Penjahit, Operator Sablon, Tim Potong
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  spk       SPK[]
+
+  @@index([nama(length: 191)])
+  @@map("karyawan")
+}
+
+model SPK {
+  id              String         @id
+  orderId         String         @unique          
+  karyawanId      String
+  tahapProduksi   StatusProduksi                  // tahap mana SPK ini berlaku (skrng: JAHIT)
+  model           String?        @db.Text         // model/desain produk
+  tali            String?        @db.Text         
+  ukuran          String?        @db.Text         
+  jumlah          Decimal        @db.Decimal(10, 2)
+  catatan         String?        @db.Text         
+  tanggalSetor    DateTime?                       // deadline karyawan setor hasil
+  accCetak        Boolean        @default(false)  // sudah di-approve untuk dicetak?
+  accCetakAt      DateTime?                       // kapan di-approve
+  accCetakOleh    String?        @db.Text         // nama/id yang approve
+  statusSPK       StatusSPK      @default(DRAFT)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  karyawan Karyawan @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
+
+  @@index([karyawanId])
+  @@index([tahapProduksi])
+  @@map("spk")
+}
+
 // Enums
+enum StatusSPK {
+  DRAFT       // SPK dibuat, belum dikonfirmasi
+  AKTIF       // SPK sudah aktif, karyawan sedang mengerjakan
+  SELESAI     // karyawan sudah setor
+  REVISI      // ada revisi dari supervisor
+  BATAL       // SPK dibatalkan
+}
+
 enum OrderChannel {
   LANGSUNG    
   WHATSAPP

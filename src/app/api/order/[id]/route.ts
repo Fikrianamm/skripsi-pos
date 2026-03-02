@@ -45,6 +45,26 @@ const ORDER_DETAIL_SELECT = {
     },
     orderBy: { createdAt: "asc" as const },
   },
+  spk: {
+    select: {
+      id: true,
+      orderId: true,
+      karyawanId: true,
+      tahapProduksi: true,
+      model: true,
+      tali: true,
+      ukuran: true,
+      jumlah: true,
+      catatan: true,
+      tanggalSetor: true,
+      accCetak: true,
+      accCetakAt: true,
+      accCetakOleh: true,
+      statusSPK: true,
+      createdAt: true,
+      karyawan: { select: { id: true, nama: true, posisi: true } },
+    },
+  },
 } as const;
 
 async function requireOrderAccess() {

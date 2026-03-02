@@ -62,6 +62,16 @@ export interface Unit {
   updatedAt?: Date;
 }
 
+export interface Karyawan {
+  id?: string;
+  nama: string;
+  nomorHp?: string | null;
+  posisi?: string | null;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export type StockStatus = {
   label: string;
   color: "default" | "primary" | "secondary" | "success" | "warning" | "danger";

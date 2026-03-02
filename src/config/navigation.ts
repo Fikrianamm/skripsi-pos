@@ -147,6 +147,11 @@ export const NAV_ITEMS: NavGroup[] = [
             roles: ["admin", "gudang"],
           },
           {
+            title: "Data Karyawan",
+            url: "/master/karyawan",
+            roles: ["admin"],
+          },
+          {
             title: "Manajemen Pengguna",
             url: "/master/user",
             roles: ["admin"],
