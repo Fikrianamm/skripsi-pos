@@ -73,9 +73,9 @@ export const NAV_ITEMS: NavGroup[] = [
             roles: ["admin", "produksi"],
           },
           {
-            title: "Bank Desain (Arsip)",
+            title: "Bank Desain",
             url: "/production/design-archive",
-            roles: ["admin", "designer"],
+            roles: ["admin", "designer", "produksi", "kasir"],
           },
         ],
       },

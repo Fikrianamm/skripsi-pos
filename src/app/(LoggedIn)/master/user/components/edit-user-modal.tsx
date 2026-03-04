@@ -166,8 +166,6 @@ export default function EditUserModal({
                         isDisabled={form.formState.isSubmitting}
                         isInvalid={!!form.formState.errors.role}
                         errorMessage={form.formState.errors.role?.message}
-                        // TODO: Enable this when we support multiple roles
-                        // selectionMode="multiple"
                       >
                         {ROLES.map((role) => (
                           <SelectItem key={role.key}>{role.label}</SelectItem>

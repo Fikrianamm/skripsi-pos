@@ -76,7 +76,8 @@ async function requireOrderAccess() {
       session: null,
       isAdmin: false,
     };
-  if (session.user.role !== "admin" && session.user.role !== "kasir") {
+  const ALLOWED = ["admin", "kasir", "designer"];
+  if (!session.user.role || !ALLOWED.includes(session.user.role)) {
     return {
       error: "Forbidden. Anda tidak memiliki akses.",
       status: 403,
