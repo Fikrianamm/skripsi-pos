@@ -76,3 +76,30 @@ export type StockStatus = {
   label: string;
   color: "default" | "primary" | "secondary" | "success" | "warning" | "danger";
 };
+
+export interface BahanBaku {
+  id?: string;
+  nama: string;
+  unitId: string;
+  stok: number;
+  minStok?: number | null;
+  keterangan?: string | null;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  unit?: { id: string; nama: string };
+  _count?: { stokMasuk: number };
+}
+
+export interface StokMasuk {
+  id?: string;
+  bahanBakuId: string;
+  supplierId?: string | null;
+  jumlah: number;
+  hargaBeli?: number | null;
+  nomorFaktur?: string | null;
+  tanggal: Date | string;
+  keterangan?: string | null;
+  createdAt?: Date;
+  supplier?: { id: string; nama: string } | null;
+}

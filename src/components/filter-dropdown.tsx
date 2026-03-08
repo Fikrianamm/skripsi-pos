@@ -38,6 +38,7 @@ export function FilterDropdown({
   showReset = true,
 }: FilterDropdownProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const isDefaultSelected = Array.from(selectedKeys)[0] === "all";
 
   return (
     <div className="flex flex-row gap-2 items-center">
@@ -77,7 +78,7 @@ export function FilterDropdown({
           ))}
         </DropdownMenu>
       </Dropdown>
-      {showReset && selectedLabel !== "Semua" && (
+      {showReset && !isDefaultSelected && (
         <Button
           variant="bordered"
           startContent={<X size={16} />}

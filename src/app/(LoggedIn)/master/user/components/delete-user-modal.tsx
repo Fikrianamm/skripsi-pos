@@ -115,8 +115,15 @@ export default function DeleteUserModal({
               </ModalHeader>
               <ModalBody>
                 <Alert color="danger" title="Peringatan">
-                  menghapus pengguna ini akan menghapus semua data yang terkait
-                  dengannya
+                  <p className="mb-2">
+                    Data pengguna akan dihapus secara permanen beserta data
+                    terkait berikut:
+                  </p>
+                  <ul className="list-disc list-inside text-sm">
+                    <li>Sesi login dan token autentikasi</li>
+                    <li>Akun provider yang terhubung</li>
+                    <li>File desain yang pernah diunggah</li>
+                  </ul>
                 </Alert>
               </ModalBody>
               <ModalFooter>

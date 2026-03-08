@@ -95,10 +95,20 @@ export function GoogleOneTap() {
   );
 }
 
-// Helper interface untuk TypeScript agar tidak error "window.google"
+export {};
+
 declare global {
   interface Window {
-    google: any;
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: (
+            callback?: ((notification: any) => void) | undefined,
+          ) => void;
+        };
+      };
+    };
     initializeGoogleOneTap?: () => void;
   }
 }

@@ -88,8 +88,13 @@ export default function BulkDeleteProductModal({
               <ModalHeader>Hapus Produk</ModalHeader>
               <ModalBody>
                 <Alert color="danger" title="Peringatan">
-                  Anda akan menghapus {productIds.length} produk. Tindakan ini
-                  tidak dapat dibatalkan.
+                  <p className="mb-2">
+                    Anda akan menghapus {productIds.length} produk secara
+                    permanen beserta data terkait berikut:
+                  </p>
+                  <ul className="list-disc list-inside text-sm">
+                    <li>Data item produk pada riwayat Order</li>
+                  </ul>
                 </Alert>
               </ModalBody>
               <ModalFooter>

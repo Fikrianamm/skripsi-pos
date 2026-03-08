@@ -96,7 +96,7 @@ function EditableRow({
   );
 }
 
-// Delete Confirm Modal 
+// Delete Confirm Modal
 function DeleteConfirmModal({
   isOpen,
   onOpenChange,
@@ -233,7 +233,7 @@ function ManageSection({
     }
   }
 
-  // Edit 
+  // Edit
   async function handleEdit(id: string, nama: string) {
     if (!nama.trim()) return;
     setIsSaving(true);
@@ -460,7 +460,11 @@ function ManageSection({
 }
 
 // Main Drawer
-export default function DrawerManageCategory() {
+export default function DrawerManageCategory({
+  onMutate,
+}: {
+  onMutate?: () => void;
+}) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const {
@@ -539,7 +543,10 @@ export default function DrawerManageCategory() {
                   items={categories}
                   isLoading={isCategoryLoading}
                   apiBase="/api/category"
-                  onMutate={() => mutateCategory()}
+                  onMutate={() => {
+                    mutateCategory();
+                    onMutate?.();
+                  }}
                   emptyLabel="Belum ada kategori."
                 />
 
@@ -552,7 +559,10 @@ export default function DrawerManageCategory() {
                   items={units}
                   isLoading={isUnitLoading}
                   apiBase="/api/unit"
-                  onMutate={() => mutateUnit()}
+                  onMutate={() => {
+                    mutateUnit();
+                    onMutate?.();
+                  }}
                   emptyLabel="Belum ada satuan."
                 />
               </DrawerBody>

@@ -89,8 +89,15 @@ export default function BulkDeleteModal({
               <ModalHeader>Hapus Pengguna</ModalHeader>
               <ModalBody>
                 <Alert color="danger" title="Peringatan">
-                  Anda akan menghapus {userIds.length} pengguna beserta semua
-                  data yang terkait. Tindakan ini tidak dapat dibatalkan.
+                  <p className="mb-2">
+                    Anda akan menghapus {userIds.length} pengguna secara
+                    permanen beserta data terkait berikut:
+                  </p>
+                  <ul className="list-disc list-inside text-sm">
+                    <li>Sesi login dan token autentikasi</li>
+                    <li>Akun provider yang terhubung</li>
+                    <li>File desain yang pernah diunggah</li>
+                  </ul>
                 </Alert>
               </ModalBody>
               <ModalFooter>

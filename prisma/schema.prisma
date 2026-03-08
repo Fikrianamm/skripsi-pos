@@ -9,20 +9,23 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  name          String    @db.Text
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?   @db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  banExpires    DateTime?
-  banReason     String?   @db.Text
-  banned        Boolean?  @default(false)
-  role          String?   @db.Text
-  accounts      Account[]
-  sessions      Session[]
-  designFiles   DesignFile[]
+  id               String             @id
+  name             String             @db.Text
+  email            String             @unique
+  emailVerified    Boolean            @default(false)
+  image            String?            @db.Text
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  banExpires       DateTime?
+  banReason        String?            @db.Text
+  banned           Boolean?           @default(false)
+  role             String?            @db.Text
+  accounts         Account[]
+  sessions         Session[]
+  orders           Order[]
+  spk              SPK[]
+  designFiles      DesignFile[]
+  penerimaanBarang PenerimaanBarang[]
 
   @@map("user")
 }
@@ -76,41 +79,42 @@ model Verification {
 }
 
 model Category {
-  id         String   @id
-  nama       String   @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  products   Product[]
+  id        String    @id
+  nama      String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
 
   @@index([nama(length: 191)])
   @@map("category")
 }
 
-model Unit{
-  id         String   @id
-  nama       String   @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  products   Product[]
+model Unit {
+  id        String      @id
+  nama      String      @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  products  Product[]
+  bahanBaku BahanBaku[]
 
   @@index([nama(length: 191)])
   @@map("unit")
 }
 
 model Product {
-  id         String   @id
+  id         String      @id
   categoryId String
   unitId     String
-  sku        String   @unique
-  nama       String   @db.Text
-  image      String?   @db.Text
-  hpp        Decimal  @db.Decimal(10, 2)
-  hargaJual  Decimal  @db.Decimal(10, 2)
-  stok       Decimal?  @db.Decimal(10, 2)
-  minStok    Decimal?  @db.Decimal(10, 2)
-  isService  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  sku        String      @unique
+  nama       String      @db.Text
+  image      String?     @db.Text
+  hpp        Decimal     @db.Decimal(10, 2)
+  hargaJual  Decimal     @db.Decimal(10, 2)
+  stok       Decimal?    @db.Decimal(10, 2)
+  minStok    Decimal?    @db.Decimal(10, 2)
+  isService  Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
@@ -133,48 +137,107 @@ model CostCategory {
 }
 
 model Cost {
-  id         String   @id
+  id             String       @id
   costCategoryId String
-  nama       String   @db.Text
-  nominal    Decimal  @db.Decimal(10, 2)
-  keterangan String   @db.Text
-  buktiNota  String   @db.Text
-  tanggal    DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  costCategory CostCategory @relation(fields: [costCategoryId], references: [id], onDelete: Cascade)
+  nama           String       @db.Text
+  nominal        Decimal      @db.Decimal(10, 2)
+  keterangan     String       @db.Text
+  buktiNota      String       @db.Text
+  tanggal        DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  costCategory   CostCategory @relation(fields: [costCategoryId], references: [id], onDelete: Cascade)
 
   @@index([nama(length: 191)])
   @@map("cost")
 }
 
 model Customer {
-  id         String   @id
-  nama       String   @db.Text
-  nomorHp    String   @db.Text
-  image      String?  @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  orders     Order[]
+  id        String   @id
+  nama      String   @db.Text
+  nomorHp   String   @db.Text
+  image     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
 
   @@index([nama(length: 191)])
   @@map("customer")
 }
 
 model Supplier {
-  id           String   @id
-  nama         String   @db.Text
-  nomorHp      String   @db.Text
-  email        String?  @db.Text
-  image        String?  @db.Text
-  alamat       String?  @db.Text
-  keterangan   String?  @db.Text
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String             @id
+  nama       String             @db.Text
+  nomorHp    String             @db.Text
+  email      String?            @db.Text
+  image      String?            @db.Text
+  alamat     String?            @db.Text
+  keterangan String?            @db.Text
+  isActive   Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  penerimaan PenerimaanBarang[]
 
   @@index([nama(length: 191)])
   @@map("supplier")
+}
+
+model BahanBaku {
+  id         String      @id
+  unitId     String
+  nama       String      @db.Text
+  stok       Decimal     @default(0) @db.Decimal(10, 2)
+  minStok    Decimal?    @db.Decimal(10, 2)
+  keterangan String?     @db.Text
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  stokMasuk  StokMasuk[]
+
+  @@index([nama(length: 191)])
+  @@index([unitId])
+  @@map("bahan_baku")
+}
+
+model PenerimaanBarang {
+  id           String   @id
+  nomorFaktur  String?  @db.VarChar(100)
+  supplierId   String?
+  tanggal      DateTime @default(now())
+  keterangan   String?  @db.Text
+  buktiNota    String?  @db.Text
+  totalTagihan Decimal  @default(0) @db.Decimal(12, 2)
+  addedById    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  supplier Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  addedBy  User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  items    StokMasuk[]
+
+  @@index([supplierId])
+  @@index([addedById])
+  @@index([tanggal])
+  @@map("penerimaan_barang")
+}
+
+model StokMasuk {
+  id             String   @id
+  penerimaanId   String
+  bahanBakuId    String
+  jumlah         Decimal  @db.Decimal(10, 2)
+  hargaSatuan    Decimal? @db.Decimal(10, 2)
+  totalHargaItem Decimal? @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  penerimaan PenerimaanBarang @relation(fields: [penerimaanId], references: [id], onDelete: Cascade)
+  bahanBaku  BahanBaku        @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+
+  @@index([penerimaanId])
+  @@index([bahanBakuId])
+  @@map("stok_masuk")
 }
 
 model Order {
@@ -197,6 +260,8 @@ model Order {
   items            OrderItem[]
   designFiles      DesignFile[]
   spk              SPK?
+  user             User?            @relation(fields: [userId], references: [id])
+  userId           String?
 
   @@index([customerId])
   @@index([nomorOrder])
@@ -241,7 +306,7 @@ model Karyawan {
   id        String   @id
   nama      String   @db.Text
   nomorHp   String?  @db.Text
-  posisi    String?  @db.Text       // ex: Penjahit, Operator Sablon, Tim Potong
+  posisi    String?  @db.Text
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -252,25 +317,27 @@ model Karyawan {
 }
 
 model SPK {
-  id              String         @id
-  orderId         String         @unique          
-  karyawanId      String
-  tahapProduksi   StatusProduksi                  // tahap mana SPK ini berlaku (skrng: JAHIT)
-  model           String?        @db.Text         // model/desain produk
-  tali            String?        @db.Text         
-  ukuran          String?        @db.Text         
-  jumlah          Decimal        @db.Decimal(10, 2)
-  catatan         String?        @db.Text         
-  tanggalSetor    DateTime?                       // deadline karyawan setor hasil
-  accCetak        Boolean        @default(false)  // sudah di-approve untuk dicetak?
-  accCetakAt      DateTime?                       // kapan di-approve
-  accCetakOleh    String?        @db.Text         // nama/id yang approve
-  statusSPK       StatusSPK      @default(DRAFT)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id            String         @id
+  orderId       String         @unique
+  karyawanId    String
+  tahapProduksi StatusProduksi
+  model         String?        @db.Text
+  tali          String?        @db.Text
+  ukuran        String?        @db.Text
+  jumlah        Decimal        @db.Decimal(10, 2)
+  catatan       String?        @db.Text
+  tanggalSetor  DateTime?
+  accCetak      Boolean        @default(false)
+  accCetakAt    DateTime?
+  accCetakOleh  String?        @db.Text
+  statusSPK     StatusSPK      @default(DRAFT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   karyawan Karyawan @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
+  user     User?    @relation(fields: [userId], references: [id])
+  userId   String?
 
   @@index([karyawanId])
   @@index([tahapProduksi])
@@ -279,36 +346,36 @@ model SPK {
 
 // Enums
 enum StatusSPK {
-  DRAFT       // SPK dibuat, belum dikonfirmasi
-  AKTIF       // SPK sudah aktif, karyawan sedang mengerjakan
-  SELESAI     // karyawan sudah setor
-  REVISI      // ada revisi dari supervisor
-  BATAL       // SPK dibatalkan
+  DRAFT
+  AKTIF
+  SELESAI
+  REVISI
+  BATAL
 }
 
 enum OrderChannel {
-  LANGSUNG    
+  LANGSUNG
   WHATSAPP
   INSTAGRAM
-  MARKETPLACE 
+  MARKETPLACE
   WEBSITE
   LAINNYA
 }
 
 enum StatusProduksi {
-  PENDING  
-  DESAIN   
-  POTONG   
-  SABLON   
-  JAHIT    
-  PACKING  
-  SELESAI  
+  PENDING
+  DESAIN
+  POTONG
+  SABLON
+  JAHIT
+  PACKING
+  SELESAI
   BATAL
 }
 
 enum StatusPembayaran {
   BELUM_BAYAR
-  DP          
+  DP
   LUNAS
   REFUND
 }
@@ -317,6 +384,6 @@ enum MetodePembayaran {
   TUNAI
   TRANSFER
   QRIS
-  KREDIT   
+  KREDIT
   LAINNYA
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar, Card, CardBody, CardHeader, Divider } from "@heroui/react";
-import { Calendar, FileText, Phone, User, Zap } from "lucide-react";
+import { Calendar, FileText, Phone, Zap } from "lucide-react";
 import { formatChannel } from "../../components/order-badges";
 import { OrderDetail } from "./types";
 

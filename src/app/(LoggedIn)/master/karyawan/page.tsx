@@ -83,7 +83,7 @@ export default function Page() {
         description="Kelola data karyawan dan tenaga produksi."
       />
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
+      <div className="flex flex-col md:flex-row gap-3 justify-between items-center border-t border-default-200 pt-4">
         <SearchInput
           value={search}
           placeholder="Cari karyawan"

@@ -5,7 +5,7 @@ import { Button } from "@heroui/button";
 import { Chip, Image, type Selection } from "@heroui/react";
 import { MoreVertical, PenLine, Package, Trash2, Eye } from "lucide-react";
 import { fetcher, getStockStatus } from "@/lib/func";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { Product as ProductType, Category } from "@/types/types";
 import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -38,6 +38,7 @@ export default function Page() {
     new Set(["all"]),
   );
   const [page, setPage] = React.useState(1);
+  const { mutate: mutateGlobal } = useSWRConfig();
 
   const [editProduct, setEditProduct] = React.useState<ProductType | null>(
     null,
@@ -89,10 +90,19 @@ export default function Page() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-4">
-      <PageHeader
-        title="Manajemen Produk"
-        description="Kelola produk, kategori, dan harga produk."
-      />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <PageHeader
+          title="Manajemen Produk"
+          description="Kelola produk, kategori, dan harga produk."
+        />
+        <DrawerManageCategory
+          onMutate={() => {
+            mutate();
+            mutateGlobal("/api/unit?limit=100");
+            mutateGlobal("/api/category?limit=100");
+          }}
+        />
+      </div>
 
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
         <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full flex-wrap">
@@ -121,10 +131,7 @@ export default function Page() {
               }}
             />
           </div>
-          <div className="flex flex-row gap-2">
-            <DrawerManageCategory />
-            <AddProductModal onProductCreated={() => mutate()} />
-          </div>
+          <AddProductModal onProductCreated={() => mutate()} />
         </div>
       </div>
 

@@ -117,7 +117,13 @@ export default function DeleteCustomerModal({
                   color="danger"
                   title="Tindakan ini tidak dapat dibatalkan."
                 >
-                  Data customer akan dihapus secara permanen.
+                  <p className="mb-2">
+                    Data customer akan dihapus secara permanen beserta data
+                    terkait berikut:
+                  </p>
+                  <ul className="list-disc list-inside text-sm">
+                    <li>Riwayat Order (Transaksi Penjualan)</li>
+                  </ul>
                 </Alert>
               </ModalBody>
               <ModalFooter>

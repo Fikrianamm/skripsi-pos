@@ -127,7 +127,7 @@ export default function Page() {
         description="Kelola akun, peran, dan hak akses seluruh pengguna sistem."
       />
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
+      <div className="flex flex-col md:flex-row gap-3 justify-between items-center border-t border-default-200 pt-4">
         <SearchInput
           value={search}
           placeholder="Cari pengguna"

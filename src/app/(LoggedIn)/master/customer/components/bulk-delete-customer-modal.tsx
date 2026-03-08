@@ -91,8 +91,13 @@ export default function BulkDeleteCustomerModal({
                   color="danger"
                   title="Tindakan ini tidak dapat dibatalkan."
                 >
-                  {selectedIds.length} customer yang dipilih akan dihapus secara
-                  permanen.
+                  <p className="mb-2">
+                    {selectedIds.length} customer yang dipilih akan dihapus
+                    secara permanen beserta data terkait berikut:
+                  </p>
+                  <ul className="list-disc list-inside text-sm">
+                    <li>Riwayat Order (Transaksi Penjualan)</li>
+                  </ul>
                 </Alert>
               </ModalBody>
               <ModalFooter>

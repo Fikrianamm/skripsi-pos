@@ -9,32 +9,30 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/modal";
-import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@heroui/alert";
 import { addToast } from "@heroui/toast";
+import { Trash2 } from "lucide-react";
 
-export default function BulkDeleteSupplierModal({
-  supplierIds,
+export default function BulkDeleteBahanBakuModal({
+  ids,
   onDeleted,
 }: {
-  supplierIds: string[];
+  ids: string[];
   onDeleted?: () => void;
 }) {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  async function handleDelete(onClose: () => void) {
+  async function handleDelete() {
     setIsDeleting(true);
     try {
-      const res = await fetch("/api/admin/supplier", {
+      const res = await fetch("/api/admin/bahan-baku", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: supplierIds }),
+        body: JSON.stringify({ ids }),
       });
-
       const json = await res.json();
-
       if (!res.ok) {
         addToast({
           title: "Gagal",
@@ -43,13 +41,11 @@ export default function BulkDeleteSupplierModal({
         });
         return;
       }
-
       addToast({
         title: "Berhasil",
-        description: `${supplierIds.length} supplier berhasil dihapus.`,
+        description: `${ids.length} bahan baku berhasil dihapus.`,
         color: "success",
       });
-
       onClose();
       onDeleted?.();
     } catch {
@@ -68,12 +64,13 @@ export default function BulkDeleteSupplierModal({
       <Button
         color="danger"
         variant="flat"
-        startContent={<Trash2 size={16} />}
-        onPress={onOpen}
         size="sm"
+        startContent={<Trash2 size={15} />}
+        onPress={onOpen}
       >
-        Hapus {supplierIds.length} Supplier
+        Hapus ({ids.length})
       </Button>
+
       <Modal
         isOpen={isOpen}
         placement="bottom-center"
@@ -83,15 +80,18 @@ export default function BulkDeleteSupplierModal({
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>Hapus Supplier</ModalHeader>
+              <ModalHeader>Hapus Bahan Baku</ModalHeader>
               <ModalBody>
-                <Alert color="danger" title="Peringatan">
+                <Alert
+                  color="danger"
+                  title="Tindakan ini tidak dapat dibatalkan."
+                >
                   <p className="mb-2">
-                    Anda akan menghapus {supplierIds.length} supplier secara
+                    {ids.length} bahan baku yang dipilih akan dihapus secara
                     permanen beserta data terkait berikut:
                   </p>
                   <ul className="list-disc list-inside text-sm">
-                    <li>Riwayat Stok Masuk dari supplier tersebut</li>
+                    <li>Riwayat Stok Masuk</li>
                   </ul>
                 </Alert>
               </ModalBody>
@@ -101,11 +101,11 @@ export default function BulkDeleteSupplierModal({
                 </Button>
                 <Button
                   color="danger"
-                  onPress={() => handleDelete(onClose)}
+                  onPress={handleDelete}
                   isDisabled={isDeleting}
                   isLoading={isDeleting}
                 >
-                  Hapus {supplierIds.length} Supplier
+                  Hapus Semua
                 </Button>
               </ModalFooter>
             </>

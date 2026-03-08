@@ -112,7 +112,13 @@ export default function DeleteProductModal({
               </ModalHeader>
               <ModalBody>
                 <Alert color="danger" title="Peringatan">
-                  Menghapus produk ini tidak dapat dibatalkan.
+                  <p className="mb-2">
+                    Data produk akan dihapus secara permanen beserta data
+                    terkait berikut:
+                  </p>
+                  <ul className="list-disc list-inside text-sm">
+                    <li>Data item produk pada riwayat Order</li>
+                  </ul>
                 </Alert>
               </ModalBody>
               <ModalFooter>
