@@ -3,7 +3,7 @@ import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, Image, type Selection } from "@heroui/react";
-import { MoreVertical, PenLine, Package, Trash2, Eye } from "lucide-react";
+import { MoreVertical, PenLine, Trash2, Eye } from "lucide-react";
 import { fetcher, getStockStatus } from "@/lib/func";
 import useSWR, { useSWRConfig } from "swr";
 import { Product as ProductType, Category } from "@/types/types";
@@ -12,7 +12,12 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useContextMenu } from "@/hooks/use-context-menu";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
-import { FilterDropdown, type FilterItem } from "@/components/filter-dropdown";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterSelect,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 import { ContextMenu } from "@/components/data-table/context-menu";
 import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
 import { DataTable } from "@/components/data-table/data-table";
@@ -37,6 +42,9 @@ export default function Page() {
   const [selectedCategory, setSelectedCategory] = React.useState<Selection>(
     new Set(["all"]),
   );
+  const [selectedType, setSelectedType] = React.useState<
+    "all" | "true" | "false"
+  >("all");
   const [page, setPage] = React.useState(1);
   const { mutate: mutateGlobal } = useSWRConfig();
 
@@ -55,7 +63,7 @@ export default function Page() {
   const categoryKey = Array.from(selectedCategory)[0] as string;
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/product?page=${page}&search=${debouncedSearch}${categoryKey !== "all" ? `&categoryId=${categoryKey}` : ""}`,
+    `/api/admin/product?page=${page}&search=${debouncedSearch}${categoryKey !== "all" ? `&categoryId=${categoryKey}` : ""}${selectedType !== "all" ? `&isService=${selectedType}` : ""}`,
     fetcher,
     { keepPreviousData: true },
   );
@@ -73,20 +81,13 @@ export default function Page() {
     return Array.from(selectedKeys).filter((k) => k !== "");
   }, [selectedKeys, data?.results]);
 
-  const categoryFilterItems: FilterItem[] = [
+  const categoryOptions: { key: string; label: string }[] = [
     { key: "all", label: "Semua" },
     ...(categoryData?.results ?? []).map((c: Category) => ({
       key: c.id,
       label: c.nama,
     })),
   ];
-
-  const selectedCategoryLabel = React.useMemo(() => {
-    if (categoryKey === "all") return "Semua";
-    const found = categoryFilterItems.find((i) => i.key === categoryKey);
-    return found?.label ?? "Semua";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, categoryFilterItems.length]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-4">
@@ -104,33 +105,44 @@ export default function Page() {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center">
-        <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full flex-wrap">
-          <div className="flex gap-2 items-center justify-start flex-1">
-            <SearchInput
-              value={search}
-              placeholder="Cari produk"
-              onChange={setSearch}
-              onClear={() => setSearch("")}
-              className="w-full max-w-xs"
-            />
-            <FilterDropdown
-              label="Kategori"
-              icon={<Package size={16} />}
-              items={categoryFilterItems}
-              selectedKeys={selectedCategory}
-              selectedLabel={selectedCategoryLabel}
-              onSelectionChange={(keys) => {
-                if (keys === "all") return;
-                const sel = Array.from(keys)[0] as string;
-                setSelectedCategory(new Set([sel || "all"]));
-              }}
-              onReset={() => {
-                setSelectedCategory(new Set(["all"]));
-                setSearch("");
-              }}
-            />
-          </div>
+      <div className="flex flex-col md:flex-row gap-2">
+        <SearchInput
+          value={search}
+          placeholder="Cari produk"
+          onChange={setSearch}
+          onClear={() => setSearch("")}
+          className="w-full"
+        />
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={
+              (categoryKey !== "all" ? 1 : 0) + (selectedType !== "all" ? 1 : 0)
+            }
+            onReset={() => {
+              setSelectedCategory(new Set(["all"]));
+              setSelectedType("all");
+              setSearch("");
+            }}
+          >
+            <FilterSection label="Kategori">
+              <FilterSelect
+                value={categoryKey}
+                onChange={(v) => setSelectedCategory(new Set([v]))}
+                options={categoryOptions}
+              />
+            </FilterSection>
+            <FilterSection label="Tipe">
+              <FilterButtonGroup
+                options={[
+                  { key: "all", label: "Semua" },
+                  { key: "false", label: "Produk" },
+                  { key: "true", label: "Jasa" },
+                ]}
+                value={selectedType}
+                onChange={(v) => setSelectedType(v as "all" | "true" | "false")}
+              />
+            </FilterSection>
+          </FilterLanjutan>
           <AddProductModal onProductCreated={() => mutate()} />
         </div>
       </div>

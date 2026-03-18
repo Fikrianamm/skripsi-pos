@@ -9,9 +9,9 @@
   - Total jumlah pesanan
   - Total nominal belanja
   - Detail riwayat pesanan per customer
-- [ ] Model `Order` / transaksi di Prisma schema
-- [ ] Halaman POS — keranjang belanja, pilih customer, checkout, cetak struk
-- [ ] Halaman Manajemen inventory — stok masuk/keluar yang terhubung ke transaksi
+- [X] Model `Order` / transaksi di Prisma schema
+- [X] Halaman POS — keranjang belanja, pilih customer, checkout
+- [X] Halaman Manajemen inventory — stok masuk/keluar yang terhubung ke transaksi
 - [ ] Halaman Laporan penjualan yang sesungguhnya (berdasarkan data transaksi)
 - [ ] Halaman Laporan laba rugi (HPP vs harga jual)
 - [ ] Halaman Manajemen biaya (Cost & CostCategory sudah ada di schema)

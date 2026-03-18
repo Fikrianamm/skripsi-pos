@@ -14,8 +14,6 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  Select,
-  SelectItem,
   Skeleton,
   useDisclosure,
 } from "@heroui/react";
@@ -26,7 +24,6 @@ import {
   Eye,
   FileText,
   PackageSearch,
-  Search,
   Trash2,
   Upload,
   ArrowRight,
@@ -34,6 +31,12 @@ import {
 import { Input } from "@heroui/input";
 import { addToast } from "@heroui/toast";
 import { PageHeader } from "@/components/page-header";
+import { SearchInput } from "@/components/search-input";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 import { authClient } from "@/lib/auth-client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -611,51 +614,37 @@ export default function Page() {
       />
 
       {/* ── Filter Bar ── */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <Input
-            placeholder="Cari nomor order atau customer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            startContent={<Search size={15} className="text-default-400" />}
-            isClearable
-            onClear={() => setSearch("")}
-            size="sm"
-          />
-        </div>
-
-        <Select
-          size="sm"
-          className="w-44"
-          aria-label="Filter file desain"
-          selectedKeys={new Set([hasFileFilter])}
-          onSelectionChange={(keys) =>
-            setHasFileFilter((Array.from(keys)[0] as string) ?? "all")
-          }
-        >
-          {HAS_FILE_OPTIONS.map((o) => (
-            <SelectItem key={o.key}>{o.label}</SelectItem>
-          ))}
-        </Select>
-
-        {activeFilters && (
-          <Button
-            size="sm"
-            variant="flat"
-            color="danger"
-            onPress={() => {
+      <div className="flex flex-col md:flex-row gap-2">
+        <SearchInput
+          value={search}
+          placeholder="Cari nomor order atau customer..."
+          onChange={setSearch}
+          onClear={() => setSearch("")}
+          className="w-full"
+        />
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={hasFileFilter !== "all" ? 1 : 0}
+            onReset={() => {
               setSearch("");
               setHasFileFilter("all");
             }}
           >
-            Reset Filter
-          </Button>
-        )}
-
-        <div className="ml-auto text-xs text-default-400 tabular-nums">
-          {data?.count !== undefined && <>{data.count} order ditemukan</>}
+            <FilterSection label="File Desain">
+              <FilterButtonGroup
+                options={HAS_FILE_OPTIONS}
+                value={hasFileFilter}
+                onChange={setHasFileFilter}
+              />
+            </FilterSection>
+          </FilterLanjutan>
         </div>
       </div>
+      {data?.count !== undefined && (
+        <p className="text-xs text-default-400 tabular-nums">
+          {data.count} order ditemukan
+        </p>
+      )}
 
       {/* ── Content ── */}
       {isLoading ? (

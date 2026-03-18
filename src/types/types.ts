@@ -103,3 +103,40 @@ export interface StokMasuk {
   createdAt?: Date;
   supplier?: { id: string; nama: string } | null;
 }
+
+export interface ItemPreview {
+  id: string;
+  jumlah: number;
+  bahanBaku: { nama: string; unit: { nama: string } | null };
+}
+
+export interface PenerimaanItem {
+  id: string;
+  tanggal: string;
+  addedBy: { name: string; image?: string | null } | null;
+  nomorFaktur: string | null;
+  supplier: { id: string; nama: string; image?: string | null } | null;
+  totalTagihan: number | string;
+  buktiNota: string | null;
+  items: ItemPreview[];
+}
+
+export interface DetailItem {
+  id: string;
+  jumlah: number;
+  hargaBeli: number;
+  totalHargaItem: number;
+  bahanBaku: { nama: string; unit: { nama: string } | null };
+}
+
+export interface PenerimaanDetail {
+  id: string;
+  tanggal: string;
+  nomorFaktur: string | null;
+  keterangan: string | null;
+  totalTagihan: number;
+  buktiNota: string | null;
+  supplier: { nama: string } | null;
+  addedBy: { name: string } | null;
+  items: DetailItem[];
+}

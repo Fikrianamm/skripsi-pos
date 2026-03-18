@@ -44,7 +44,7 @@ export async function GET(
     const results = resultsRaw.map((r) => ({
       id: r.id,
       jumlah: r.jumlah,
-      hargaSatuan: r.hargaSatuan,
+      hargaBeli: r.hargaBeli,
       tanggal: r.penerimaan.tanggal,
       nomorFaktur: r.penerimaan.nomorFaktur,
       buktiNota: r.penerimaan.buktiNota,
@@ -119,9 +119,9 @@ export async function POST(
 
     const penerimaanId = crypto.randomUUID();
     const itemId = crypto.randomUUID();
-    const hargaSatuanNum = hargaBeli ? Number(hargaBeli) : null;
+    const hargaBeliNum = hargaBeli ? Number(hargaBeli) : null;
     const q = Number(jumlah);
-    const totalHargaItem = hargaSatuanNum ? q * hargaSatuanNum : null;
+    const totalHargaItem = hargaBeliNum ? q * hargaBeliNum : null;
 
     // Transactional: create penerimaan header + item detail + update stok bahan baku
     const [penerimaanBarang] = await prisma.$transaction([
@@ -140,7 +140,7 @@ export async function POST(
               id: itemId,
               bahanBakuId: id,
               jumlah: q,
-              hargaSatuan: hargaSatuanNum,
+              hargaBeli: hargaBeliNum,
               totalHargaItem: totalHargaItem,
             },
           },

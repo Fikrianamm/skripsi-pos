@@ -41,3 +41,19 @@ export const formatRupiah = (value: number): string => {
     maximumFractionDigits: 0,
   }).format(value);
 };
+
+/** Convert @internationalized/date DateValue to YYYY-MM-DD string */
+export const toISO = (
+  d?: { year: number; month: number; day: number } | null,
+): string =>
+  d
+    ? `${d.year}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`
+    : "";
+
+/** Format a date/string to Indonesian locale medium date */
+export const formatDate = (d: string | Date) =>
+  new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(d));
+
+/** Parse ribuan-formatted string (e.g. "1.500.000") to number */
+export const parseRibuan = (formatted: string): number =>
+  Number(formatted.replace(/\./g, "").replace(/,/g, "")) || 0;

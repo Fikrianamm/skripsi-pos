@@ -5,15 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { fetcher } from "@/lib/func";
 import { useDebounce } from "@/hooks/use-debounce";
-import {
-  Button,
-  Chip,
-  Divider,
-  Select,
-  SelectItem,
-  Skeleton,
-  Switch,
-} from "@heroui/react";
+import { Button, Chip, Divider, Skeleton, Switch } from "@heroui/react";
 import {
   AlertCircle,
   Calendar,
@@ -21,12 +13,17 @@ import {
   ClipboardList,
   ExternalLink,
   PackageSearch,
-  Search,
   User,
 } from "lucide-react";
-import { Input } from "@heroui/input";
 import { addToast } from "@heroui/toast";
 import { PageHeader } from "@/components/page-header";
+import { SearchInput } from "@/components/search-input";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+  FilterSelect,
+} from "@/components/filter-lanjutan";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface SpkItem {
@@ -375,89 +372,60 @@ export default function Page() {
       />
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap gap-3 items-center">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <Input
-            placeholder="Cari nomor order, customer, karyawan..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            startContent={<Search size={15} className="text-default-400" />}
-            isClearable
-            onClear={() => setSearch("")}
-            size="sm"
-          />
-        </div>
-
-        {/* Status SPK */}
-        <Select
-          size="sm"
-          className="w-40"
-          aria-label="Filter status SPK"
-          selectedKeys={new Set([statusFilter])}
-          onSelectionChange={(keys) =>
-            setStatusFilter((Array.from(keys)[0] as string) ?? "all")
-          }
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <SelectItem key={o.key}>{o.label}</SelectItem>
-          ))}
-        </Select>
-
-        {/* Karyawan */}
-        <Select
-          size="sm"
-          className="w-44"
-          aria-label="Filter karyawan"
-          selectedKeys={new Set([karyawanFilter])}
-          onSelectionChange={(keys) =>
-            setKaryawanFilter((Array.from(keys)[0] as string) ?? "all")
-          }
-        >
-          {[
-            <SelectItem key="all">Semua Karyawan</SelectItem>,
-            ...karyawanList.map((k) => (
-              <SelectItem key={k.id}>{k.nama}</SelectItem>
-            )),
-          ]}
-        </Select>
-
-        {/* ACC Cetak */}
-        <Select
-          size="sm"
-          className="w-36"
-          aria-label="Filter ACC cetak"
-          selectedKeys={new Set([accFilter])}
-          onSelectionChange={(keys) =>
-            setAccFilter((Array.from(keys)[0] as string) ?? "all")
-          }
-        >
-          {ACC_OPTIONS.map((o) => (
-            <SelectItem key={o.key}>{o.label}</SelectItem>
-          ))}
-        </Select>
-
-        {/* Reset */}
-        {activeFilters && (
-          <Button
-            size="sm"
-            variant="flat"
-            color="danger"
-            onPress={() => {
+      <div className="flex flex-col md:flex-row gap-2">
+        <SearchInput
+          value={search}
+          placeholder="Cari nomor order, customer, karyawan..."
+          onChange={setSearch}
+          onClear={() => setSearch("")}
+          className="w-full"
+        />
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={
+              (statusFilter !== "all" ? 1 : 0) +
+              (accFilter !== "all" ? 1 : 0) +
+              (karyawanFilter !== "all" ? 1 : 0)
+            }
+            onReset={() => {
               setSearch("");
               setStatusFilter("all");
               setAccFilter("all");
               setKaryawanFilter("all");
             }}
           >
-            Reset Filter
-          </Button>
-        )}
-
-        <div className="ml-auto text-xs text-default-400 tabular-nums">
-          {data?.count !== undefined && <>{data.count} SPK ditemukan</>}
+            <FilterSection label="Status SPK">
+              <FilterButtonGroup
+                options={STATUS_OPTIONS}
+                value={statusFilter}
+                onChange={setStatusFilter}
+              />
+            </FilterSection>
+            <FilterSection label="Karyawan">
+              <FilterSelect
+                value={karyawanFilter}
+                onChange={setKaryawanFilter}
+                options={[
+                  { key: "all", label: "Semua Karyawan" },
+                  ...karyawanList.map((k) => ({ key: k.id, label: k.nama })),
+                ]}
+              />
+            </FilterSection>
+            <FilterSection label="ACC Cetak">
+              <FilterButtonGroup
+                options={ACC_OPTIONS}
+                value={accFilter}
+                onChange={setAccFilter}
+              />
+            </FilterSection>
+          </FilterLanjutan>
         </div>
       </div>
+      {data?.count !== undefined && (
+        <p className="text-xs text-default-400 tabular-nums">
+          {data.count} SPK ditemukan
+        </p>
+      )}
 
       {/* ── Content ── */}
       {isLoading ? (

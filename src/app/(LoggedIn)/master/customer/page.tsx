@@ -70,13 +70,13 @@ export default function Page() {
         description="Kelola data pelanggan dan informasi kontak mereka."
       />
 
-      <div className="flex flex-row gap-3 items-center justify-between">
+      <div className="flex flex-row gap-2 items-center">
         <SearchInput
           value={search}
           placeholder="Cari customer"
           onChange={setSearch}
           onClear={() => setSearch("")}
-          className="w-full max-w-sm"
+          className="flex-1"
         />
         <AddCustomerModal onCustomerAdded={() => mutate()} />
       </div>

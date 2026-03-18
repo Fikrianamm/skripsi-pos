@@ -227,7 +227,7 @@ model StokMasuk {
   penerimaanId   String
   bahanBakuId    String
   jumlah         Decimal  @db.Decimal(10, 2)
-  hargaSatuan    Decimal? @db.Decimal(10, 2)
+  hargaBeli      Decimal? @db.Decimal(10, 2)
   totalHargaItem Decimal? @db.Decimal(12, 2)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

@@ -3,7 +3,7 @@ import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, type Selection } from "@heroui/react";
-import { CircleDot, Eye, MoreVertical, PenLine, Trash2 } from "lucide-react";
+import { Eye, MoreVertical, PenLine, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/func";
 import useSWR from "swr";
 import { Karyawan } from "@/types/types";
@@ -17,14 +17,18 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useContextMenu } from "@/hooks/use-context-menu";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
-import { FilterDropdown, type FilterItem } from "@/components/filter-dropdown";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 import { ContextMenu } from "@/components/data-table/context-menu";
 import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
 import { DataTable } from "@/components/data-table/data-table";
 import { TablePagination } from "@/components/data-table/table-pagination";
 import { columns } from "./components/columns";
 
-const STATUS_FILTER_ITEMS: FilterItem[] = [
+const STATUS_OPTIONS = [
   { key: "all", label: "Semua" },
   { key: "true", label: "Aktif" },
   { key: "false", label: "Tidak Aktif" },
@@ -71,11 +75,6 @@ export default function Page() {
     return Array.from(selectedKeys).filter((k) => k !== "");
   }, [selectedKeys, data?.results]);
 
-  const selectedStatusLabel = React.useMemo(() => {
-    if (statusKey === "all") return "Semua";
-    return statusKey === "true" ? "Aktif" : "Tidak Aktif";
-  }, [statusKey]);
-
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
       <PageHeader
@@ -83,30 +82,30 @@ export default function Page() {
         description="Kelola data karyawan dan tenaga produksi."
       />
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center border-t border-default-200 pt-4">
+      <div className="flex flex-col md:flex-row gap-2">
         <SearchInput
           value={search}
           placeholder="Cari karyawan"
           onChange={setSearch}
           onClear={() => setSearch("")}
+          className="w-full"
         />
-        <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full">
-          <FilterDropdown
-            label="Status"
-            icon={<CircleDot size={16} />}
-            items={STATUS_FILTER_ITEMS}
-            selectedKeys={selectedStatus}
-            selectedLabel={selectedStatusLabel}
-            onSelectionChange={(keys) => {
-              if (keys === "all") return;
-              const sel = Array.from(keys)[0] as string;
-              setSelectedStatus(new Set([sel || "all"]));
-            }}
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={statusKey !== "all" ? 1 : 0}
             onReset={() => {
               setSelectedStatus(new Set(["all"]));
               setSearch("");
             }}
-          />
+          >
+            <FilterSection label="Status">
+              <FilterButtonGroup
+                options={STATUS_OPTIONS}
+                value={statusKey}
+                onChange={(v) => setSelectedStatus(new Set([v]))}
+              />
+            </FilterSection>
+          </FilterLanjutan>
           <AddKaryawanModal onKaryawanAdded={() => mutate()} />
         </div>
       </div>

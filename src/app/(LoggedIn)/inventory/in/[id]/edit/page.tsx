@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useCallback, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useSWR from "swr";
@@ -12,17 +12,21 @@ import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
-import { penerimaanSchema, type PenerimaanFormData } from "./schema";
-import { FakturInfoCard } from "./components/faktur-info-card";
-import { BahanBakuList } from "./components/bahan-baku-list";
+import { penerimaanSchema, type PenerimaanFormData } from "../../create/schema";
+import { FakturInfoCard } from "../../create/components/faktur-info-card";
+import { BahanBakuList } from "../../create/components/bahan-baku-list";
+import type { PenerimaanDetail } from "@/types/types";
 
-export default function CatatPenerimaanPage() {
+export default function EditPenerimaanPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const duplicateId = searchParams.get("duplicate");
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [displayHarga, setDisplayHarga] = useState<string[]>([""]);
+  const [displayHarga, setDisplayHarga] = useState<string[]>([]);
 
   const { data: supplierData } = useSWR(
     "/api/admin/supplier?limit=200&isActive=true",
@@ -32,8 +36,8 @@ export default function CatatPenerimaanPage() {
     "/api/admin/bahan-baku?limit=500&isActive=true",
     fetcher,
   );
-  const { data: existing } = useSWR<any>(
-    duplicateId ? `/api/admin/inventory/in/${duplicateId}` : null,
+  const { data: existing } = useSWR<PenerimaanDetail>(
+    `/api/admin/inventory/in/${id}`,
     fetcher,
   );
 
@@ -48,13 +52,13 @@ export default function CatatPenerimaanPage() {
     },
   });
 
-  // Pre-fill form when data loads (duplicate scenario)
+  // Pre-fill form when data loads
   useEffect(() => {
     if (!existing) return;
     form.reset({
-      tanggal: new Date().toISOString().split("T")[0],
-      supplierId: existing.supplier?.id ?? "",
-      nomorFaktur: existing.nomorFaktur ? `${existing.nomorFaktur}-copy` : "",
+      tanggal: existing.tanggal.split("T")[0],
+      supplierId: (existing.supplier as any)?.id ?? "",
+      nomorFaktur: existing.nomorFaktur ?? "",
       keterangan: existing.keterangan ?? "",
       items: existing.items.map((item: any) => ({
         bahanBakuId: item.bahanBaku.id ?? "",
@@ -63,7 +67,7 @@ export default function CatatPenerimaanPage() {
       })),
     });
     setDisplayHarga(
-      existing.items.map((item: any) =>
+      existing.items.map((item) =>
         item.hargaBeli > 0
           ? Number(item.hargaBeli).toLocaleString("id-ID")
           : "",
@@ -77,9 +81,11 @@ export default function CatatPenerimaanPage() {
   });
   const watchItems = form.watch("items");
 
-  const liveTotal = watchItems.reduce((acc, curr) => {
-    return acc + (Number(curr.jumlah) || 0) * parseRibuan(curr.hargaBeli || "");
-  }, 0);
+  const liveTotal = watchItems.reduce(
+    (acc: number, curr: any) =>
+      acc + (Number(curr.jumlah) || 0) * parseRibuan(curr.hargaBeli || ""),
+    0,
+  );
 
   const handleHargaChange = useCallback(
     (index: number, raw: string) => {
@@ -109,7 +115,7 @@ export default function CatatPenerimaanPage() {
   async function onSubmit(data: PenerimaanFormData) {
     setIsSubmitting(true);
     try {
-      const cleanItems = data.items.map((item) => ({
+      const cleanItems = data.items.map((item: any) => ({
         bahanBakuId: item.bahanBakuId,
         jumlah: item.jumlah,
         hargaBeli: item.hargaBeli
@@ -124,8 +130,8 @@ export default function CatatPenerimaanPage() {
       if (file) formData.append("buktiNota", file);
       formData.append("items", JSON.stringify(cleanItems));
 
-      const res = await fetch("/api/admin/inventory/in", {
-        method: "POST",
+      const res = await fetch(`/api/admin/inventory/in/${id}`, {
+        method: "PATCH",
         body: formData,
       });
       const json = await res.json();
@@ -133,14 +139,14 @@ export default function CatatPenerimaanPage() {
 
       addToast({
         title: "Berhasil",
-        description: "Penerimaan barang berhasil dicatat.",
+        description: "Penerimaan berhasil diperbarui.",
         color: "success",
       });
       router.push("/inventory/in");
       router.refresh();
     } catch (err: any) {
       addToast({
-        title: "Gagal menyimpan",
+        title: "Gagal memperbarui",
         description: err.message,
         color: "danger",
       });
@@ -149,6 +155,8 @@ export default function CatatPenerimaanPage() {
     }
   }
 
+  const isReady = !!existing;
+
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-6 mb-6">
       <div className="flex items-center gap-3">
@@ -156,60 +164,64 @@ export default function CatatPenerimaanPage() {
           <ArrowLeft size={18} />
         </Button>
         <PageHeader
-          title="Catat Penerimaan Barang"
-          description="Isi informasi faktur dan daftar bahan baku yang diterima"
+          title="Edit Penerimaan Barang"
+          description={`Memperbarui data penerimaan · ${existing?.nomorFaktur || id}`}
         />
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-1">
-            <FakturInfoCard
-              control={form.control}
-              errors={form.formState.errors}
-              supplierData={supplierData}
-              file={file}
-              onFileChange={setFile}
-            />
-          </div>
-
-          <div className="xl:col-span-2 flex flex-col gap-4">
-            <BahanBakuList
-              control={form.control}
-              fields={fields as any}
-              register={form.register}
-              errors={form.formState.errors}
-              bahanBakuData={bahanBakuData}
-              watchItems={watchItems}
-              displayHarga={displayHarga}
-              liveTotal={liveTotal}
-              onHargaChange={handleHargaChange}
-              onAdd={handleAdd}
-              onRemove={handleRemove}
-            />
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button
-                variant="flat"
-                as={Link}
-                href="/inventory/in"
-                className="rounded-xl"
-              >
-                Batal
-              </Button>
-              <Button
-                color="primary"
-                type="submit"
-                isLoading={isSubmitting}
-                startContent={!isSubmitting && <Save size={17} />}
-                className="rounded-xl px-6"
-              >
-                Simpan Penerimaan
-              </Button>
+      {!isReady ? (
+        <div className="flex items-center justify-center py-24 text-default-400">
+          Memuat data...
+        </div>
+      ) : (
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-1">
+              <FakturInfoCard
+                control={form.control}
+                errors={form.formState.errors}
+                supplierData={supplierData}
+                file={file}
+                onFileChange={setFile}
+              />
+            </div>
+            <div className="xl:col-span-2 flex flex-col gap-4">
+              <BahanBakuList
+                control={form.control}
+                fields={fields as any}
+                register={form.register}
+                errors={form.formState.errors}
+                bahanBakuData={bahanBakuData}
+                watchItems={watchItems}
+                displayHarga={displayHarga}
+                liveTotal={liveTotal}
+                onHargaChange={handleHargaChange}
+                onAdd={handleAdd}
+                onRemove={handleRemove}
+              />
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  variant="flat"
+                  as={Link}
+                  href="/inventory/in"
+                  className="rounded-xl"
+                >
+                  Batal
+                </Button>
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={isSubmitting}
+                  startContent={!isSubmitting && <Save size={17} />}
+                  className="rounded-xl px-6"
+                >
+                  Simpan Perubahan
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

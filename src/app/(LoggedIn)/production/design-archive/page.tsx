@@ -5,10 +5,11 @@ import useSWR from "swr";
 import Link from "next/link";
 import { fetcher } from "@/lib/func";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button, Chip, Select, SelectItem, Skeleton } from "@heroui/react";
-import { Eye, Images, Search } from "lucide-react";
-import { Input } from "@heroui/input";
+import { Button, Chip, Skeleton } from "@heroui/react";
+import { Eye, Images } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SearchInput } from "@/components/search-input";
+import { FilterButtonGroup, FilterLanjutan, FilterSection } from "@/components/filter-lanjutan";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface DesignFileItem {
@@ -218,48 +219,34 @@ export default function Page() {
       />
 
       {/* ── Filter Bar ── */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Input
-            placeholder="Cari nama file, nomor order, atau customer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            startContent={<Search size={15} className="text-default-400" />}
-            isClearable
-            onClear={() => setSearch("")}
-            size="sm"
-          />
-        </div>
-
-        <Select
-          size="sm"
-          className="w-40"
-          aria-label="Filter tahap produksi"
-          selectedKeys={new Set([tahapFilter])}
-          onSelectionChange={(keys) =>
-            setTahapFilter((Array.from(keys)[0] as string) ?? "all")
-          }
-        >
-          {TAHAP_OPTIONS.map((o) => (
-            <SelectItem key={o.key}>{o.label}</SelectItem>
-          ))}
-        </Select>
-
-        {activeFilters && (
-          <Button
-            size="sm"
-            variant="flat"
-            color="danger"
-            onPress={resetFilters}
+      <div className="flex flex-col md:flex-row gap-2">
+        <SearchInput
+          value={search}
+          placeholder="Cari nama file, nomor order, atau customer..."
+          onChange={setSearch}
+          onClear={() => setSearch("")}
+          className="w-full"
+        />
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={tahapFilter !== "all" ? 1 : 0}
+            onReset={resetFilters}
           >
-            Reset Filter
-          </Button>
-        )}
-
-        <div className="ml-auto text-xs text-default-400 tabular-nums">
-          {data?.count !== undefined && <>{data.count} file ditemukan</>}
+            <FilterSection label="Tahap Produksi">
+              <FilterButtonGroup
+                options={TAHAP_OPTIONS}
+                value={tahapFilter}
+                onChange={setTahapFilter}
+              />
+            </FilterSection>
+          </FilterLanjutan>
         </div>
       </div>
+      {data?.count !== undefined && (
+        <p className="text-xs text-default-400 tabular-nums">
+          {data.count} file ditemukan
+        </p>
+      )}
 
       {/* ── Content ── */}
       {isLoading ? (

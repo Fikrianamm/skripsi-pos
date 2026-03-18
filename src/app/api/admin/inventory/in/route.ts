@@ -18,17 +18,38 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const page = parseInt(searchParams.get("page") || "1");
     const search = searchParams.get("search") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
+    const supplierId = searchParams.get("supplierId") || "";
+    const bahanBakuId = searchParams.get("bahanBakuId") || "";
 
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            { nomorFaktur: { contains: search } },
-            { supplier: { nama: { contains: search } } },
-          ],
-        }
-      : {};
+    const where: Record<string, unknown> = {};
+
+    if (search) {
+      where.OR = [
+        { nomorFaktur: { contains: search } },
+        { supplier: { nama: { contains: search } } },
+      ];
+    }
+
+    if (dateFrom || dateTo) {
+      where.tanggal = {
+        ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+        ...(dateTo
+          ? { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }
+          : {}),
+      };
+    }
+
+    if (supplierId) {
+      where.supplierId = supplierId;
+    }
+
+    if (bahanBakuId) {
+      where.items = { some: { bahanBakuId } };
+    }
 
     const [results, total] = await Promise.all([
       prisma.penerimaanBarang.findMany({
@@ -37,9 +58,18 @@ export async function GET(request: NextRequest) {
         skip,
         orderBy: { tanggal: "desc" },
         include: {
-          supplier: { select: { id: true, nama: true } },
-          addedBy: { select: { id: true, name: true } },
+          supplier: { select: { id: true, nama: true, image: true } },
+          addedBy: { select: { id: true, name: true, image: true } },
           _count: { select: { items: true } },
+          items: {
+            select: {
+              id: true,
+              jumlah: true,
+              bahanBaku: {
+                select: { nama: true, unit: { select: { nama: true } } },
+              },
+            },
+          },
         },
       }),
       prisma.penerimaanBarang.count({ where }),
@@ -108,17 +138,17 @@ export async function POST(request: NextRequest) {
       (item: {
         bahanBakuId: string;
         jumlah: string | number;
-        hargaSatuan?: string | number;
+        hargaBeli?: string | number;
       }) => {
         const q = Number(item.jumlah);
-        const p = Number(item.hargaSatuan) || 0;
+        const p = Number(item.hargaBeli) || 0;
         const totalHargaItem = q * p;
         totalTagihan += totalHargaItem;
         return {
           id: crypto.randomUUID(),
           bahanBakuId: item.bahanBakuId,
           jumlah: q,
-          hargaSatuan: p,
+          hargaBeli: p,
           totalHargaItem,
         };
       },
@@ -159,7 +189,7 @@ export async function POST(request: NextRequest) {
               id: pi.id,
               bahanBakuId: pi.bahanBakuId,
               jumlah: pi.jumlah,
-              hargaSatuan: pi.hargaSatuan,
+              hargaBeli: pi.hargaBeli,
               totalHargaItem: pi.totalHargaItem,
             })),
           },

@@ -3,15 +3,7 @@ import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, type Selection } from "@heroui/react";
-import {
-  AlertTriangle,
-  Box,
-  CircleDot,
-  MoreVertical,
-  PenLine,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Box, MoreVertical, PenLine, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/func";
 import useSWR from "swr";
 import { BahanBaku } from "@/types/types";
@@ -24,7 +16,11 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useContextMenu } from "@/hooks/use-context-menu";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
-import { FilterDropdown, type FilterItem } from "@/components/filter-dropdown";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 import { ContextMenu } from "@/components/data-table/context-menu";
 import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
 import { useSWRConfig } from "swr";
@@ -33,14 +29,14 @@ import { TablePagination } from "@/components/data-table/table-pagination";
 import { columns } from "./components/columns";
 import DrawerManageCategory from "../../master/customer/components/drawer-category";
 
-const STATUS_FILTER_ITEMS: FilterItem[] = [
+const STATUS_OPTIONS = [
   { key: "all", label: "Semua" },
   { key: "true", label: "Aktif" },
   { key: "false", label: "Tidak Aktif" },
 ];
 
-const STOK_FILTER_ITEMS: FilterItem[] = [
-  { key: "all", label: "Semua Stok" },
+const STOK_OPTIONS = [
+  { key: "all", label: "Semua" },
   { key: "menipis", label: "⚠️ Menipis" },
   { key: "habis", label: "🔴 Habis" },
 ];
@@ -98,20 +94,6 @@ export default function Page() {
     return Array.from(selectedKeys).filter((k) => k !== "") as string[];
   }, [selectedKeys, data?.results]);
 
-  const statusLabel = React.useMemo(() => {
-    if (statusKey === "all") return "Semua";
-    return statusKey === "true" ? "Aktif" : "Tidak Aktif";
-  }, [statusKey]);
-
-  const stokLabel = React.useMemo(() => {
-    return (
-      STOK_FILTER_ITEMS.find((f) => f.key === stokKey)?.label ?? "Semua Stok"
-    );
-  }, [stokKey]);
-
-  const hasActiveFilters =
-    search !== "" || statusKey !== "all" || stokKey !== "all";
-
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -128,70 +110,41 @@ export default function Page() {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center border-t border-default-200 pt-4">
+      <div className="flex flex-col md:flex-row gap-2">
         <SearchInput
           value={search}
           placeholder="Cari bahan baku"
           onChange={setSearch}
           onClear={() => setSearch("")}
-          className="w-full md:w-auto"
+          className="w-full"
         />
-        <div className="flex flex-col md:flex-row gap-2 justify-center md:justify-between w-full">
-          <div className="flex gap-2">
-            <FilterDropdown
-              label="Status"
-              icon={<CircleDot size={16} />}
-              items={STATUS_FILTER_ITEMS}
-              selectedKeys={selectedStatus}
-              selectedLabel={statusLabel}
-              onSelectionChange={(keys) => {
-                if (keys === "all") return;
-                const sel = Array.from(keys)[0] as string;
-                setSelectedStatus(new Set([sel || "all"]));
-              }}
-              showReset={false}
-              onReset={() => {
-                setSelectedStatus(new Set(["all"]));
-                setSearch("");
-              }}
-            />
-            <FilterDropdown
-              label="Stok"
-              icon={<AlertTriangle size={16} />}
-              items={STOK_FILTER_ITEMS}
-              selectedKeys={selectedStokFilter}
-              selectedLabel={stokLabel}
-              onSelectionChange={(keys) => {
-                if (keys === "all") return;
-                const sel = Array.from(keys)[0] as string;
-                setSelectedStokFilter(new Set([sel || "all"]));
-              }}
-              showReset={false}
-              onReset={() => {
-                setSelectedStatus(new Set(["all"]));
-                setSelectedStokFilter(new Set(["all"]));
-                setSearch("");
-              }}
-            />
-            {hasActiveFilters && (
-              <Button
-                variant="flat"
-                color="danger"
-                startContent={<X size={16} />}
-                onPress={() => {
-                  setSearch("");
-                  setSelectedStatus(new Set(["all"]));
-                  setSelectedStokFilter(new Set(["all"]));
-                }}
-                className="hidden lg:flex"
-              >
-                Reset
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <AddBahanBakuModal onAdded={() => mutate()} />
-          </div>
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={
+              (statusKey !== "all" ? 1 : 0) + (stokKey !== "all" ? 1 : 0)
+            }
+            onReset={() => {
+              setSearch("");
+              setSelectedStatus(new Set(["all"]));
+              setSelectedStokFilter(new Set(["all"]));
+            }}
+          >
+            <FilterSection label="Status">
+              <FilterButtonGroup
+                options={STATUS_OPTIONS}
+                value={statusKey}
+                onChange={(v) => setSelectedStatus(new Set([v]))}
+              />
+            </FilterSection>
+            <FilterSection label="Status Stok">
+              <FilterButtonGroup
+                options={STOK_OPTIONS}
+                value={stokKey}
+                onChange={(v) => setSelectedStokFilter(new Set([v]))}
+              />
+            </FilterSection>
+          </FilterLanjutan>
+          <AddBahanBakuModal onAdded={() => mutate()} />
         </div>
       </div>
 

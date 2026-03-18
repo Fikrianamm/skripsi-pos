@@ -29,7 +29,11 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useContextMenu } from "@/hooks/use-context-menu";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
-import { FilterDropdown, type FilterItem } from "@/components/filter-dropdown";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 import { ContextMenu } from "@/components/data-table/context-menu";
 import { BulkSelectionBar } from "@/components/data-table/bulk-selection-bar";
 import { DataTable } from "@/components/data-table/data-table";
@@ -72,7 +76,7 @@ const ROLE_CONFIG: Record<
   },
 };
 
-const ROLE_FILTER_ITEMS: FilterItem[] = [
+const ROLE_OPTIONS = [
   { key: "all", label: "Semua" },
   ...ROLES.map((r) => ({ key: r.key, label: r.label })),
 ];
@@ -115,11 +119,6 @@ export default function Page() {
     return Array.from(selectedKeys).filter((k) => k !== "");
   }, [selectedKeys, data?.results]);
 
-  const selectedRoleLabel = React.useMemo(() => {
-    if (roleKey === "all") return "Semua";
-    return ROLES.find((r) => r.key === roleKey)?.label ?? "Semua";
-  }, [roleKey]);
-
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
       <PageHeader
@@ -127,30 +126,30 @@ export default function Page() {
         description="Kelola akun, peran, dan hak akses seluruh pengguna sistem."
       />
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-center border-t border-default-200 pt-4">
+      <div className="flex flex-col md:flex-row gap-2">
         <SearchInput
           value={search}
           placeholder="Cari pengguna"
           onChange={setSearch}
           onClear={() => setSearch("")}
+          className="w-full"
         />
-        <div className="flex flex-row gap-2 items-center justify-start md:justify-between w-full">
-          <FilterDropdown
-            label="Role"
-            icon={<ShieldUser size={16} />}
-            items={ROLE_FILTER_ITEMS}
-            selectedKeys={selectedRole}
-            selectedLabel={selectedRoleLabel}
-            onSelectionChange={(keys) => {
-              if (keys === "all") return;
-              const sel = Array.from(keys)[0] as string;
-              setSelectedRole(new Set([sel || "all"]));
-            }}
+        <div className="flex flex-row gap-2 items-center justify-start">
+          <FilterLanjutan
+            activeCount={roleKey !== "all" ? 1 : 0}
             onReset={() => {
               setSelectedRole(new Set(["all"]));
               setSearch("");
             }}
-          />
+          >
+            <FilterSection label="Role">
+              <FilterButtonGroup
+                options={ROLE_OPTIONS}
+                value={roleKey}
+                onChange={(v) => setSelectedRole(new Set([v]))}
+              />
+            </FilterSection>
+          </FilterLanjutan>
           <AddUserModal onUserCreated={() => mutate()} />
         </div>
       </div>

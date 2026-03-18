@@ -1,11 +1,18 @@
 "use client";
 
-import { Button, Input, Select, SelectItem, Tooltip } from "@heroui/react";
-import { Plus, Search, RefreshCw } from "lucide-react";
+import { Button, Tooltip } from "@heroui/react";
+import { Plus, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import {
   STATUS_PRODUKSI_OPTIONS,
   STATUS_BAYAR_OPTIONS,
 } from "../../components/types";
+import { SearchInput } from "@/components/search-input";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 
 export const SORT_OPTIONS = [
   { key: "createdAt", label: "Terbaru" },
@@ -37,77 +44,91 @@ export function OrderToolbar({
   onRefresh,
   onCreateOrder,
 }: OrderToolbarProps) {
+  const activeCount =
+    (filterStatusProduksi ? 1 : 0) +
+    (filterStatusBayar ? 1 : 0) +
+    (sortBy !== "createdAt" ? 1 : 0);
+
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const handleRefresh = () => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    onRefresh();
+    setTimeout(() => setIsSpinning(false), 500); // Putar selama 500ms
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Input
-        placeholder="Cari nomor order / nama customer..."
-        startContent={<Search size={15} className="text-default-400" />}
+    <div className="flex flex-col md:flex-row gap-2">
+      <SearchInput
         value={search}
-        onValueChange={onSearchChange}
-        isClearable
+        placeholder="Cari nomor order / nama customer..."
+        onChange={onSearchChange}
         onClear={() => onSearchChange("")}
-        className="max-w-xs"
-        variant="bordered"
-        size="sm"
-        classNames={{ inputWrapper: "border-1" }}
+        className="w-full"
       />
-
-      <Select
-        size="sm"
-        className="max-w-[200px]"
-        selectedKeys={filterStatusProduksi ? [filterStatusProduksi] : [""]}
-        onSelectionChange={(keys) =>
-          onFilterStatusProduksiChange((Array.from(keys)[0] as string) ?? "")
-        }
-        aria-label="Filter status produksi"
-      >
-        {STATUS_PRODUKSI_OPTIONS.map((o) => (
-          <SelectItem key={o.key}>{o.label}</SelectItem>
-        ))}
-      </Select>
-
-      <Select
-        size="sm"
-        className="max-w-[180px]"
-        selectedKeys={filterStatusBayar ? [filterStatusBayar] : [""]}
-        onSelectionChange={(keys) =>
-          onFilterStatusBayarChange((Array.from(keys)[0] as string) ?? "")
-        }
-        aria-label="Filter status bayar"
-      >
-        {STATUS_BAYAR_OPTIONS.map((o) => (
-          <SelectItem key={o.key}>{o.label}</SelectItem>
-        ))}
-      </Select>
-
-      <Select
-        size="sm"
-        className="max-w-[180px]"
-        selectedKeys={[sortBy]}
-        onSelectionChange={(keys) =>
-          onSortByChange((Array.from(keys)[0] as string) ?? "createdAt")
-        }
-        aria-label="Urutan"
-      >
-        {SORT_OPTIONS.map((o) => (
-          <SelectItem key={o.key}>{o.label}</SelectItem>
-        ))}
-      </Select>
-
-      <div className="flex items-center gap-2 ml-auto">
-        <Tooltip content="Refresh">
-          <Button isIconOnly variant="flat" size="sm" onPress={onRefresh}>
-            <RefreshCw size={15} />
-          </Button>
-        </Tooltip>
-        <Button
-          color="primary"
-          size="sm"
-          startContent={<Plus size={15} />}
-          onPress={onCreateOrder}
+      <div className="flex flex-row gap-2 items-center justify-start">
+        <FilterLanjutan
+          activeCount={activeCount}
+          onReset={() => {
+            onFilterStatusProduksiChange("");
+            onFilterStatusBayarChange("");
+            onSortByChange("createdAt");
+            onSearchChange("");
+          }}
         >
-          Buat Pesanan
-        </Button>
+          <FilterSection label="Status Produksi">
+            <FilterButtonGroup
+              options={[
+                { key: "", label: "Semua" },
+                ...STATUS_PRODUKSI_OPTIONS.filter((o) => o.key !== ""),
+              ]}
+              value={filterStatusProduksi}
+              onChange={onFilterStatusProduksiChange}
+            />
+          </FilterSection>
+          <FilterSection label="Status Bayar">
+            <FilterButtonGroup
+              options={[
+                { key: "", label: "Semua" },
+                ...STATUS_BAYAR_OPTIONS.filter((o) => o.key !== ""),
+              ]}
+              value={filterStatusBayar}
+              onChange={onFilterStatusBayarChange}
+            />
+          </FilterSection>
+          <FilterSection label="Urutan">
+            <FilterButtonGroup
+              options={SORT_OPTIONS}
+              value={sortBy}
+              onChange={onSortByChange}
+            />
+          </FilterSection>
+        </FilterLanjutan>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <Tooltip content="Refresh">
+            <Button
+              isIconOnly
+              variant="bordered"
+              size="sm"
+              onPress={handleRefresh}
+            >
+              <RefreshCw
+                size={15}
+                className={isSpinning ? "animate-spin" : ""}
+              />
+            </Button>
+          </Tooltip>
+          <Button
+            color="primary"
+            size="sm"
+            startContent={<Plus size={15} />}
+            onPress={onCreateOrder}
+          >
+            Buat Pesanan
+          </Button>
+        </div>
       </div>
     </div>
   );
