@@ -62,14 +62,14 @@ export function GoogleOneTap() {
       });
 
       // Tampilkan Popup
-      window.google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          console.log(
-            "One Tap skipped/not displayed:",
-            notification.getNotDisplayedReason(),
-          );
-        }
-      });
+      // window.google.accounts.id.prompt((notification: any) => {
+      //   if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      //     console.log(
+      //       "One Tap skipped/not displayed:",
+      //       notification.getNotDisplayedReason(),
+      //     );
+      //   }
+      // });
     };
 
     // Cek apakah script sudah ada

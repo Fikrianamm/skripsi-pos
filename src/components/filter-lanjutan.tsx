@@ -109,7 +109,7 @@ export function FilterLanjutan({
     <Button
       variant="bordered"
       startContent={<Filter size={15} />}
-      className="border-1 capitalize shrink-0"
+      className="border capitalize shrink-0"
       endContent={
         activeCount > 0 && !isMobile ? (
           <span className="ml-1 min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-primary text-primary-foreground flex items-center justify-center px-1">

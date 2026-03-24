@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { fetcher } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
-import { Spinner, Pagination } from "@heroui/react";
+import { Spinner, Pagination, Divider } from "@heroui/react";
 import { ShoppingBag } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { OrderRow } from "../components/types";
@@ -99,9 +99,10 @@ export default function Page() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-default-400">
-            Menampilkan {orders.length} dari {totalCount} pesanan
-          </p>
+          <div className="flex gap-2 items-center">
+            <span className="text-xs text-default-400 tabular-nums">Menampilkan {orders.length} dari {totalCount} pesanan</span>
+            <Divider className="flex-1"/>
+          </div>
 
           <div className="flex flex-col gap-3">
             {orders.map((order) => (

@@ -111,7 +111,6 @@ export function NavUser({ user }: { user: User }) {
 }
 
 export function NavUserSimple({ user }: { user: User }) {
-  const { isMobile } = useSidebar();
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 

@@ -23,6 +23,7 @@ import {
   ModalBody,
   ModalFooter,
   User,
+  Divider,
 } from "@heroui/react";
 import {
   type DateValue,
@@ -252,9 +253,12 @@ export default function PenerimaanBarangPage() {
       </div>
 
       {data?.pagination?.total !== undefined && (
-        <p className="text-xs text-default-400 tabular-nums">
-          {data.pagination.total} penerimaan ditemukan
-        </p>
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            Menampilkan {data.results.length} dari {data.pagination.total} penerimaan
+          </span>
+          <Divider className="flex-1" />
+        </div>
       )}
 
       <Table

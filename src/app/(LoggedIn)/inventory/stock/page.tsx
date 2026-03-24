@@ -2,7 +2,7 @@
 import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
-import { Chip, type Selection } from "@heroui/react";
+import { Chip, Divider, type Selection } from "@heroui/react";
 import { Box, MoreVertical, PenLine, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/func";
 import useSWR from "swr";
@@ -147,6 +147,12 @@ export default function Page() {
           <AddBahanBakuModal onAdded={() => mutate()} />
         </div>
       </div>
+      {data?.count !== undefined && (
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">Menampilkan {data.results.length} dari {data.count} bahan baku</span>
+          <Divider className="flex-1"/>
+        </div>
+      )}
 
       <BulkSelectionBar count={selectedIds.length} label="bahan baku dipilih">
         <BulkDeleteBahanBakuModal

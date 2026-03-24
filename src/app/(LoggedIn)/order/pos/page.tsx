@@ -20,6 +20,8 @@ import {
   CardHeader,
   Divider,
   ScrollShadow,
+  Autocomplete,
+  AutocompleteItem,
 } from "@heroui/react";
 import {
   ShoppingCart,
@@ -202,8 +204,6 @@ export default function Page() {
     }
   }
 
-  const selectedCustomer = customers.find((c) => c.id === customerId);
-
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-4">
       <PageHeader
@@ -215,7 +215,7 @@ export default function Page() {
         {/* LEFT: Product Search + Cart */}
         <div className="flex flex-col gap-5 min-h-0">
           {/* Product Search */}
-          <Card shadow="sm" className="border border-default-200">
+          <Card className="border border-default-200">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-primary/10">
                 <Search size={15} className="text-primary" />
@@ -231,10 +231,7 @@ export default function Page() {
           </Card>
 
           {/* Cart */}
-          <Card
-            shadow="sm"
-            className="border border-default-200 flex-1 min-h-0"
-          >
+          <Card className="border border-default-200 flex-1 min-h-0">
             <CardHeader className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-md bg-primary/10">
@@ -292,83 +289,51 @@ export default function Page() {
         {/* RIGHT: Order Info Panel */}
         <div className="flex flex-col gap-4">
           {/* Customer */}
-          <Card shadow="sm" className="border border-default-200">
+          <Card className="border border-default-200">
             <CardHeader className="flex items-center gap-2 pb-2">
-              <div className="p-1.5 rounded-md bg-success/10">
-                <User size={15} className="text-success" />
+              <div className="p-1.5 rounded-md bg-blue-500/10">
+                <User size={15} className="text-blue-500" />
               </div>
               <span className="font-semibold text-sm">Customer</span>
-              {selectedCustomer && (
-                <Chip
-                  size="sm"
-                  color="success"
-                  variant="flat"
-                  className="ml-auto"
-                >
-                  Terpilih
-                </Chip>
-              )}
             </CardHeader>
             <Divider />
             <CardBody className="gap-3">
-              {selectedCustomer && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-success/5 border border-success/20">
-                  <Avatar
-                    src={selectedCustomer.image ?? undefined}
-                    name={selectedCustomer.nama}
-                    size="sm"
-                    color="success"
-                    isBordered
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {selectedCustomer.nama}
-                    </p>
-                    <p className="text-xs text-default-500">
-                      {selectedCustomer.nomorHp}
-                    </p>
-                  </div>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="light"
-                    color="danger"
-                    onPress={() => setCustomerId("")}
-                  >
-                    <Trash2 size={13} />
-                  </Button>
-                </div>
-              )}
-              <Select
-                label="Pilih Customer"
+              <Autocomplete
+                defaultItems={customers}
+                label="Customer"
                 placeholder="Cari dan pilih customer..."
-                selectedKeys={customerId ? [customerId] : []}
-                onSelectionChange={(keys) =>
-                  setCustomerId((Array.from(keys)[0] as string) ?? "")
-                }
                 startContent={<User size={14} className="text-default-400" />}
                 size="sm"
+                selectedKey={customerId || ""}
+                onSelectionChange={(key) =>
+                  setCustomerId((key as string) ?? "")
+                }
+                defaultFilter={(text, filterValue) =>
+                  text.toLowerCase().includes(filterValue.toLowerCase())
+                }
               >
-                {customers.map((c) => (
-                  <SelectItem
-                    key={c.id!}
-                    textValue={c.nama}
+                {(customer) => (
+                  <AutocompleteItem
+                    key={customer.id!}
+                    textValue={customer.nama}
                     startContent={
                       <Avatar
-                        src={c.image ?? undefined}
-                        name={c.nama}
+                        src={customer.image ?? undefined}
+                        name={customer.nama}
                         size="sm"
                         className="shrink-0"
                       />
                     }
                   >
                     <div>
-                      <p className="text-sm">{c.nama}</p>
-                      <p className="text-xs text-default-400">{c.nomorHp}</p>
+                      <p className="text-sm">{customer.nama}</p>
+                      <p className="text-xs text-default-400">
+                        {customer.nomorHp}
+                      </p>
                     </div>
-                  </SelectItem>
-                ))}
-              </Select>
+                  </AutocompleteItem>
+                )}
+              </Autocomplete>
 
               {/* Divider + Tambah Pelanggan Baru */}
               <div className="flex items-center gap-2">
@@ -386,7 +351,7 @@ export default function Page() {
           </Card>
 
           {/* Order Detail */}
-          <Card shadow="sm" className="border border-default-200">
+          <Card className="border border-default-200">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-warning/10">
                 <ClipboardList size={15} className="text-warning" />
@@ -438,10 +403,10 @@ export default function Page() {
           </Card>
 
           {/* Payment */}
-          <Card shadow="sm" className="border border-default-200">
+          <Card className="border border-default-200">
             <CardHeader className="flex items-center gap-2 pb-2">
-              <div className="p-1.5 rounded-md bg-primary/10">
-                <CreditCard size={15} className="text-primary" />
+              <div className="p-1.5 rounded-md bg-success/10">
+                <CreditCard size={15} className="text-success" />
               </div>
               <span className="font-semibold text-sm">Pembayaran</span>
             </CardHeader>
@@ -477,10 +442,10 @@ export default function Page() {
           </Card>
 
           {/* Price Summary */}
-          <Card shadow="sm" className="border border-default-200">
+          <Card className="border border-default-200">
             <CardHeader className="flex items-center gap-2 pb-2">
-              <div className="p-1.5 rounded-md bg-primary/10">
-                <Tag size={15} className="text-primary" />
+              <div className="p-1.5 rounded-md bg-red-500/10">
+                <Tag size={15} className="text-red-500" />
               </div>
               <span className="font-semibold text-sm">Ringkasan Harga</span>
             </CardHeader>

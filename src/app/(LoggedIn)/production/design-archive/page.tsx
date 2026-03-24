@@ -5,7 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { fetcher } from "@/lib/func";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button, Chip, Skeleton } from "@heroui/react";
+import { Button, Chip, Divider, Skeleton } from "@heroui/react";
 import { Eye, Images } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
@@ -243,9 +243,10 @@ export default function Page() {
         </div>
       </div>
       {data?.count !== undefined && (
-        <p className="text-xs text-default-400 tabular-nums">
-          {data.count} file ditemukan
-        </p>
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">{data.count} file ditemukan</span>
+          <Divider className="flex-1"/>
+        </div>
       )}
 
       {/* ── Content ── */}

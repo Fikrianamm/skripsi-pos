@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Tooltip } from "@heroui/react";
-import { Plus, RefreshCw } from "lucide-react";
+import { RefreshCw, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import {
   STATUS_PRODUKSI_OPTIONS,
@@ -123,7 +123,7 @@ export function OrderToolbar({
           <Button
             color="primary"
             size="sm"
-            startContent={<Plus size={15} />}
+            startContent={<ShoppingBag size={15} />}
             onPress={onCreateOrder}
           >
             Buat Pesanan
