@@ -59,7 +59,7 @@ export default function TambahStokMasukModal({
   const [file, setFile] = useState<File | null>(null);
 
   const { data: supplierData } = useSWR(
-    isOpen ? `/api/admin/supplier?limit=100&isActive=true` : null,
+    isOpen ? `/api/admin/supplier?all=true&isActive=true` : null,
     fetcher,
   );
 

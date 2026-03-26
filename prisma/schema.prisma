@@ -25,7 +25,9 @@ model User {
   orders           Order[]
   spk              SPK[]
   designFiles      DesignFile[]
-  penerimaanBarang PenerimaanBarang[]
+  penerimaanBarang  PenerimaanBarang[]
+  pengeluaranBarang PengeluaranBarang[]
+  stokOpname        StokOpname[]
 
   @@map("user")
 }
@@ -194,6 +196,8 @@ model BahanBaku {
   updatedAt  DateTime    @updatedAt
   unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Restrict)
   stokMasuk  StokMasuk[]
+  stokKeluar StokKeluar[]
+  opnameItems StokOpnameItem[]
 
   @@index([nama(length: 191)])
   @@index([unitId])
@@ -334,14 +338,84 @@ model SPK {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  karyawan Karyawan @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
-  user     User?    @relation(fields: [userId], references: [id])
-  userId   String?
+  order       Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  karyawan    Karyawan            @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
+  user        User?               @relation(fields: [userId], references: [id])
+  userId      String?
+  pengeluaran PengeluaranBarang[]
 
   @@index([karyawanId])
   @@index([tahapProduksi])
   @@map("spk")
+}
+
+model PengeluaranBarang {
+  id         String       @id
+  spkId      String?
+  tanggal    DateTime     @default(now())
+  keterangan String?      @db.Text
+  addedById  String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  spk     SPK?         @relation(fields: [spkId], references: [id], onDelete: SetNull)
+  addedBy User?        @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  items   StokKeluar[]
+
+  @@index([spkId])
+  @@index([addedById])
+  @@index([tanggal])
+  @@map("pengeluaran_barang")
+}
+
+model StokKeluar {
+  id            String   @id
+  pengeluaranId String
+  bahanBakuId   String
+  jumlah        Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pengeluaran PengeluaranBarang @relation(fields: [pengeluaranId], references: [id], onDelete: Cascade)
+  bahanBaku   BahanBaku         @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+
+  @@index([pengeluaranId])
+  @@index([bahanBakuId])
+  @@map("stok_keluar")
+}
+
+model StokOpname {
+  id         String           @id
+  tanggal    DateTime         @default(now())
+  keterangan String?          @db.Text
+  addedById  String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  addedBy User?            @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  items   StokOpnameItem[]
+
+  @@index([addedById])
+  @@index([tanggal])
+  @@map("stok_opname")
+}
+
+model StokOpnameItem {
+  id          String   @id
+  opnameId    String
+  bahanBakuId String
+  stokSistem  Decimal  @db.Decimal(10, 2)
+  stokFisik   Decimal  @db.Decimal(10, 2)
+  selisih     Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  opname    StokOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
+  bahanBaku BahanBaku  @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+
+  @@index([opnameId])
+  @@index([bahanBakuId])
+  @@map("stok_opname_item")
 }
 
 // Enums

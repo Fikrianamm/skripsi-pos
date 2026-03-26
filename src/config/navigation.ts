@@ -94,6 +94,10 @@ export const NAV_ITEMS: NavGroup[] = [
             url: "/inventory/in",
           },
           {
+            title: "Barang Keluar",
+            url: "/inventory/out",
+          },
+          {
             title: "Stok Opname",
             url: "/inventory/opname",
           },

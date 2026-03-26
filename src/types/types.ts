@@ -140,3 +140,59 @@ export interface PenerimaanDetail {
   addedBy: { name: string } | null;
   items: DetailItem[];
 }
+export interface PengeluaranDetail {
+  id: string;
+  tanggal: string;
+  keterangan: string | null;
+  spk: {
+    id: string;
+    orderId: string;
+    order: { nomorOrder: string; customer: { nama: string; image?: string | null } };
+  } | null;
+  addedBy: { name: string; image?: string | null; role: string } | null;
+  items: {
+    id: string;
+    jumlah: number;
+    bahanBaku: { nama: string; unit: { nama: string } | null };
+  }[];
+}
+
+export interface PengeluaranItem {
+  id: string;
+  tanggal: string;
+  keterangan: string | null;
+  addedBy: { name: string; image?: string | null } | null;
+  spk: {
+    id: string;
+    order: { nomorOrder: string; customer: { nama: string } };
+  } | null;
+  items: {
+    id: string;
+    jumlah: number;
+    bahanBaku: { nama: string; unit: { nama: string } | null };
+  }[];
+}
+
+export interface OpnameItemPreview {
+  id: string;
+  stokSistem: number;
+  stokFisik: number;
+  selisih: number;
+  bahanBaku: { nama: string; unit: { nama: string } | null };
+}
+
+export interface StokOpnameItem {
+  id: string;
+  tanggal: string;
+  keterangan: string | null;
+  addedBy: { name: string; image?: string | null; role: string } | null;
+  items: OpnameItemPreview[];
+}
+
+export interface StokOpnameDetail {
+  id: string;
+  tanggal: string;
+  keterangan: string | null;
+  addedBy: { name: string; image?: string | null; role: string } | null;
+  items: OpnameItemPreview[];
+}

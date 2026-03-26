@@ -27,6 +27,15 @@ export default function Page() {
   const { data, isLoading, mutate } = useSWR(`/api/order/${orderId}`, fetcher);
   const order: OrderDetail | null = data?.order ?? null;
 
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const handleRefresh = () => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    mutate();
+    setTimeout(() => setIsSpinning(false), 500); // Putar selama 500ms
+  };
+
   async function handleDelete() {
     if (
       !confirm(
@@ -117,9 +126,9 @@ export default function Page() {
               isIconOnly
               size="sm"
               variant="flat"
-              onPress={() => mutate()}
+              onPress={() => handleRefresh()}
             >
-              <RefreshCw size={14} />
+              <RefreshCw size={14} className={isSpinning ? "animate-spin" : ""} />
             </Button>
           </Tooltip>
           <UpdateStatusModal
@@ -146,7 +155,7 @@ export default function Page() {
       </div>
 
       {/* ── Progress produksi ── */}
-      <Card shadow="sm" className="border border-default-200">
+      <Card className="border border-default-200">
         <CardBody className="py-3 px-4">
           <ProduksiProgress current={order.statusProduksi} />
         </CardBody>
@@ -176,10 +185,7 @@ export default function Page() {
                 />
               ) : (
                 /* SPK belum dibuat — tampilkan card placeholder */
-                <Card
-                  shadow="sm"
-                  className="border border-warning-200 bg-warning-50/40"
-                >
+                <Card className="border border-warning-200 bg-warning-50/40">
                   <CardBody className="flex flex-col items-center gap-3 py-5 text-center">
                     <div className="text-warning-600 text-sm font-medium">
                       SPK Belum Dibuat

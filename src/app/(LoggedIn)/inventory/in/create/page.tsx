@@ -25,11 +25,11 @@ export default function CatatPenerimaanPage() {
   const [displayHarga, setDisplayHarga] = useState<string[]>([""]);
 
   const { data: supplierData } = useSWR(
-    "/api/admin/supplier?limit=200&isActive=true",
+    "/api/admin/supplier?all=true&isActive=true",
     fetcher,
   );
   const { data: bahanBakuData } = useSWR(
-    "/api/admin/bahan-baku?limit=500&isActive=true",
+    "/api/admin/bahan-baku?all=true&isActive=true",
     fetcher,
   );
   const { data: existing } = useSWR<any>(

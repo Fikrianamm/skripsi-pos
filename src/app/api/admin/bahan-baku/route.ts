@@ -23,11 +23,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
+    const fetchAll = searchParams.get("all") === "true";
     const search = searchParams.get("search") || "";
     const isActiveParam = searchParams.get("isActive");
     const stokFilter = searchParams.get("stokFilter"); // "menipis" | "habis" | "all"
 
-    const skip = (page - 1) * limit;
+    const skip = fetchAll ? undefined : (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
 
@@ -42,9 +43,9 @@ export async function GET(request: NextRequest) {
     const [results, count] = await Promise.all([
       prisma.bahanBaku.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: { nama: "asc" },
         skip,
-        take: limit,
+        take: fetchAll ? undefined : limit,
         include: {
           unit: { select: { id: true, nama: true } },
           _count: { select: { stokMasuk: true } },

@@ -98,7 +98,7 @@ export default function Page() {
     <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <PageHeader
-          title="Inventory Bahan Baku"
+          title="Stok Bahan Baku"
           description="Kelola stok bahan baku produksi dan catat setiap pembelian."
         />
         <DrawerManageCategory
@@ -133,14 +133,20 @@ export default function Page() {
               <FilterButtonGroup
                 options={STATUS_OPTIONS}
                 value={statusKey}
-                onChange={(v) => setSelectedStatus(new Set([v]))}
+                onChange={(v) => {
+                  setSelectedStatus(new Set([v]));
+                  setPage(1);
+                }}
               />
             </FilterSection>
             <FilterSection label="Status Stok">
               <FilterButtonGroup
                 options={STOK_OPTIONS}
                 value={stokKey}
-                onChange={(v) => setSelectedStokFilter(new Set([v]))}
+                onChange={(v) => {
+                  setSelectedStokFilter(new Set([v]));
+                  setPage(1);
+                }}
               />
             </FilterSection>
           </FilterLanjutan>
@@ -149,8 +155,10 @@ export default function Page() {
       </div>
       {data?.count !== undefined && (
         <div className="flex gap-2 items-center">
-          <span className="text-xs text-default-400 tabular-nums">Menampilkan {data.results.length} dari {data.count} bahan baku</span>
-          <Divider className="flex-1"/>
+          <span className="text-xs text-default-400 tabular-nums">
+            Menampilkan {data.results.length} dari {data.count} bahan baku
+          </span>
+          <Divider className="flex-1" />
         </div>
       )}
 

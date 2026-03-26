@@ -28,6 +28,11 @@
 - [x] Integrasi Object Storage (Neo S3) untuk upload bukti nota dan file desain
 - [x] Context Menu (Klik Kanan) & Optimasi UX dengan HeroUI
 
+### Inventory
+- [X] Stok Opname, Fungsi: Mengoreksi stok bahan baku yang tidak sesuai dengan fisik.
+- [X] Barang Keluar Produksi, Fungsi: Mengurangi stok bahan baku saat produksi dimulai. Admin menginput kain apa yang keluar dan berapa banyak untuk sebuah SPK (Surat Perintah Kerja).
+- [X] Fix Pagination barang keluar dan stok opname dan search opname berdasarkan keterangan
+
 ---
 
 ## 📝 Todo & Pertimbangan Fitur (Selanjutnya)
@@ -51,6 +56,3 @@
 - [ ] **Notifikasi Stok Menipis** — Peringatan global di navbar ketika ada Bahan Baku / Produk di bawah `minStok`.
 - [ ] **Halaman Pengaturan Web** — Menyimpan profil bisnis (Logo Toko, Alamat, Info Pajak) untuk lampiran invoice.
 - [ ] **Audit Log Activity** — Merekam aksi pengguna (hapus produk, edit laporan) untuk keamanan admin.
-
-### Inventory
-- [ ] Barang Keluar Produksi, Fungsi: Mengurangi stok bahan baku saat produksi dimulai. Admin menginput kain apa yang keluar dan berapa banyak untuk sebuah SPK (Surat Perintah Kerja).

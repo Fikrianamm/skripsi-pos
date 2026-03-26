@@ -21,7 +21,7 @@ function CardSection({
   return (
     <div className="rounded-2xl border border-divider bg-content1 overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-4 border-b border-divider bg-default-50">
-        <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+        <div className="p-1.5 rounded-lg bg-success/10 text-success">
           {icon}
         </div>
         <span className="text-sm font-semibold">{title}</span>

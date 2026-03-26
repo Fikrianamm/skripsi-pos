@@ -77,11 +77,11 @@ export default function PenerimaanBarangPage() {
   const dateTo = toISO(dateRange?.end);
 
   const { data: supplierData } = useSWR(
-    "/api/admin/supplier?limit=200",
+    "/api/admin/supplier?all=true",
     fetcher,
   );
   const { data: bahanBakuData } = useSWR(
-    "/api/admin/bahan-baku?limit=200",
+    "/api/admin/bahan-baku?all=true",
     fetcher,
   );
 

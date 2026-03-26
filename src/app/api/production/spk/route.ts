@@ -20,22 +20,27 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-    const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
-    const skip = (page - 1) * limit;
+    const fetchAll = searchParams.get("all") === "true";
+    const limit = fetchAll
+      ? undefined
+      : Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
+    const skip = fetchAll ? undefined : (page - 1) * (limit ?? 20);
     const search = searchParams.get("search")?.trim() ?? "";
     const statusSPK = searchParams.get("statusSPK") ?? "all";
     const karyawanId = searchParams.get("karyawanId") ?? "";
     const accCetak = searchParams.get("accCetak") ?? "all";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      tahapProduksi: "JAHIT", // untuk sekarang hanya tahap JAHIT
-    };
+    const where: any = fetchAll
+      ? {} // when fetching all for select dropdowns, no stage filter
+      : { tahapProduksi: "JAHIT" }; // production queue only shows JAHIT
 
-    if (statusSPK !== "all") where.statusSPK = statusSPK;
-    if (karyawanId) where.karyawanId = karyawanId;
-    if (accCetak === "true") where.accCetak = true;
-    if (accCetak === "false") where.accCetak = false;
+    if (!fetchAll) {
+      if (statusSPK !== "all") where.statusSPK = statusSPK;
+      if (karyawanId) where.karyawanId = karyawanId;
+      if (accCetak === "true") where.accCetak = true;
+      if (accCetak === "false") where.accCetak = false;
+    }
 
     if (search) {
       where.OR = [
