@@ -18,9 +18,7 @@ import { addToast } from "@heroui/toast";
 import { ArrowRightLeft } from "lucide-react";
 import {
   STATUS_PRODUKSI_STEPS,
-  STATUS_BAYAR_OPTIONS,
   StatusProduksiKey,
-  StatusPembayaranKey,
 } from "../../components/types";
 import {
   getStatusProduksiBadge,
@@ -48,20 +46,14 @@ export function UpdateStatusModal({
   const [selectedProduksi, setSelectedProduksi] = useState<StatusProduksiKey>(
     currentStatus as StatusProduksiKey,
   );
-  const [selectedBayar, setSelectedBayar] = useState<StatusPembayaranKey>(
-    currentStatusBayar as StatusPembayaranKey,
-  );
   const [isLoading, setIsLoading] = useState(false);
-
   function handleOpen() {
     setSelectedProduksi(currentStatus as StatusProduksiKey);
-    setSelectedBayar(currentStatusBayar as StatusPembayaranKey);
     onOpen();
   }
 
   const produksiChanged = selectedProduksi !== currentStatus;
-  const bayarChanged = selectedBayar !== currentStatusBayar;
-  const hasChanges = produksiChanged || bayarChanged;
+  const hasChanges = produksiChanged;
 
   async function handleSave() {
     if (!hasChanges) {
@@ -80,7 +72,6 @@ export function UpdateStatusModal({
     try {
       const body: Record<string, string> = {};
       if (produksiChanged) body.statusProduksi = selectedProduksi;
-      if (bayarChanged) body.statusPembayaran = selectedBayar;
 
       const res = await fetch(`/api/order/${orderId}`, {
         method: "PATCH",
@@ -113,10 +104,6 @@ export function UpdateStatusModal({
   const curProduksiBadge = getStatusProduksiBadge(currentStatus);
   const newProduksiBadge = getStatusProduksiBadge(selectedProduksi);
   const curBayarBadge = getStatusBayarBadge(currentStatusBayar);
-  const newBayarBadge = getStatusBayarBadge(selectedBayar);
-
-  // Filter out the empty-string "Semua" option — only real statuses for select
-  const bayarSteps = STATUS_BAYAR_OPTIONS.filter((o) => o.key !== "");
 
   return (
     <>
@@ -201,38 +188,15 @@ export function UpdateStatusModal({
                   <span className="text-xs font-semibold text-default-500 uppercase tracking-wide">
                     Status Pembayaran
                   </span>
-                  {/* Preview */}
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-default-50">
+                  
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-default-50 border border-default-200">
                     <Chip size="sm" color={curBayarBadge.color} variant="flat">
                       {curBayarBadge.label}
                     </Chip>
-                    <ArrowRightLeft
-                      size={13}
-                      className="text-default-300 shrink-0"
-                    />
-                    <Chip
-                      size="sm"
-                      color={newBayarBadge.color}
-                      variant={bayarChanged ? "solid" : "flat"}
-                    >
-                      {newBayarBadge.label}
-                    </Chip>
+                    <span className="text-xs text-default-400 ml-auto text-right">
+                      Diperbarui otomatis saat kasir menambahkan Riwayat Bayar.
+                    </span>
                   </div>
-                  <Select
-                    size="sm"
-                    selectedKeys={[selectedBayar]}
-                    onSelectionChange={(keys) =>
-                      setSelectedBayar(
-                        (Array.from(keys)[0] as StatusPembayaranKey) ??
-                          selectedBayar,
-                      )
-                    }
-                    aria-label="Status pembayaran"
-                  >
-                    {bayarSteps.map((s) => (
-                      <SelectItem key={s.key}>{s.label}</SelectItem>
-                    ))}
-                  </Select>
                 </div>
               </ModalBody>
 

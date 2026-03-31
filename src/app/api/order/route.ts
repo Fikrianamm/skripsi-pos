@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createJurnalDoubleEntry } from "@/lib/finance";
 
 // Shared auth guard: admin or kasir only
 async function requireOrderAccess() {
@@ -128,8 +130,8 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/order — Create order ───────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
-    const { error, status } = await requireOrderAccess();
-    if (error) return NextResponse.json({ error }, { status });
+    const { error, status, session } = await requireOrderAccess();
+    if (error || !session) return NextResponse.json({ error }, { status });
 
     const body = await request.json();
     const {
@@ -144,6 +146,8 @@ export async function POST(request: NextRequest) {
       subtotal,
       grandTotal,
       items,
+      kasBankId,
+      nominalBayar,
     } = body;
 
     // Validasi field wajib
@@ -162,6 +166,16 @@ export async function POST(request: NextRequest) {
     if (subtotal === undefined || grandTotal === undefined) {
       return NextResponse.json(
         { error: "Subtotal dan grandTotal wajib diisi." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      (statusPembayaran === "DP" || statusPembayaran === "LUNAS") &&
+      (!kasBankId || !nominalBayar || Number(nominalBayar) <= 0)
+    ) {
+      return NextResponse.json(
+        { error: "Kas/Bank tujuan dan nominal bayar wajib diisi jika status LUNAS atau DP." },
         { status: 400 },
       );
     }
@@ -195,69 +209,123 @@ export async function POST(request: NextRequest) {
     const nomorOrder = await generateNomorOrder();
     const orderId = crypto.randomUUID();
 
-    const order = await prisma.order.create({
-      data: {
-        id: orderId,
-        customerId,
-        nomorOrder,
-        channel: channel || "LANGSUNG",
-        statusProduksi: "PENDING",
-        statusPembayaran: statusPembayaran || "BELUM_BAYAR",
-        metodePembayaran: metodePembayaran || "TUNAI",
-        deadline: deadline ? new Date(deadline) : null,
-        catatan: catatan || null,
-        diskon: diskon ?? 0,
-        ongkir: ongkir ?? null,
-        subtotal: subtotal,
-        grandTotal: grandTotal,
-        items: {
-          create: items.map(
-            (item: {
-              productId: string;
-              nama: string;
-              harga: number;
-              qty: number;
-              subtotal: number;
-              catatan?: string;
-            }) => ({
-              id: crypto.randomUUID(),
-              productId: item.productId,
-              nama: item.nama,
-              harga: item.harga,
-              qty: item.qty,
-              subtotal: item.subtotal,
-              catatan: item.catatan || null,
-            }),
-          ),
-        },
-      },
-      select: {
-        id: true,
-        nomorOrder: true,
-        channel: true,
-        statusProduksi: true,
-        statusPembayaran: true,
-        metodePembayaran: true,
-        deadline: true,
-        catatan: true,
-        subtotal: true,
-        diskon: true,
-        ongkir: true,
-        grandTotal: true,
-        createdAt: true,
-        customer: { select: { id: true, nama: true, nomorHp: true } },
-        items: {
-          select: {
-            id: true,
-            productId: true,
-            nama: true,
-            harga: true,
-            qty: true,
-            subtotal: true,
-            catatan: true,
+    const order = await prisma.$transaction(async (tx) => {
+      // 1. Buat Order
+      const newOrder = await tx.order.create({
+        data: {
+          id: orderId,
+          customerId,
+          nomorOrder,
+          channel: channel || "LANGSUNG",
+          statusProduksi: "PENDING",
+          statusPembayaran: statusPembayaran || "BELUM_BAYAR",
+          metodePembayaran: metodePembayaran || "TUNAI",
+          deadline: deadline ? new Date(deadline) : null,
+          catatan: catatan || null,
+          diskon: diskon ?? 0,
+          ongkir: ongkir ?? null,
+          subtotal: subtotal,
+          grandTotal: grandTotal,
+          items: {
+            create: items.map(
+              (item: {
+                productId: string;
+                nama: string;
+                harga: number;
+                qty: number;
+                subtotal: number;
+                catatan?: string;
+              }) => ({
+                id: crypto.randomUUID(),
+                productId: item.productId,
+                nama: item.nama,
+                harga: item.harga,
+                qty: item.qty,
+                subtotal: item.subtotal,
+                catatan: item.catatan || null,
+              }),
+            ),
           },
         },
-      },
+        select: {
+          id: true,
+          nomorOrder: true,
+          channel: true,
+          statusProduksi: true,
+          statusPembayaran: true,
+          metodePembayaran: true,
+          deadline: true,
+          catatan: true,
+          subtotal: true,
+          diskon: true,
+          ongkir: true,
+          grandTotal: true,
+          createdAt: true,
+          customer: { select: { id: true, nama: true, nomorHp: true } },
+          items: {
+            select: {
+              id: true,
+              productId: true,
+              nama: true,
+              harga: true,
+              qty: true,
+              subtotal: true,
+              catatan: true,
+            },
+          },
+        },
+      });
+
+      // 2. Jika user membuat pesanan + langsung bayar (DP / Lunas)
+      if ((statusPembayaran === "DP" || statusPembayaran === "LUNAS") && kasBankId) {
+        const nominal = Number(nominalBayar);
+        const paymentId = crypto.randomUUID();
+
+        await tx.payment.create({
+          data: {
+            id: paymentId,
+            orderId: orderId,
+            userId: session.user.id,
+            nominal: nominal,
+            metodePembayaran: metodePembayaran || "TUNAI",
+            keterangan: "Pembayaran awal saat checkout POS",
+          },
+        });
+
+        const kasBank = await tx.kasBank.findUnique({
+          where: { id: kasBankId },
+          include: { akun: true },
+        });
+
+        if (!kasBank || !kasBank.akunId) {
+          throw new Error("Rekening Kas/Bank tujuan tidak valid.");
+        }
+
+        const pendapatanKasirAkun = await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
+        if (!pendapatanKasirAkun) {
+          throw new Error("Akun Pendapatan Penjualan (4-001) tidak ditemukan.");
+        }
+
+        await tx.kasBank.update({
+          where: { id: kasBankId },
+          data: { saldoSaatIni: { increment: nominal } },
+        });
+
+        await createJurnalDoubleEntry({
+          ref: `PYM-${orderId.slice(0, 5)}`,
+          tanggal: new Date(),
+          keterangan: `Pembayaran Awal Order #${orderId.slice(0, 8)}`,
+          akunDebetId: kasBank.akunId!,
+          akunKreditId: pendapatanKasirAkun.id,
+          nominal: nominal,
+          sumber: "PAYMENT" as any,
+          divisi: "HQ" as any,
+          paymentId: paymentId,
+          createdById: session.user.id,
+        }, tx as any);
+      }
+
+      return newOrder;
     });
 
     return NextResponse.json(

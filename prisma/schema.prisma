@@ -8,26 +8,34 @@ datasource db {
   provider = "mysql"
 }
 
+// ============================================================
+// AUTH & USER
+// ============================================================
+
 model User {
-  id               String             @id
-  name             String             @db.Text
-  email            String             @unique
-  emailVerified    Boolean            @default(false)
-  image            String?            @db.Text
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  banExpires       DateTime?
-  banReason        String?            @db.Text
-  banned           Boolean?           @default(false)
-  role             String?            @db.Text
-  accounts         Account[]
-  sessions         Session[]
-  orders           Order[]
-  spk              SPK[]
-  designFiles      DesignFile[]
+  id                String              @id
+  name              String              @db.Text
+  email             String              @unique
+  emailVerified     Boolean             @default(false)
+  image             String?             @db.Text
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  banExpires        DateTime?
+  banReason         String?             @db.Text
+  banned            Boolean?            @default(false)
+  role              String?             @db.Text
+  accounts          Account[]
+  sessions          Session[]
+  orders            Order[]
+  spk               SPK[]
+  designFiles       DesignFile[]
   penerimaanBarang  PenerimaanBarang[]
   pengeluaranBarang PengeluaranBarang[]
   stokOpname        StokOpname[]
+  payments          Payment[]
+  costs             Cost[]
+  jurnalUmum        JurnalUmum[]
+  tabungan          Tabungan[]
 
   @@map("user")
 }
@@ -80,6 +88,10 @@ model Verification {
   @@map("verification")
 }
 
+// ============================================================
+// PRODUK & KATEGORI
+// ============================================================
+
 model Category {
   id        String    @id
   nama      String    @db.Text
@@ -126,33 +138,9 @@ model Product {
   @@map("product")
 }
 
-model CostCategory {
-  id         String   @id
-  nama       String   @db.Text
-  jenisBeban String   @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  costs      Cost[]
-
-  @@index([nama(length: 191)])
-  @@map("cost_category")
-}
-
-model Cost {
-  id             String       @id
-  costCategoryId String
-  nama           String       @db.Text
-  nominal        Decimal      @db.Decimal(10, 2)
-  keterangan     String       @db.Text
-  buktiNota      String       @db.Text
-  tanggal        DateTime     @default(now())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  costCategory   CostCategory @relation(fields: [costCategoryId], references: [id], onDelete: Cascade)
-
-  @@index([nama(length: 191)])
-  @@map("cost")
-}
+// ============================================================
+// CUSTOMER & SUPPLIER
+// ============================================================
 
 model Customer {
   id        String   @id
@@ -184,19 +172,23 @@ model Supplier {
   @@map("supplier")
 }
 
+// ============================================================
+// BAHAN BAKU & STOK
+// ============================================================
+
 model BahanBaku {
-  id         String      @id
-  unitId     String
-  nama       String      @db.Text
-  stok       Decimal     @default(0) @db.Decimal(10, 2)
-  minStok    Decimal?    @db.Decimal(10, 2)
-  keterangan String?     @db.Text
-  isActive   Boolean     @default(true)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  stokMasuk  StokMasuk[]
-  stokKeluar StokKeluar[]
+  id          String           @id
+  unitId      String
+  nama        String           @db.Text
+  stok        Decimal          @default(0) @db.Decimal(10, 2)
+  minStok     Decimal?         @db.Decimal(10, 2)
+  keterangan  String?          @db.Text
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  unit        Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  stokMasuk   StokMasuk[]
+  stokKeluar  StokKeluar[]
   opnameItems StokOpnameItem[]
 
   @@index([nama(length: 191)])
@@ -205,20 +197,19 @@ model BahanBaku {
 }
 
 model PenerimaanBarang {
-  id           String   @id
-  nomorFaktur  String?  @db.VarChar(100)
+  id           String      @id
+  nomorFaktur  String?     @db.VarChar(100)
   supplierId   String?
-  tanggal      DateTime @default(now())
-  keterangan   String?  @db.Text
-  buktiNota    String?  @db.Text
-  totalTagihan Decimal  @default(0) @db.Decimal(12, 2)
+  tanggal      DateTime    @default(now())
+  keterangan   String?     @db.Text
+  buktiNota    String?     @db.Text
+  totalTagihan Decimal     @default(0) @db.Decimal(12, 2)
   addedById    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  supplier Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  addedBy  User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
-  items    StokMasuk[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  supplier     Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  addedBy      User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  items        StokMasuk[]
 
   @@index([supplierId])
   @@index([addedById])
@@ -227,26 +218,77 @@ model PenerimaanBarang {
 }
 
 model StokMasuk {
-  id             String   @id
+  id             String           @id
   penerimaanId   String
   bahanBakuId    String
-  jumlah         Decimal  @db.Decimal(10, 2)
-  hargaBeli      Decimal? @db.Decimal(10, 2)
-  totalHargaItem Decimal? @db.Decimal(12, 2)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  penerimaan PenerimaanBarang @relation(fields: [penerimaanId], references: [id], onDelete: Cascade)
-  bahanBaku  BahanBaku        @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+  jumlah         Decimal          @db.Decimal(10, 2)
+  hargaBeli      Decimal?         @db.Decimal(10, 2)
+  totalHargaItem Decimal?         @db.Decimal(12, 2)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  penerimaan     PenerimaanBarang @relation(fields: [penerimaanId], references: [id], onDelete: Cascade)
+  bahanBaku      BahanBaku        @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
 
   @@index([penerimaanId])
   @@index([bahanBakuId])
   @@map("stok_masuk")
 }
 
+model StokKeluar {
+  id            String            @id
+  pengeluaranId String
+  bahanBakuId   String
+  jumlah        Decimal           @db.Decimal(10, 2)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  pengeluaran   PengeluaranBarang @relation(fields: [pengeluaranId], references: [id], onDelete: Cascade)
+  bahanBaku     BahanBaku         @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+
+  @@index([pengeluaranId])
+  @@index([bahanBakuId])
+  @@map("stok_keluar")
+}
+
+model StokOpname {
+  id         String           @id
+  tanggal    DateTime         @default(now())
+  keterangan String?          @db.Text
+  addedById  String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  addedBy    User?            @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  items      StokOpnameItem[]
+
+  @@index([addedById])
+  @@index([tanggal])
+  @@map("stok_opname")
+}
+
+model StokOpnameItem {
+  id          String     @id
+  opnameId    String
+  bahanBakuId String
+  stokSistem  Decimal    @db.Decimal(10, 2)
+  stokFisik   Decimal    @db.Decimal(10, 2)
+  selisih     Decimal    @db.Decimal(10, 2)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  opname      StokOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
+  bahanBaku   BahanBaku  @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+
+  @@index([opnameId])
+  @@index([bahanBakuId])
+  @@map("stok_opname_item")
+}
+
+// ============================================================
+// ORDER & PRODUKSI
+// ============================================================
+
 model Order {
   id               String           @id
   customerId       String
+  userId           String?
   nomorOrder       String           @unique @db.VarChar(50)
   channel          OrderChannel     @default(LANGSUNG)
   statusProduksi   StatusProduksi   @default(PENDING)
@@ -261,14 +303,17 @@ model Order {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  user             User?            @relation(fields: [userId], references: [id])
   items            OrderItem[]
   designFiles      DesignFile[]
   spk              SPK?
-  user             User?            @relation(fields: [userId], references: [id])
-  userId           String?
+  payments         Payment[]
 
   @@index([customerId])
+  @@index([userId])
   @@index([nomorOrder])
+  @@index([statusPembayaran])
+  @@index([createdAt])
   @@map("order")
 }
 
@@ -321,28 +366,27 @@ model Karyawan {
 }
 
 model SPK {
-  id            String         @id
-  orderId       String         @unique
+  id            String              @id
+  orderId       String              @unique
   karyawanId    String
+  userId        String?
   tahapProduksi StatusProduksi
-  model         String?        @db.Text
-  tali          String?        @db.Text
-  ukuran        String?        @db.Text
-  jumlah        Decimal        @db.Decimal(10, 2)
-  catatan       String?        @db.Text
+  model         String?             @db.Text
+  tali          String?             @db.Text
+  ukuran        String?             @db.Text
+  jumlah        Decimal             @db.Decimal(10, 2)
+  catatan       String?             @db.Text
   tanggalSetor  DateTime?
-  accCetak      Boolean        @default(false)
+  accCetak      Boolean             @default(false)
   accCetakAt    DateTime?
-  accCetakOleh  String?        @db.Text
-  statusSPK     StatusSPK      @default(DRAFT)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  order       Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  karyawan    Karyawan            @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
-  user        User?               @relation(fields: [userId], references: [id])
-  userId      String?
-  pengeluaran PengeluaranBarang[]
+  accCetakOleh  String?             @db.Text
+  statusSPK     StatusSPK           @default(DRAFT)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  order         Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  karyawan      Karyawan            @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
+  user          User?               @relation(fields: [userId], references: [id])
+  pengeluaran   PengeluaranBarang[]
 
   @@index([karyawanId])
   @@index([tahapProduksi])
@@ -357,10 +401,9 @@ model PengeluaranBarang {
   addedById  String?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
-
-  spk     SPK?         @relation(fields: [spkId], references: [id], onDelete: SetNull)
-  addedBy User?        @relation(fields: [addedById], references: [id], onDelete: SetNull)
-  items   StokKeluar[]
+  spk        SPK?         @relation(fields: [spkId], references: [id], onDelete: SetNull)
+  addedBy    User?        @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  items      StokKeluar[]
 
   @@index([spkId])
   @@index([addedById])
@@ -368,57 +411,235 @@ model PengeluaranBarang {
   @@map("pengeluaran_barang")
 }
 
-model StokKeluar {
+// ============================================================
+// FINANCE — PEMBAYARAN (PENDAPATAN)
+// ============================================================
+
+model Payment {
+  id               String           @id
+  orderId          String
+  userId           String?
+  nominal          Decimal          @db.Decimal(12, 2)
+  metodePembayaran MetodePembayaran @default(TUNAI)
+  keterangan       String?          @db.Text
+  tanggal          DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  order            Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Relasi ke jurnal — satu payment menghasilkan 2 baris jurnal
+  jurnalUmum       JurnalUmum[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([tanggal])
+  @@map("payment")
+}
+
+// ============================================================
+// FINANCE — BEBAN / BIAYA (PENGELUARAN)
+// ============================================================
+
+model CostCategory {
+  id         String   @id
+  nama       String   @db.Text
+  jenisBeban String   @db.Text // "HPP" | "Marketing" | "Gaji" | "Administrasi & Umum"
+  // Relasi ke Akun (Buku Besar) untuk Auto-Journal
+  akunId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  costs      Cost[]
+  akun       Akun?    @relation(fields: [akunId], references: [id], onDelete: SetNull)
+
+  @@index([akunId])
+  @@index([nama(length: 191)])
+  @@map("cost_category")
+}
+
+model Cost {
+  id             String       @id
+  costCategoryId String
+  userId         String?
+  nama           String       @db.Text
+  nominal        Decimal      @db.Decimal(12, 2)
+  keterangan     String?      @db.Text
+  buktiNota      String?      @db.Text
+  tanggal        DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  costCategory   CostCategory @relation(fields: [costCategoryId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Relasi ke jurnal — satu cost menghasilkan 2 baris jurnal
+  jurnalUmum     JurnalUmum[]
+
+  @@index([costCategoryId])
+  @@index([userId])
+  @@index([tanggal])
+  @@map("cost")
+}
+
+// ============================================================
+// FINANCE — CHART OF ACCOUNT (AKUN)
+// ============================================================
+
+model Akun {
+  id             String          @id
+  kodeAkun       String          @unique @db.VarChar(20) // "1-001", "2-001", "4-001"
+  namaAkun       String          @db.Text
+  // Kelompok akun sesuai Excel: "Aktiva Lancar" | "Kewajiban" | "Modal" | "Pendapatan" | "Beban"
+  kelompok       KelompokAkun
+  // Posisi normal di neraca
+  posisiNormal   PosisiNormal
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  // Semua baris jurnal yang menggunakan akun ini
+  jurnalDebet    JurnalUmum[]    @relation("JurnalDebet")
+  jurnalKredit   JurnalUmum[]    @relation("JurnalKredit")
+  kasBanks       KasBank[]
+  costCategories CostCategory[]
+  jenisTabungans JenisTabungan[]
+
+  @@index([kodeAkun])
+  @@index([kelompok])
+  @@map("akun")
+}
+
+// ============================================================
+// FINANCE — JURNAL UMUM (PUSAT PENCATATAN)
+// ============================================================
+
+model JurnalUmum {
+  id           String       @id
+  ref          String       @db.VarChar(30) // "J-PAY-001" | "J-CST-001" | "J-MAN-001"
+  tanggal      DateTime
+  keterangan   String       @db.Text
+  // Dua akun: debet dan kredit (double-entry)
+  akunDebetId  String
+  akunKreditId String
+  debet        Decimal      @db.Decimal(12, 2)
+  kredit       Decimal      @db.Decimal(12, 2)
+  bulan        Int // 1–12
+  tahun        Int // 2025, 2026, ...
+  // Sumber pencatatan: dari mana jurnal ini berasal
+  sumber       SumberJurnal @default(MANUAL)
+  // FK opsional ke sumber transaksi nyata
+  paymentId    String?
+  costId       String?
+  tabunganId   String?
+  // Divisi / Cost Center
+  divisi       Divisi       @default(HQ)
+  createdById  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  akunDebet  Akun      @relation("JurnalDebet", fields: [akunDebetId], references: [id], onDelete: Restrict)
+  akunKredit Akun      @relation("JurnalKredit", fields: [akunKreditId], references: [id], onDelete: Restrict)
+  payment    Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  cost       Cost?     @relation(fields: [costId], references: [id], onDelete: SetNull)
+  tabungan   Tabungan? @relation(fields: [tabunganId], references: [id], onDelete: SetNull)
+  createdBy  User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tanggal])
+  @@index([bulan, tahun])
+  @@index([sumber])
+  @@index([paymentId])
+  @@index([costId])
+  @@index([tabunganId])
+  @@index([akunDebetId])
+  @@index([akunKreditId])
+  @@map("jurnal_umum")
+}
+
+// ============================================================
+// FINANCE — TABUNGAN
+// ============================================================
+
+model JenisTabungan {
+  id         String     @id
+  nama       String     @db.Text // "Tabungan Kas" | "THR" | "CSR" | "Piknik" | dll
+  keterangan String?    @db.Text
+  // Relasi ke Akun Buku Besar untuk pencatatan Jurnal
+  akunId     String?
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  tabungan   Tabungan[]
+  akun       Akun?      @relation(fields: [akunId], references: [id], onDelete: SetNull)
+
+  @@index([akunId])
+  @@index([nama(length: 191)])
+  @@map("jenis_tabungan")
+}
+
+model Tabungan {
+  id              String        @id
+  jenisTabunganId String
+  userId          String?
+  nominal         Decimal       @db.Decimal(12, 2)
+  bulan           Int // 1–12
+  tahun           Int
+  keterangan      String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  jenisTabungan   JenisTabungan @relation(fields: [jenisTabunganId], references: [id], onDelete: Restrict)
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Relasi ke jurnal — tabungan membentuk jurnal penyisihan
+  jurnalUmum      JurnalUmum[]
+
+  @@unique([jenisTabunganId, bulan, tahun]) // satu jenis tabungan, satu nominal per bulan
+  @@index([bulan, tahun])
+  @@index([jenisTabunganId])
+  @@map("tabungan")
+}
+
+// ============================================================
+// FINANCE — KAS BANK (REKENING)
+// ============================================================
+
+model KasBank {
   id            String   @id
-  pengeluaranId String
-  bahanBakuId   String
-  jumlah        Decimal  @db.Decimal(10, 2)
+  namaRekening  String   @db.Text // "BCA - 1234567890" | "Uang Cash Kasir"
+  jenisRekening String   @db.VarChar(20) // "BANK" | "CASH" | "EWALLET"
+  nomorRekening String?  @db.VarChar(50)
+  saldoAwal     Decimal  @default(0) @db.Decimal(14, 2)
+  saldoSaatIni  Decimal  @default(0) @db.Decimal(14, 2)
+  // Relasi ke Akun Buku Besar (agar selaras dengan saldo Neraca)
+  akunId        String?
+  isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  akun          Akun?    @relation(fields: [akunId], references: [id], onDelete: SetNull)
 
-  pengeluaran PengeluaranBarang @relation(fields: [pengeluaranId], references: [id], onDelete: Cascade)
-  bahanBaku   BahanBaku         @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
-
-  @@index([pengeluaranId])
-  @@index([bahanBakuId])
-  @@map("stok_keluar")
+  @@index([akunId])
+  @@index([jenisRekening])
+  @@map("kas_bank")
 }
 
-model StokOpname {
-  id         String           @id
-  tanggal    DateTime         @default(now())
-  keterangan String?          @db.Text
-  addedById  String?
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+// ============================================================
+// FINANCE — TARGET / ANGGARAN (OPSIONAL)
+// ============================================================
 
-  addedBy User?            @relation(fields: [addedById], references: [id], onDelete: SetNull)
-  items   StokOpnameItem[]
+model BudgetTarget {
+  id         String   @id
+  nama       String   @db.Text // "Target Pendapatan" | "Target Margin"
+  tipe       String   @db.VarChar(30) // "PENDAPATAN" | "MARGIN" | "BEBAN"
+  nominal    Decimal  @db.Decimal(14, 2)
+  bulan      Int
+  tahun      Int
+  keterangan String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@index([addedById])
-  @@index([tanggal])
-  @@map("stok_opname")
+  @@unique([tipe, bulan, tahun])
+  @@index([bulan, tahun])
+  @@map("budget_target")
 }
 
-model StokOpnameItem {
-  id          String   @id
-  opnameId    String
-  bahanBakuId String
-  stokSistem  Decimal  @db.Decimal(10, 2)
-  stokFisik   Decimal  @db.Decimal(10, 2)
-  selisih     Decimal  @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ============================================================
+// ENUMS — EXISTING
+// ============================================================
 
-  opname    StokOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
-  bahanBaku BahanBaku  @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
-
-  @@index([opnameId])
-  @@index([bahanBakuId])
-  @@map("stok_opname_item")
-}
-
-// Enums
 enum StatusSPK {
   DRAFT
   AKTIF
@@ -460,4 +681,39 @@ enum MetodePembayaran {
   QRIS
   KREDIT
   LAINNYA
+}
+
+// ============================================================
+// ENUMS — FINANCE (BARU)
+// ============================================================
+
+enum KelompokAkun {
+  AKTIVA_LANCAR // Kas, Piutang, Tabungan
+  AKTIVA_TETAP // Mesin, Kendaraan, Gedung
+  KEWAJIBAN // Hutang Usaha, Hutang Bank
+  MODAL // Modal Awal, Prive, Laba
+  PENDAPATAN // Pendapatan Konveksi, Printing, Textile
+  BEBAN_HPP // HPP, Gaji Borongan
+  BEBAN_MARKETING // Iklan, ADS, Marketplace
+  BEBAN_GAJI // Gaji Karyawan, CEO, THR
+  BEBAN_ADMINISTRASI // Listrik, Internet, ATK, BBM
+}
+
+enum Divisi {
+  KONVEKSI
+  PRINTING
+  TEXTILE
+  HQ
+}
+
+enum PosisiNormal {
+  DEBET // Aktiva & Beban — bertambah di sisi Debet
+  KREDIT // Kewajiban, Modal & Pendapatan — bertambah di sisi Kredit
+}
+
+enum SumberJurnal {
+  PAYMENT // otomatis dari tabel Payment (pendapatan masuk)
+  COST // otomatis dari tabel Cost (pengeluaran)
+  TABUNGAN // otomatis dari alokasi tabungan bulanan
+  MANUAL // diinput manual oleh admin (koreksi, penyesuaian, dll)
 }

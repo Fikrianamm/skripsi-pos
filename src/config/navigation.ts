@@ -7,6 +7,7 @@ import {
   Shield,
   Settings,
   ShoppingBag,
+  TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { RoleKey } from "@/config/roles";
@@ -117,6 +118,63 @@ export const NAV_ITEMS: NavGroup[] = [
           {
             title: "Laporan Produksi",
             url: "/reports/production",
+          },
+          {
+            title: "Laporan Laba Rugi",
+            url: "/reports/finance/laba-rugi",
+          },
+          {
+            title: "Laporan Neraca",
+            url: "/reports/finance/neraca",
+          },
+          {
+            title: "Buku Besar / Jurnal",
+            url: "/reports/finance/jurnal",
+          },
+          {
+            title: "Laporan Tabungan",
+            url: "/reports/finance/tabungan",
+          },
+          {
+            title: "Laporan Beban Kas",
+            url: "/reports/finance/cost",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Keuangan",
+    items: [
+      {
+        title: "Keuangan",
+        url: "#",
+        icon: TrendingUp,
+        roles: ["admin"],
+        items: [
+          {
+            title: "Dashboard Keuangan",
+            url: "/finance/dashboard",
+          },
+          {
+            title: "Jurnal Umum",
+            url: "/finance/jurnal",
+          },
+          {
+            title: "Pengeluaran / Beban",
+            url: "/finance/cost",
+          },
+          {
+            title: "Tabungan",
+            url: "/finance/tabungan",
+          },
+          {
+            title: "Manajemen Akun (CoA)",
+            url: "/finance/akun",
+          },
+          {
+            title: "Piutang",
+            url: "/finance/piutang",
           },
         ],
       },
