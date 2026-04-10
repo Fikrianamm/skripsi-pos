@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -76,16 +77,27 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (!kasBank || !kasBank.akunId)
       return NextResponse.json({ error: "Rekening Kas/Bank tidak ditemukan atau akunId tidak di set." }, { status: 400 });
 
-    const pendapatanKasirAkun = await prisma.akun.findUnique({ where: { kodeAkun: "4-001" } });
-    if (!pendapatanKasirAkun)
-      return NextResponse.json({ error: "Akun Pendapatan Penjualan (4-001) tidak ditemukan." }, { status: 500 });
+    const piutangAkun = await prisma.akun.findUnique({ where: { kodeAkun: "1-003" } });
+    if (!piutangAkun)
+      return NextResponse.json({ error: "Akun Piutang Usaha (1-003) tidak ditemukan." }, { status: 500 });
 
     const sudahDibayar = order.payments.reduce(
       (s: number, p: { nominal: unknown }) => s + Number(p.nominal),
       0
     );
     const grandTotal = Number(order.grandTotal);
+    const sisaTagihan = Math.max(0, grandTotal - sudahDibayar);
     const newTotal = sudahDibayar + Number(nominal);
+
+    // Guard: tolak jika nominal melebihi sisa tagihan
+    if (Number(nominal) > sisaTagihan) {
+      return NextResponse.json(
+        {
+          error: `Nominal pembayaran (${Number(nominal).toLocaleString("id-ID")}) melebihi sisa tagihan (${sisaTagihan.toLocaleString("id-ID")}). Silakan sesuaikan nominal.`,
+        },
+        { status: 400 },
+      );
+    }
 
     // Determine new statusPembayaran
     let newStatus: "BELUM_BAYAR" | "DP" | "LUNAS" = "BELUM_BAYAR";
@@ -115,11 +127,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         data: { statusPembayaran: newStatus },
       });
 
-      // 3. Update KasBank Balance
-      await tx.kasBank.update({
-        where: { id: kasBankId },
-        data: { saldoSaatIni: { increment: Number(nominal) } },
-      });
+      // 3. (Dihapus) Tidak perlu update saldo KasBank manual, karena diambil otomatis dari JurnalUmum
 
       // 4. Merekam Jurnal UMUM (Double-Entry)
       //    Debet = Akun Kas/Bank, Kredit = Akun Pendapatan
@@ -128,10 +136,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         tanggal: realTanggal,
         keterangan: `Pembayaran Order #${id.slice(0, 8)} - ${keterangan || "Tanpa Keterangan"}`,
         akunDebetId: kasBank.akunId!,
-        akunKreditId: pendapatanKasirAkun.id,
+        akunKreditId: piutangAkun.id,
         nominal: Number(nominal),
-        sumber: "PAYMENT" as any,
-        divisi: "HQ" as any, // pukul rata masuk divisi HQ sesuai konfirmasi user
         paymentId: paymentId,
         createdById: session.user.id,
       }, tx as any);

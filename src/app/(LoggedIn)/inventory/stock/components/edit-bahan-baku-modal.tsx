@@ -21,6 +21,7 @@ import { BahanBaku, Unit } from "@/types/types";
 import { Select, SelectItem } from "@heroui/react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/func";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 const schema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
@@ -74,6 +75,7 @@ export default function EditBahanBakuModal({
   }, [bahanBaku, form]);
 
   const isActiveValue = useWatch({ control: form.control, name: "isActive" });
+  const watchedMinStok = useWatch({ control: form.control, name: "minStok" });
 
   async function onSubmit(data: FormData) {
     setGlobalError("");
@@ -155,13 +157,15 @@ export default function EditBahanBakuModal({
                     </Select>
                   )}
                 />
-                <Input
-                  type="number"
+                <FormattedNumberInput
                   label="Minimum Stok"
                   placeholder="Opsional"
-                  min={0}
+                  value={watchedMinStok ? Number(watchedMinStok) : 0}
+                  onChange={(v) => {
+                    const n = Number(v);
+                    form.setValue("minStok", n > 0 ? String(n) : "");
+                  }}
                   description="Indikator stok menipis"
-                  {...form.register("minStok")}
                   isDisabled={form.formState.isSubmitting}
                 />
                 <Textarea

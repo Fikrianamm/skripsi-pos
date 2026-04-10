@@ -276,7 +276,25 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 2. Jika user membuat pesanan + langsung bayar (DP / Lunas)
+      // 2. Jurnal Piutang Usaha saat pesanan dibuat (berlaku semua status)
+      //    Debet = Piutang Usaha (1-003), Kredit = Pendapatan (4-001)
+      const piutangAkun    = await tx.akun.findUnique({ where: { kodeAkun: "1-003" } });
+      const pendapatanAkun = await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
+
+      if (piutangAkun && pendapatanAkun) {
+        await createJurnalDoubleEntry({
+          ref:          `ORD-${orderId.slice(0, 5)}`,
+          tanggal:      new Date(),
+          keterangan:   `Piutang Order #${nomorOrder} - ${customer.nama}`,
+          akunDebetId:  piutangAkun.id,
+          akunKreditId: pendapatanAkun.id,
+          nominal:      Number(grandTotal),
+          createdById:  session.user.id,
+        }, tx as any);
+      }
+
+      // 3. Jika user membuat pesanan + langsung bayar (DP / Lunas)
+      //    Catat juga jurnal pembayaran: Debet Kas/Bank, Kredit Piutang Usaha
       if ((statusPembayaran === "DP" || statusPembayaran === "LUNAS") && kasBankId) {
         const nominal = Number(nominalBayar);
         const paymentId = crypto.randomUUID();
@@ -300,29 +318,22 @@ export async function POST(request: NextRequest) {
         if (!kasBank || !kasBank.akunId) {
           throw new Error("Rekening Kas/Bank tujuan tidak valid.");
         }
+        
+        // Note: SaldoKasBank via Jurnal Umum
 
-        const pendapatanKasirAkun = await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
-        if (!pendapatanKasirAkun) {
-          throw new Error("Akun Pendapatan Penjualan (4-001) tidak ditemukan.");
+        // Debet = Kas/Bank, Kredit = Piutang Usaha (mengurangi piutang)
+        if (piutangAkun) {
+          await createJurnalDoubleEntry({
+            ref:          `PYM-${orderId.slice(0, 5)}`,
+            tanggal:      new Date(),
+            keterangan:   `Pembayaran Awal Order #${nomorOrder}`,
+            akunDebetId:  kasBank.akunId!,
+            akunKreditId: piutangAkun.id,
+            nominal:      nominal,
+            paymentId:    paymentId,
+            createdById:  session.user.id,
+          }, tx as any);
         }
-
-        await tx.kasBank.update({
-          where: { id: kasBankId },
-          data: { saldoSaatIni: { increment: nominal } },
-        });
-
-        await createJurnalDoubleEntry({
-          ref: `PYM-${orderId.slice(0, 5)}`,
-          tanggal: new Date(),
-          keterangan: `Pembayaran Awal Order #${orderId.slice(0, 8)}`,
-          akunDebetId: kasBank.akunId!,
-          akunKreditId: pendapatanKasirAkun.id,
-          nominal: nominal,
-          sumber: "PAYMENT" as any,
-          divisi: "HQ" as any,
-          paymentId: paymentId,
-          createdById: session.user.id,
-        }, tx as any);
       }
 
       return newOrder;

@@ -21,7 +21,8 @@ import { z } from "zod";
 import { ArrowDownToLine, Loader2 } from "lucide-react";
 import { BahanBaku } from "@/types/types";
 import useSWR from "swr";
-import { fetcher } from "@/lib/func";
+import { fetcher, parseRibuan } from "@/lib/func";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 const schema = z.object({
   jumlah: z.string().min(1, "Jumlah wajib diisi"),
@@ -57,6 +58,7 @@ export default function TambahStokMasukModal({
 
   const [globalError, setGlobalError] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [displayHargaBeli, setDisplayHargaBeli] = useState(0);
 
   const { data: supplierData } = useSWR(
     isOpen ? `/api/admin/supplier?all=true&isActive=true` : null,
@@ -92,6 +94,7 @@ export default function TambahStokMasukModal({
       tanggal: today,
       keterangan: "",
     });
+    setDisplayHargaBeli(0);
     setFile(null);
     setGlobalError("");
   }
@@ -107,7 +110,9 @@ export default function TambahStokMasukModal({
       const formData = new FormData();
       formData.append("jumlah", jumlahNum.toString());
       if (data.supplierId) formData.append("supplierId", data.supplierId);
-      if (data.hargaBeli) formData.append("hargaBeli", data.hargaBeli);
+      // hargaBeli stored as formatted ribuan string, parse it
+      const hargaNum = parseRibuan(data.hargaBeli || "");
+      if (hargaNum > 0) formData.append("hargaBeli", String(hargaNum));
       if (data.nomorFaktur) formData.append("nomorFaktur", data.nomorFaktur);
       formData.append("tanggal", data.tanggal);
       if (data.keterangan) formData.append("keterangan", data.keterangan);
@@ -212,17 +217,20 @@ export default function TambahStokMasukModal({
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <Input
-                            type="number"
+                          <FormattedNumberInput
                             label={`Harga Beli / ${bahanBaku.unit?.nama || "Satuan"}`}
                             placeholder="Opsional"
-                            min={0}
+                            value={displayHargaBeli}
+                            onChange={(v) => {
+                              const num = Number(v);
+                              setDisplayHargaBeli(num);
+                              form.setValue("hargaBeli", String(num));
+                            }}
                             startContent={
                               <span className="text-foreground-400 text-sm">
                                 Rp
                               </span>
                             }
-                            {...form.register("hargaBeli")}
                             isDisabled={form.formState.isSubmitting}
                           />
                           <Input

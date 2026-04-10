@@ -35,7 +35,6 @@ model User {
   payments          Payment[]
   costs             Cost[]
   jurnalUmum        JurnalUmum[]
-  tabungan          Tabungan[]
 
   @@map("user")
 }
@@ -210,6 +209,7 @@ model PenerimaanBarang {
   supplier     Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   addedBy      User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
   items        StokMasuk[]
+  jurnalUmums  JurnalUmum[]
 
   @@index([supplierId])
   @@index([addedById])
@@ -440,25 +440,9 @@ model Payment {
 // FINANCE — BEBAN / BIAYA (PENGELUARAN)
 // ============================================================
 
-model CostCategory {
-  id         String   @id
-  nama       String   @db.Text
-  jenisBeban String   @db.Text // "HPP" | "Marketing" | "Gaji" | "Administrasi & Umum"
-  // Relasi ke Akun (Buku Besar) untuk Auto-Journal
-  akunId     String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  costs      Cost[]
-  akun       Akun?    @relation(fields: [akunId], references: [id], onDelete: SetNull)
-
-  @@index([akunId])
-  @@index([nama(length: 191)])
-  @@map("cost_category")
-}
-
 model Cost {
   id             String       @id
-  costCategoryId String
+  akunId         String
   userId         String?
   nama           String       @db.Text
   nominal        Decimal      @db.Decimal(12, 2)
@@ -467,12 +451,11 @@ model Cost {
   tanggal        DateTime     @default(now())
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  costCategory   CostCategory @relation(fields: [costCategoryId], references: [id], onDelete: Cascade)
+  akun           Akun         @relation(fields: [akunId], references: [id], onDelete: Cascade)
   user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  // Relasi ke jurnal — satu cost menghasilkan 2 baris jurnal
   jurnalUmum     JurnalUmum[]
 
-  @@index([costCategoryId])
+  @@index([akunId])
   @@index([userId])
   @@index([tanggal])
   @@map("cost")
@@ -487,7 +470,7 @@ model Akun {
   kodeAkun       String          @unique @db.VarChar(20) // "1-001", "2-001", "4-001"
   namaAkun       String          @db.Text
   // Kelompok akun sesuai Excel: "Aktiva Lancar" | "Kewajiban" | "Modal" | "Pendapatan" | "Beban"
-  kelompok       KelompokAkun
+  kelompok       String
   // Posisi normal di neraca
   posisiNormal   PosisiNormal
   isActive       Boolean         @default(true)
@@ -497,8 +480,7 @@ model Akun {
   jurnalDebet    JurnalUmum[]    @relation("JurnalDebet")
   jurnalKredit   JurnalUmum[]    @relation("JurnalKredit")
   kasBanks       KasBank[]
-  costCategories CostCategory[]
-  jenisTabungans JenisTabungan[]
+  costs          Cost[]
 
   @@index([kodeAkun])
   @@index([kelompok])
@@ -510,88 +492,36 @@ model Akun {
 // ============================================================
 
 model JurnalUmum {
-  id           String       @id
-  ref          String       @db.VarChar(30) // "J-PAY-001" | "J-CST-001" | "J-MAN-001"
+  id           String    @id
+  ref          String    @db.VarChar(30)
   tanggal      DateTime
-  keterangan   String       @db.Text
-  // Dua akun: debet dan kredit (double-entry)
+  keterangan   String    @db.Text
   akunDebetId  String
   akunKreditId String
-  debet        Decimal      @db.Decimal(12, 2)
-  kredit       Decimal      @db.Decimal(12, 2)
-  bulan        Int // 1–12
-  tahun        Int // 2025, 2026, ...
-  // Sumber pencatatan: dari mana jurnal ini berasal
-  sumber       SumberJurnal @default(MANUAL)
-  // FK opsional ke sumber transaksi nyata
-  paymentId    String?
-  costId       String?
-  tabunganId   String?
-  // Divisi / Cost Center
-  divisi       Divisi       @default(HQ)
+  nominal      Decimal   @db.Decimal(12, 2)
+  paymentId    String?   @unique
+  costId       String?   @unique
+  penerimaanId String?   @unique
   createdById  String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  akunDebet  Akun      @relation("JurnalDebet", fields: [akunDebetId], references: [id], onDelete: Restrict)
-  akunKredit Akun      @relation("JurnalKredit", fields: [akunKreditId], references: [id], onDelete: Restrict)
-  payment    Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  cost       Cost?     @relation(fields: [costId], references: [id], onDelete: SetNull)
-  tabungan   Tabungan? @relation(fields: [tabunganId], references: [id], onDelete: SetNull)
-  createdBy  User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  akunDebet  Akun             @relation("JurnalDebet",  fields: [akunDebetId],  references: [id], onDelete: Restrict)
+  akunKredit Akun             @relation("JurnalKredit", fields: [akunKreditId], references: [id], onDelete: Restrict)
+  payment    Payment?         @relation(fields: [paymentId],    references: [id], onDelete: SetNull)
+  cost       Cost?            @relation(fields: [costId],       references: [id], onDelete: SetNull)
+  penerimaan PenerimaanBarang? @relation(fields: [penerimaanId], references: [id], onDelete: SetNull)
+  createdBy  User?            @relation(fields: [createdById],  references: [id], onDelete: SetNull)
 
   @@index([tanggal])
-  @@index([bulan, tahun])
-  @@index([sumber])
   @@index([paymentId])
   @@index([costId])
-  @@index([tabunganId])
   @@index([akunDebetId])
   @@index([akunKreditId])
   @@map("jurnal_umum")
 }
 
-// ============================================================
-// FINANCE — TABUNGAN
-// ============================================================
 
-model JenisTabungan {
-  id         String     @id
-  nama       String     @db.Text // "Tabungan Kas" | "THR" | "CSR" | "Piknik" | dll
-  keterangan String?    @db.Text
-  // Relasi ke Akun Buku Besar untuk pencatatan Jurnal
-  akunId     String?
-  isActive   Boolean    @default(true)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  tabungan   Tabungan[]
-  akun       Akun?      @relation(fields: [akunId], references: [id], onDelete: SetNull)
-
-  @@index([akunId])
-  @@index([nama(length: 191)])
-  @@map("jenis_tabungan")
-}
-
-model Tabungan {
-  id              String        @id
-  jenisTabunganId String
-  userId          String?
-  nominal         Decimal       @db.Decimal(12, 2)
-  bulan           Int // 1–12
-  tahun           Int
-  keterangan      String?       @db.Text
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  jenisTabungan   JenisTabungan @relation(fields: [jenisTabunganId], references: [id], onDelete: Restrict)
-  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  // Relasi ke jurnal — tabungan membentuk jurnal penyisihan
-  jurnalUmum      JurnalUmum[]
-
-  @@unique([jenisTabunganId, bulan, tahun]) // satu jenis tabungan, satu nominal per bulan
-  @@index([bulan, tahun])
-  @@index([jenisTabunganId])
-  @@map("tabungan")
-}
 
 // ============================================================
 // FINANCE — KAS BANK (REKENING)
@@ -602,8 +532,6 @@ model KasBank {
   namaRekening  String   @db.Text // "BCA - 1234567890" | "Uang Cash Kasir"
   jenisRekening String   @db.VarChar(20) // "BANK" | "CASH" | "EWALLET"
   nomorRekening String?  @db.VarChar(50)
-  saldoAwal     Decimal  @default(0) @db.Decimal(14, 2)
-  saldoSaatIni  Decimal  @default(0) @db.Decimal(14, 2)
   // Relasi ke Akun Buku Besar (agar selaras dengan saldo Neraca)
   akunId        String?
   isActive      Boolean  @default(true)
@@ -687,33 +615,7 @@ enum MetodePembayaran {
 // ENUMS — FINANCE (BARU)
 // ============================================================
 
-enum KelompokAkun {
-  AKTIVA_LANCAR // Kas, Piutang, Tabungan
-  AKTIVA_TETAP // Mesin, Kendaraan, Gedung
-  KEWAJIBAN // Hutang Usaha, Hutang Bank
-  MODAL // Modal Awal, Prive, Laba
-  PENDAPATAN // Pendapatan Konveksi, Printing, Textile
-  BEBAN_HPP // HPP, Gaji Borongan
-  BEBAN_MARKETING // Iklan, ADS, Marketplace
-  BEBAN_GAJI // Gaji Karyawan, CEO, THR
-  BEBAN_ADMINISTRASI // Listrik, Internet, ATK, BBM
-}
-
-enum Divisi {
-  KONVEKSI
-  PRINTING
-  TEXTILE
-  HQ
-}
-
 enum PosisiNormal {
-  DEBET // Aktiva & Beban — bertambah di sisi Debet
-  KREDIT // Kewajiban, Modal & Pendapatan — bertambah di sisi Kredit
-}
-
-enum SumberJurnal {
-  PAYMENT // otomatis dari tabel Payment (pendapatan masuk)
-  COST // otomatis dari tabel Cost (pengeluaran)
-  TABUNGAN // otomatis dari alokasi tabungan bulanan
-  MANUAL // diinput manual oleh admin (koreksi, penyesuaian, dll)
+  DEBET
+  KREDIT
 }

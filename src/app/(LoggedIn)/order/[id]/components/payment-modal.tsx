@@ -55,7 +55,8 @@ export function PaymentModal({
       return;
     }
     if (nominal > sisaTagihan) {
-        if (!confirm(`Telah membayar Lunas lebih dari sisa tagihan (Sisa: ${sisaTagihan}). Lanjutkan?`)) return;
+      addToast({ title: "Validasi", description: `Nominal tidak boleh melebihi sisa tagihan (Rp ${sisaTagihan.toLocaleString("id-ID")})`, color: "warning" });
+      return;
     }
 
     setIsLoading(true);
@@ -104,8 +105,13 @@ export function PaymentModal({
               <FormattedNumberInput
                 label="Nominal Pembayaran"
                 value={nominal}
-                onChange={(val) => setNominal(Number(val))}
+                onChange={(val) => {
+                  const v = Number(val);
+                  setNominal(v);
+                }}
                 isRequired
+                isInvalid={nominal > sisaTagihan}
+                errorMessage={nominal > sisaTagihan ? `Maksimal Rp ${sisaTagihan.toLocaleString("id-ID")}` : ""}
               />
 
               <div className="grid grid-cols-2 gap-3">

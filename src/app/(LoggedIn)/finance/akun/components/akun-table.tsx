@@ -23,7 +23,7 @@ export function AkunTable({ akuns, isLoading, onEdit }: AkunTableProps) {
       aria-label="Tabel Chart of Accounts"
       isHeaderSticky
       classNames={{
-        base: "max-h-[600px] overflow-scroll",
+        base: "max-h-[600px]",
         wrapper: "border border-default-200 shadow-none",
       }}
     >
@@ -32,7 +32,7 @@ export function AkunTable({ akuns, isLoading, onEdit }: AkunTableProps) {
         <TableColumn>NAMA AKUN</TableColumn>
         <TableColumn>KELOMPOK</TableColumn>
         <TableColumn>POSISI NORMAL</TableColumn>
-        <TableColumn>STATUS</TableColumn>
+        <TableColumn align="center">STATUS</TableColumn>
         <TableColumn align="center">AKSI</TableColumn>
       </TableHeader>
       <TableBody
@@ -63,8 +63,8 @@ export function AkunTable({ akuns, isLoading, onEdit }: AkunTableProps) {
               </Chip>
             </TableCell>
             <TableCell>
-              <Chip size="sm" color={item.isActive ? "success" : "default"} variant="flat">
-                {item.isActive ? "Aktif" : "Nonaktif"}
+              <Chip size="sm" variant="dot" color={item.isActive ? "success" : "danger"}>
+                {item.isActive ? "Aktif" : "Tidak Aktif"}
               </Chip>
             </TableCell>
             <TableCell>

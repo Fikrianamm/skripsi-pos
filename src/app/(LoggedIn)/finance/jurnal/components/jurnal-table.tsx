@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import {
   Table,
   TableHeader,
@@ -6,87 +7,167 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Chip,
+  Button,
+  Tooltip,
+  Spinner,
 } from "@heroui/react";
 import { formatRupiah } from "@/lib/func";
-import { ArrowRight } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+
+export type JurnalItem = {
+  id: string;
+  ref: string;
+  tanggal: string;
+  keterangan: string;
+  nominal: string | number;
+  akunDebet: { kodeAkun: string; namaAkun: string; kelompok: string };
+  akunKredit: { kodeAkun: string; namaAkun: string };
+  akunDebetId: string;
+  akunKreditId: string;
+  createdBy?: { name: string } | null;
+};
 
 interface JurnalTableProps {
-  jurnals: any[];
+  jurnals: JurnalItem[];
   isLoading: boolean;
+  totalNominal: number;
+  onReversal: (item: JurnalItem) => void;
 }
 
-export function JurnalTable({ jurnals, isLoading }: JurnalTableProps) {
+const columns = [
+  { key: "ref",        label: "REF"         },
+  { key: "tanggal",   label: "TANGGAL"     },
+  { key: "keterangan",label: "KETERANGAN"  },
+  { key: "debet",     label: "DEBET AKUN"  },
+  { key: "kredit",    label: "KREDIT AKUN" },
+  { key: "nominal",   label: "NOMINAL"     },
+  { key: "aksi",      label: "AKSI"        },
+];
+
+export function JurnalTable({
+  jurnals,
+  isLoading,
+  totalNominal,
+  onReversal,
+}: JurnalTableProps) {
   return (
     <Table
-      aria-label="Buku Besar / Jurnal Umum"
+      aria-label="Tabel Jurnal Umum"
       isHeaderSticky
       classNames={{
-        base: "max-h-[800px] overflow-scroll",
-        wrapper: "border border-default-200 shadow-none",
+        base: "max-h-[680px]",
+        wrapper: "border border-default-200 shadow-none rounded-xl",
+        th: "text-xs uppercase",
       }}
+      bottomContent={
+        jurnals.length > 0 && !isLoading ? (
+          <div className="flex items-center justify-between px-2 py-2 border-t border-default-200">
+            <span className="text-xs text-default-500">
+              {jurnals.length} entri jurnal
+            </span>
+            <span className="text-sm font-bold text-default-900 tabular-nums">
+              Total: {formatRupiah(totalNominal)}
+            </span>
+          </div>
+        ) : null
+      }
     >
-      <TableHeader>
-        <TableColumn>TANGGAL & REF</TableColumn>
-        <TableColumn>KETERANGAN TRANSAKSI</TableColumn>
-        <TableColumn>PENCATATAN (DEBET {"->"} KREDIT)</TableColumn>
-        <TableColumn>NOMINAL TRANSAKSI</TableColumn>
-        <TableColumn>SUMBER</TableColumn>
+      <TableHeader columns={columns}>
+        {(col) => (
+          <TableColumn
+            key={col.key}
+            align={col.key === "nominal" || col.key === "aksi" ? "end" : "start"}
+          >
+            {col.label}
+          </TableColumn>
+        )}
       </TableHeader>
+
       <TableBody
         items={jurnals}
         isLoading={isLoading}
-        emptyContent={isLoading ? "Memuat buku besar..." : "Belum ada transaksi di jurnal umum."}
+        loadingContent={<Spinner label="Memuat buku besar..." />}
+        emptyContent="Belum ada transaksi pada periode ini."
       >
-        {(item: any) => (
+        {(item) => (
           <TableRow key={item.id}>
+            {/* Ref */}
             <TableCell>
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-semibold">
-                  {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
+              <span className="font-mono text-xs font-semibold text-default-700 whitespace-nowrap">
+                {item.ref}
+              </span>
+            </TableCell>
+
+            {/* Tanggal */}
+            <TableCell>
+              <span className="text-sm text-default-700 whitespace-nowrap">
+                {new Date(item.tanggal).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
+            </TableCell>
+
+            {/* Keterangan */}
+            <TableCell>
+              <div className="flex flex-col max-w-xs">
+                <span className="text-sm text-default-700 line-clamp-2">
+                  {item.keterangan}
                 </span>
-                <span className="text-xs text-default-400 font-mono">{item.ref}</span>
-              </div>
-            </TableCell>
-            
-            <TableCell>
-              <span className="text-sm max-w-sm block truncate" title={item.keterangan}>
-                {item.keterangan}
-              </span>
-            </TableCell>
-
-            <TableCell>
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <div className="flex flex-col text-success-600">
-                  <span className="text-xs opacity-70">DEBET (+)</span>
-                  <span>{item.akunDebet.kodeAkun} - {item.akunDebet.namaAkun}</span>
-                </div>
-                <ArrowRight size={16} className="text-default-300" />
-                <div className="flex flex-col text-danger-600 text-right">
-                  <span className="text-xs opacity-70">KREDIT (-)</span>
-                  <span>{item.akunKredit.kodeAkun} - {item.akunKredit.namaAkun}</span>
-                </div>
-              </div>
-            </TableCell>
-
-            <TableCell>
-              <span className="text-sm font-bold tracking-tight">
-                {formatRupiah(Number(item.debet))}
-              </span>
-            </TableCell>
-
-            <TableCell>
-              <div className="flex flex-col items-start gap-1">
-                <Chip size="sm" variant="flat" color={item.sumber === "MANUAL" ? "warning" : "primary"}>
-                  {item.sumber}
-                </Chip>
                 {item.createdBy?.name && (
-                  <span className="text-[10px] text-default-400">by {item.createdBy.name}</span>
+                  <span className="text-xs text-default-400">
+                    by {item.createdBy.name}
+                  </span>
                 )}
+              </div>
+            </TableCell>
+
+            {/* Debet Akun */}
+            <TableCell>
+              <div className="flex flex-col whitespace-nowrap">
+                <span className="text-sm font-medium text-success-700">
+                  {item.akunDebet.namaAkun}
+                </span>
+                <span className="text-[11px] text-default-400">
+                  {item.akunDebet.kodeAkun}
+                </span>
+              </div>
+            </TableCell>
+
+            {/* Kredit Akun */}
+            <TableCell>
+              <div className="flex flex-col whitespace-nowrap">
+                <span className="text-sm font-medium text-danger-600">
+                  {item.akunKredit.namaAkun}
+                </span>
+                <span className="text-[11px] text-default-400">
+                  {item.akunKredit.kodeAkun}
+                </span>
+              </div>
+            </TableCell>
+
+            {/* Nominal */}
+            <TableCell>
+              <span className="text-sm font-bold tabular-nums text-default-900 whitespace-nowrap">
+                {formatRupiah(Number(item.nominal))}
+              </span>
+            </TableCell>
+
+            {/* Aksi */}
+            <TableCell>
+              <div className="flex items-center justify-end">
+                <Tooltip content="Buat Entri Koreksi (Reversal)" placement="left">
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    color="warning"
+                    onPress={() => onReversal(item)}
+                  >
+                    <RotateCcw size={13} />
+                  </Button>
+                </Tooltip>
               </div>
             </TableCell>
           </TableRow>

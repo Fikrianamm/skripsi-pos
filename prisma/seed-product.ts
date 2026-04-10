@@ -161,7 +161,7 @@ const RAW_PRODUCTS: [string, string, number][] = [
   ["EMILY-25x13x20", "Emily Bag 25x13x20", 4000],
 ];
 
-async function main() {
+export async function seedProduct() {
   console.log("🌱 Seeding categories & units...");
 
   // Upsert kategori
@@ -226,11 +226,3 @@ async function main() {
   console.log(`\n🎉 Seeding selesai! Dibuat: ${created}, Dilewati: ${skipped}`);
 }
 
-main()
-  .catch((e) => {
-    console.error("❌ Seeding failed:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

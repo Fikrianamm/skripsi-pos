@@ -29,34 +29,51 @@
 - [x] Context Menu (Klik Kanan) & Optimasi UX dengan HeroUI
 
 ### Inventory
+
 - [x] Stok Opname, Fungsi: Mengoreksi stok bahan baku yang tidak sesuai dengan fisik.
 - [x] Barang Keluar Produksi, Fungsi: Mengurangi stok bahan baku saat produksi dimulai. Admin menginput kain apa yang keluar dan berapa banyak untuk sebuah SPK (Surat Perintah Kerja).
 - [x] Fix Pagination barang keluar dan stok opname dan search opname berdasarkan keterangan
 
 ### Keuangan & Akuntansi (Finance Core)
+
 - [x] Migrasi Schema Database Finance (Double-Entry Jurnal Umum, KasBank, Tabungan)
-- [x] Integrasi API *Payment* ke Saldo Kas & Jurnal Otomatis
-- [x] Pembuatan API *Cost* (Pengeluaran) terintegrasi Jurnal Otomatis
+- [x] Integrasi API _Payment_ ke Saldo Kas & Jurnal Otomatis
+- [x] Pembuatan API _Cost_ (Pengeluaran) terintegrasi Jurnal Otomatis
 
 ---
 
-## 📝 Todo & Pertimbangan Fitur (Selanjutnya)
-
-### Transaksi & Keuangan (Frontend UI)
-
+- [x] **Question** — Sebenarnya Payment, Cost, dan CostCategory apakah perlu atau cukup ambil dari jurnal umum saja? YA
+- [x] **Halaman Tabungan** — hapus fitur tabungan, karena sudah ada di jurnal umum.
+- [x] **Halaman Pengeluaran** — menampilkan pengeluaran berdasarkan tanggal/tahun dan kategori.
+- [x] **Halaman Piutang** — penambahan fitur pembayaran dan status lunas.
+- [X] **Halaman stok** — penambahan auto menambahkan jurnal umum ketika input barang masuk.
+- [X] **Halaman Input Pesanan** — tambahkan auto input ke jurnal umum ketika input pesanan dengan kredit piutang usaha dan debit kas bank.
+- [X] **Halaman Pesanan** — bug ketika pelunasan melebihi sisa tagihan masih bisa input lebih.
+- [x] **Halaman Input Pembayaran tagihan** — tambahkan validasi agar tidak bisa input nilai lebih dari sisa tagihan yang harus dibayar.
+- [x] **Halaman Input Number** — ubah semua input number display value auto format ke format ribuan (contoh: 1000000 -> 1.000.000).
+- [x] **Halaman Laporan Neraca** — Recreate UI.
+- [x] **Halaman Laporan Laba-rugi** — Recreate UI.
+- [x] **Halaman Laporan Tabungan** — Recreate UI.
+- [X] **Update Schema** — refactor field jurnalumum, hapus tabel tabungan.
 - [x] **Refaktor UI Kasir (Payment)** — Menambahkan dropdown pilihan `KasBank` saat Checkout/Bayar Order, wajib diisi agar masuk ke akun yang benar.
 - [x] **Manajemen Pengeluaran (Cost)** — Membuat UI untuk merekam biaya operasional, memanggil API Cost yang sudah ada.
-- [ ] **Manajemen Tabungan** — Membuat UI untuk memindahkan Laba ke Jenis Tabungan khusus.
+- [X] **Hutang / Piutang** — Sistem untuk melacak order dengan status `DP` / `BELUM_BAYAR`, serta tagihan ke supplier.
+
+## 📝 Todo & Pertimbangan Fitur (Selanjutnya)
+
+
 - [ ] **Detail Riwayat Customer** — Melihat riwayat belanja, total pesanan, pesanan pertama, dan data retensi pelanggan.
 - [ ] **Pengurangan Stok Otomatis (Finished Goods)** — Sistem untuk mengurangi stok Produk Jadi ketika pesanan diberikan ke customer.
-- [ ] **Hutang / Piutang** — Sistem untuk melacak order dengan status `DP` / `BELUM_BAYAR`, serta tagihan ke supplier.
-
-### Pelaporan (Analytics & Reports)
 
 - [ ] **Halaman Dashboard Utama** — Menampilkan _Summary Cards_ (Penjualan Hari Ini, Total Customer, dll), _Low Stock Alerts_, dan Grafik Pendapatan.
 - [ ] **Laporan Penjualan aktual** — Berdasarkan range tanggal dengan fitur Export.
 - [ ] **Laporan Laba Rugi** — Menautkan Pendapatan (Omzet) dikurangi pengeluaran (Cost) dan Harga Pokok (HPP) produk.
 - [ ] **Pencetakan Bukti Digital** — Generate Invoice POS / Struk order dalam bentuk PDF atau print otomatis.
+
+- [ ] **Halaman Laporan Barang masuk** — Improve UI.
+- [ ] **Halaman Customer** — Improve UI.
+- [ ] **Pendapatan** — pendapatan masing" nilai pendapatan didapat dari input yang mana? dan apakah benar ketika input pesanan membuat jurnal umum yang kredit dari pendapatan konveksi ke debit piutang usaha?.
+- [ ] **Jurnal Umum** — tambahkan warning ketika akun yang ditambahkan ternyata nonaktif
 
 ### Peningkatan Ekstra (Nice-to-Have)
 
@@ -64,6 +81,4 @@
 - [ ] **Halaman Pengaturan Web** — Menyimpan profil bisnis (Logo Toko, Alamat, Info Pajak) untuk lampiran invoice.
 - [ ] **Halaman Sampah** — soft delete untuk semua model.
 - [ ] **Audit Log Activity** — Merekam aksi pengguna (hapus produk, edit laporan) untuk keamanan admin.
-
-- [ ] **Halaman Piutang** — penambahan fitur pembayaran dan status lunas.
 

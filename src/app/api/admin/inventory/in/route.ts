@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadToNeo } from "@/lib/storage";
 import path from "path";
+import { createJurnalDoubleEntry } from "@/lib/finance";
 
 // ── GET /api/admin/inventory/in — List all PenerimaanBarang (Barang Masuk)
 export async function GET(request: NextRequest) {
@@ -171,9 +172,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Execute transactional queries
-    const [penerimaanBarang] = await prisma.$transaction([
-      // 1. Create header
-      prisma.penerimaanBarang.create({
+    const penerimaanBarang = await prisma.$transaction(async (tx) => {
+      // 1. Create header + detail items
+      const penerimaan = await tx.penerimaanBarang.create({
         data: {
           id: penerimaanId,
           nomorFaktur: nomorFaktur || null,
@@ -183,7 +184,6 @@ export async function POST(request: NextRequest) {
           buktiNota: fileUrl,
           totalTagihan,
           addedById: session.user.id,
-          // 2. Create detail items using nested writes
           items: {
             create: parsedItems.map((pi) => ({
               id: pi.id,
@@ -194,18 +194,46 @@ export async function POST(request: NextRequest) {
             })),
           },
         },
-      }),
+      });
 
-      // 3. Update stock for each bahan baku using Prisma updateMany where possible,
-      // or map over each item since Prisma doesn't support bulk updates with arithmetic increments directly easily yet,
-      // we'll run multiple updates concurrently in the transaction array.
-      ...parsedItems.map((pi) =>
-        prisma.bahanBaku.update({
+      // 2. Update stok bahan baku
+      for (const pi of parsedItems) {
+        await tx.bahanBaku.update({
           where: { id: pi.bahanBakuId },
           data: { stok: { increment: pi.jumlah } },
-        }),
-      ),
-    ]);
+        });
+      }
+
+      // 3. Catat Jurnal Umum otomatis (jika total tagihan > 0)
+      //    Debet = HPP / Persediaan Bahan Baku (5-001)
+      //    Kredit = Hutang Usaha (2-001)
+      if (totalTagihan > 0) {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        const [hppAkun, hutangAkun] = await Promise.all([
+          tx.akun.findUnique({ where: { kodeAkun: "5-001" } }),
+          tx.akun.findUnique({ where: { kodeAkun: "2-001" } }),
+        ]);
+
+        if (hppAkun && hutangAkun) {
+          const realTanggal = tanggal ? new Date(tanggal) : new Date();
+          await createJurnalDoubleEntry(
+            {
+              ref:          `INV-${penerimaanId.slice(0, 5)}`,
+              tanggal:      realTanggal,
+              keterangan:   `Penerimaan Barang${nomorFaktur ? ` #${nomorFaktur}` : ""} - Total ${totalTagihan.toLocaleString("id-ID")}`,
+              akunDebetId:  hppAkun.id,
+              akunKreditId: hutangAkun.id,
+              nominal:      totalTagihan,
+              penerimaanId: penerimaanId,
+              createdById:  session.user.id,
+            },
+            tx as any,
+          );
+        }
+      }
+
+      return penerimaan;
+    });
 
     return NextResponse.json(
       { message: "Penerimaan barang berhasil dicatat.", penerimaanBarang },

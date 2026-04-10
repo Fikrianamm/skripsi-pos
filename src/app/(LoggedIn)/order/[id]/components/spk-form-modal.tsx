@@ -19,6 +19,7 @@ import { fetcher } from "@/lib/func";
 import useSWR from "swr";
 import { z } from "zod";
 import { OrderItem } from "./types";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 const spkSchema = z.object({
   karyawanId: z.string().min(1, "Karyawan wajib dipilih"),
@@ -50,6 +51,8 @@ export function SpkFormModal({
   onSuccess,
 }: Props) {
   const [globalError, setGlobalError] = useState("");
+  const totalQty = items.reduce((sum, i) => sum + Number(i.qty), 0);
+  const [displayJumlah, setDisplayJumlah] = useState<number>(totalQty || 1);
 
   const { data: karyawanData } = useSWR(
     "/api/admin/karyawan?isActive=true&limit=100",
@@ -57,8 +60,6 @@ export function SpkFormModal({
   );
   const karyawanList: { id: string; nama: string; posisi: string | null }[] =
     karyawanData?.results ?? [];
-
-  const totalQty = items.reduce((sum, i) => sum + Number(i.qty), 0);
 
   const form = useForm<SpkFormData>({
     resolver: zodResolver(spkSchema),
@@ -74,7 +75,9 @@ export function SpkFormModal({
   });
 
   useEffect(() => {
-    if (totalQty > 0) form.setValue("jumlah", String(totalQty));
+    if (totalQty > 0) {
+      form.setValue("jumlah", String(totalQty));
+    }
   }, [totalQty, form]);
 
   async function onSubmit(data: SpkFormData) {
@@ -193,14 +196,18 @@ export function SpkFormModal({
                   {...form.register("tali")}
                   isDisabled={form.formState.isSubmitting}
                 />
-                <Input
+                <FormattedNumberInput
                   label="Jumlah"
-                  type="number"
                   isRequired
-                  {...form.register("jumlah")}
-                  isDisabled={form.formState.isSubmitting}
+                  value={displayJumlah}
+                  onChange={(v) => {
+                    const n = Number(v);
+                    setDisplayJumlah(n);
+                    form.setValue("jumlah", String(n), { shouldValidate: true });
+                  }}
                   isInvalid={!!form.formState.errors.jumlah}
                   errorMessage={form.formState.errors.jumlah?.message}
+                  isDisabled={form.formState.isSubmitting}
                 />
               </div>
 

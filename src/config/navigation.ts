@@ -121,23 +121,23 @@ export const NAV_ITEMS: NavGroup[] = [
           },
           {
             title: "Laporan Laba Rugi",
-            url: "/reports/finance/laba-rugi",
+            url: "/reports/laba-rugi",
           },
           {
             title: "Laporan Neraca",
-            url: "/reports/finance/neraca",
-          },
-          {
-            title: "Buku Besar / Jurnal",
-            url: "/reports/finance/jurnal",
+            url: "/reports/neraca",
           },
           {
             title: "Laporan Tabungan",
-            url: "/reports/finance/tabungan",
+            url: "/reports/tabungan",
           },
           {
-            title: "Laporan Beban Kas",
-            url: "/reports/finance/cost",
+            title: "Laporan Pengeluaran",
+            url: "/reports/cost",
+          },
+          {
+            title: "Laporan Piutang",
+            url: "/reports/piutang",
           },
         ],
       },
@@ -161,20 +161,8 @@ export const NAV_ITEMS: NavGroup[] = [
             url: "/finance/jurnal",
           },
           {
-            title: "Pengeluaran / Beban",
-            url: "/finance/cost",
-          },
-          {
-            title: "Tabungan",
-            url: "/finance/tabungan",
-          },
-          {
-            title: "Manajemen Akun (CoA)",
+            title: "Akun",
             url: "/finance/akun",
-          },
-          {
-            title: "Piutang",
-            url: "/finance/piutang",
           },
         ],
       },

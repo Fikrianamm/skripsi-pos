@@ -23,6 +23,7 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/func";
 import { Unit } from "@/types/types";
 import { Controller } from "react-hook-form";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 const schema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
@@ -49,6 +50,8 @@ export default function AddBahanBakuModal({
 }) {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [globalError, setGlobalError] = useState("");
+  const [displayStok, setDisplayStok] = useState<number>(0);
+  const [displayMinStok, setDisplayMinStok] = useState<number>(0);
 
   const { data: unitData } = useSWR(`/api/unit?limit=100`, fetcher);
   const units = unitData?.results ?? [];
@@ -84,6 +87,8 @@ export default function AddBahanBakuModal({
         color: "success",
       });
       form.reset(defaultValues);
+      setDisplayStok(0);
+      setDisplayMinStok(0);
       setGlobalError("");
       onClose();
       onAdded?.();
@@ -109,6 +114,8 @@ export default function AddBahanBakuModal({
           onOpenChange();
           if (!open) {
             form.reset(defaultValues);
+            setDisplayStok(0);
+            setDisplayMinStok(0);
             setGlobalError("");
           }
         }}
@@ -152,21 +159,25 @@ export default function AddBahanBakuModal({
                     )}
                   />
                   <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      type="number"
+                    <FormattedNumberInput
                       label="Stok Awal"
                       placeholder="0"
-                      min={0}
-                      {...form.register("stok")}
+                      value={displayStok}
+                      onChange={(v) => {
+                        setDisplayStok(Number(v));
+                        form.setValue("stok", String(Number(v)));
+                      }}
                       isDisabled={form.formState.isSubmitting}
                     />
-                    <Input
-                      type="number"
+                    <FormattedNumberInput
                       label="Minimum Stok"
                       placeholder="Opsional"
-                      min={0}
+                      value={displayMinStok}
+                      onChange={(v) => {
+                        setDisplayMinStok(Number(v));
+                        form.setValue("minStok", String(Number(v)));
+                      }}
                       description="Indikator stok menipis"
-                      {...form.register("minStok")}
                       isDisabled={form.formState.isSubmitting}
                     />
                   </div>

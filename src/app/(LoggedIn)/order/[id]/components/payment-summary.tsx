@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Card, CardBody, CardHeader, Chip, Divider } from "@heroui/react";

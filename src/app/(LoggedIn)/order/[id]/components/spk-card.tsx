@@ -15,6 +15,7 @@ import { fetcher } from "@/lib/func";
 import useSWR from "swr";
 import { CheckCircle, ClipboardList, Pencil, User, X } from "lucide-react";
 import { SPKDetail } from "./types";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 const editSpkSchema = z.object({
   karyawanId: z.string().min(1, "Karyawan wajib dipilih"),
@@ -60,6 +61,9 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
       catatan: spk.catatan ?? "",
     },
   });
+
+  // local state for FormattedNumberInput (jumlah)
+  const [displayJumlah, setDisplayJumlah] = useState<number>(spk.jumlah ?? 0);
 
   async function onSubmitEdit(data: EditSpkFormData) {
     setEditError("");
@@ -195,11 +199,15 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
                 {...form.register("tali")}
                 isDisabled={form.formState.isSubmitting}
               />
-              <Input
+              <FormattedNumberInput
                 size="sm"
                 label="Jumlah"
-                type="number"
-                {...form.register("jumlah")}
+                value={displayJumlah}
+                onChange={(v) => {
+                  const n = Number(v);
+                  setDisplayJumlah(n);
+                  form.setValue("jumlah", String(n), { shouldValidate: true });
+                }}
                 isInvalid={!!form.formState.errors.jumlah}
                 errorMessage={form.formState.errors.jumlah?.message}
                 isDisabled={form.formState.isSubmitting}
