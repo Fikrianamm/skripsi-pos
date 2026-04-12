@@ -16,6 +16,7 @@ import {
   ModalHeader,
   Skeleton,
   useDisclosure,
+  Pagination,
 } from "@heroui/react";
 import {
   AlertCircle,
@@ -319,7 +320,7 @@ function DesignOrderCard({
       const res = await fetch(`/api/order/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statusProduksi: "POTONG" }),
+        body: JSON.stringify({ statusProduksi: "PRODUKSI" }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -327,7 +328,7 @@ function DesignOrderCard({
         return;
       }
       addToast({
-        title: "Order dilanjutkan ke tahap Potong ✂️",
+        title: "Order dilanjutkan ke Produksi 🏭",
         color: "success",
       });
       onMutate();
@@ -510,7 +511,7 @@ function DesignOrderCard({
                 onPress={advanceDisclosure.onOpen}
                 className="self-end"
               >
-                Lanjut ke Potong
+                Lanjut ke Produksi
               </Button>
             </>
           )}
@@ -539,8 +540,8 @@ function DesignOrderCard({
       <ConfirmModal
         isOpen={advanceDisclosure.isOpen}
         onClose={advanceDisclosure.onClose}
-        title="Lanjut ke Tahap Potong"
-        description={`Order ${order.nomorOrder} akan dipindahkan ke tahap Potong. Pastikan semua file desain sudah lengkap.`}
+        title="Lanjut ke Produksi"
+        description={`Order ${order.nomorOrder} akan dipindahkan ke tahap Produksi. Pastikan semua file desain sudah lengkap.`}
         onConfirm={handleAdvance}
         isLoading={isAdvancing}
         confirmLabel="Ya, Lanjutkan"
@@ -588,7 +589,7 @@ export default function Page() {
   const [page, setPage] = React.useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
-  const limit = 18;
+  const limit = 12;
 
   const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}`;
 
@@ -641,10 +642,30 @@ export default function Page() {
         </div>
       </div>
       {data?.count !== undefined && (
-        <p className="text-xs text-default-400 tabular-nums">
-          {data.count} order ditemukan
-        </p>
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            {data.count} order ditemukan
+          </span>
+          <Divider className="flex-1" />
+        </div>
       )}
+
+      {/* ── Legend ── */}
+      <div className="flex items-center gap-4 text-xs text-default-400 flex-wrap pb-2">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-danger" />
+          <span>Deadline terlewat</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-warning" />
+          <span>Deadline ≤ 2 hari</span>
+        </div>
+        {!canEdit && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="italic">Mode view-only</span>
+          </div>
+        )}
+      </div>
 
       {/* ── Content ── */}
       {isLoading ? (
@@ -694,45 +715,18 @@ export default function Page() {
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
+        <div className="flex items-center justify-center pt-2">
+          <Pagination
+            total={totalPages}
+            page={page}
+            onChange={setPage}
+            showControls
             size="sm"
+            color="primary"
             variant="flat"
-            isDisabled={page <= 1}
-            onPress={() => setPage((p) => p - 1)}
-          >
-            ← Sebelumnya
-          </Button>
-          <span className="text-sm text-default-500">
-            Halaman {page} dari {totalPages}
-          </span>
-          <Button
-            size="sm"
-            variant="flat"
-            isDisabled={page >= totalPages}
-            onPress={() => setPage((p) => p + 1)}
-          >
-            Berikutnya →
-          </Button>
+          />
         </div>
       )}
-
-      {/* ── Legend ── */}
-      <div className="flex items-center gap-4 text-xs text-default-400 flex-wrap pb-2">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-danger" />
-          <span>Deadline terlewat</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-warning" />
-          <span>Deadline ≤ 2 hari</span>
-        </div>
-        {!canEdit && (
-          <div className="flex items-center gap-1.5 ml-auto">
-            <span className="italic">Mode view-only</span>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

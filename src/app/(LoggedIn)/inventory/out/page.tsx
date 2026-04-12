@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { fetcher, formatDate } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
 import { useDebounce } from "@/hooks/use-debounce";
-import { PackageMinus, Eye, Trash2 } from "lucide-react";
+import { PackageMinus, Eye, Trash2, MoreVertical } from "lucide-react";
 import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
-import { Pagination } from "@heroui/pagination";
 import Link from "next/link";
 import { DateRangePicker } from "@heroui/date-picker";
 import {
@@ -29,26 +28,20 @@ import {
   today,
   getLocalTimeZone,
 } from "@internationalized/date";
-import {
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "@heroui/table";
+import { TableRow, TableCell } from "@heroui/table";
 import {
   FilterLanjutan,
   FilterSection,
   FilterSelect,
 } from "@/components/filter-lanjutan";
 import { PengeluaranDetailModal } from "./components/detail-modal";
-import {
-  ContextMenu,
-  type ContextMenuAction,
-} from "@/components/data-table/context-menu";
+import { ContextMenu } from "@/components/data-table/context-menu";
 import type { PengeluaranItem } from "@/types/types";
 import { toISO } from "@/lib/func";
+import { TablePagination } from "@/components/data-table/table-pagination";
+import { DataTable } from "@/components/data-table/data-table";
+import { columns } from "./components/columns";
+import { useContextMenu } from "@/hooks/use-context-menu";
 
 export default function BarangKeluarPage() {
   const [page, setPage] = useState(1);
@@ -59,16 +52,13 @@ export default function BarangKeluarPage() {
   const [bahanBakuId, setBahanBakuId] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [contextMenuInfo, setContextMenuInfo] = useState<{
-    x: number;
-    y: number;
-    id: string;
-  } | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { contextMenu, openMenu, openMenuFromButton, closeMenu } =
+    useContextMenu<PengeluaranItem>();
 
   const debouncedSearch = useDebounce(search, 300);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
   const { mutate } = useSWRConfig();
 
   const dateFrom = toISO(dateRange?.start);
@@ -99,6 +89,10 @@ export default function BarangKeluarPage() {
     fetcher,
   );
 
+  const pages = useMemo(
+    () => (data?.pagination?.total ? Math.ceil(data.pagination.total / limit) : 0),
+    [data?.pagination?.total, limit],
+  );
   const activeCount = (dateRange ? 1 : 0) + (bahanBakuId ? 1 : 0);
   const resetFilters = () => {
     setSearch("");
@@ -108,12 +102,6 @@ export default function BarangKeluarPage() {
   const openDetail = (id: string) => {
     setSelectedId(id);
     setIsDetailOpen(true);
-  };
-
-  const closeContextMenu = () => setContextMenuInfo(null);
-  const handleContextMenu = (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    setContextMenuInfo({ x: e.clientX, y: e.clientY, id });
   };
 
   async function handleDelete() {
@@ -143,31 +131,8 @@ export default function BarangKeluarPage() {
     }
   }
 
-  const menuActions: ContextMenuAction[] = [
-    {
-      label: "Lihat",
-      icon: <Eye size={15} />,
-      onClick: () => {
-        closeContextMenu();
-        openDetail(contextMenuInfo!.id);
-      },
-    },
-    {
-      label: "Hapus",
-      icon: <Trash2 size={15} />,
-      variant: "destructive",
-      onClick: () => {
-        closeContextMenu();
-        setDeleteItemId(contextMenuInfo!.id);
-      },
-    },
-  ];
-
   return (
-    <div
-      className="flex flex-col flex-1 min-h-0 gap-4 mb-4"
-      onClick={closeContextMenu}
-    >
+    <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
       <PageHeader
         title="Barang Keluar Produksi"
         description="Riwayat pengeluaran bahan baku untuk proses produksi SPK"
@@ -223,50 +188,18 @@ export default function BarangKeluarPage() {
         </div>
       )}
 
-      <Table
-        aria-label="Tabel Barang Keluar Produksi"
-        classNames={{
-          wrapper: "flex-1 overflow-auto border border-default-200 shadow-none",
-          th: "bg-default-50 text-default-500",
-        }}
-        bottomContent={
-          data?.pagination?.totalPages > 1 && (
-            <div className="flex w-full justify-center mt-2">
-              <Pagination
-                isCompact
-                showControls
-                showShadow
-                color="primary"
-                page={page}
-                total={data.pagination.totalPages}
-                onChange={setPage}
-              />
-            </div>
-          )
-        }
-      >
-        <TableHeader>
-          <TableColumn>TANGGAL</TableColumn>
-          <TableColumn>SPK / ORDER</TableColumn>
-          <TableColumn>DITAMBAHKAN OLEH</TableColumn>
-          <TableColumn>BAHAN BAKU</TableColumn>
-          <TableColumn>KETERANGAN</TableColumn>
-        </TableHeader>
-        <TableBody
-          items={(data?.results ?? []) as PengeluaranItem[]}
-          emptyContent={
-            isLoading
-              ? "Memuat data..."
-              : "Belum ada riwayat pengeluaran barang."
-          }
-          isLoading={isLoading}
-        >
-          {(item) => (
+      <DataTable<PengeluaranItem>
+        columns={columns}
+        items={data?.results ?? []}
+        isLoading={isLoading}
+        selectionMode="none"
+        emptyContent="Belum ada riwayat pengeluaran barang."
+        renderRow={(item) => {
+          return (
             <TableRow
               key={item.id}
-              className="cursor-pointer hover:bg-default-100 transition-colors"
+              onContextMenu={(e) => openMenu(e, item)}
               onClick={() => openDetail(item.id)}
-              onContextMenu={(e) => handleContextMenu(e, item.id)}
             >
               <TableCell>
                 <div className="text-sm">{formatDate(item.tanggal)}</div>
@@ -328,23 +261,56 @@ export default function BarangKeluarPage() {
                   {item.keterangan || "—"}
                 </span>
               </TableCell>
+              {/* Actions (mobile) */}
+              <TableCell className="md:hidden">
+                <Button
+                  className="p-1.5 rounded-md hover:bg-accent"
+                  onClick={(e) => openMenuFromButton(e, item)}
+                  isIconOnly
+                  variant="light"
+                >
+                  <MoreVertical size={16} />
+                </Button>
+              </TableCell>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          );
+        }}
+      />
 
       <PengeluaranDetailModal
         id={selectedId}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
       />
-      {contextMenuInfo && (
+
+      {/* Context Menu */}
+      {contextMenu && (
         <ContextMenu
-          x={contextMenuInfo.x}
-          y={contextMenuInfo.y}
-          actions={menuActions}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          actions={[
+            {
+              label: "Lihat",
+              icon: <Eye size={15} />,
+              onClick: () => {
+                closeMenu();
+                openDetail(contextMenu?.item.id);
+              },
+            },
+            {
+              label: "Hapus",
+              icon: <Trash2 size={15} />,
+              variant: "destructive",
+              onClick: () => {
+                closeMenu();
+                setDeleteItemId(contextMenu?.item.id);
+              },
+            },
+          ]}
         />
       )}
+
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.pagination?.total} />
 
       <Modal
         isOpen={!!deleteItemId}

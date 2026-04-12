@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { fetcher, formatDate } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
 import { useDebounce } from "@/hooks/use-debounce";
-import { ClipboardPen, Eye, Trash2 } from "lucide-react";
+import { ClipboardPen, Eye, MoreVertical, Trash2 } from "lucide-react";
 import { Button } from "@heroui/button";
 import { addToast } from "@heroui/toast";
-import { Pagination } from "@heroui/pagination";
 import Link from "next/link";
 import { DateRangePicker } from "@heroui/date-picker";
 import {
@@ -23,7 +22,8 @@ import {
   Divider,
   User,
   Chip,
-  Spinner,
+  TableRow,
+  TableCell,
 } from "@heroui/react";
 import type { DateValue } from "@heroui/calendar";
 import { today, getLocalTimeZone } from "@internationalized/date";
@@ -32,6 +32,9 @@ import { ContextMenu } from "@/components/data-table/context-menu";
 import { FilterLanjutan, FilterSection } from "@/components/filter-lanjutan";
 import type { StokOpnameItem } from "@/types/types";
 import { OpnameDetailModal } from "./components/detail-modal";
+import { TablePagination } from "@/components/data-table/table-pagination";
+import { DataTable } from "@/components/data-table/data-table";
+import { columns } from "./components/columns";
 
 function toISO(d: any): string | undefined {
   if (!d) return undefined;
@@ -48,6 +51,7 @@ export default function OpnamePage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [dateRange, setDateRange] = useState<RangeValue<DateValue> | null>(
     null,
   );
@@ -61,6 +65,7 @@ export default function OpnamePage() {
 
   const params = new URLSearchParams({
     page: String(page),
+    limit: String(limit),
     search: debouncedSearch,
     ...(dateFrom && { dateFrom }),
     ...(dateTo && { dateTo }),
@@ -72,9 +77,13 @@ export default function OpnamePage() {
     mutate: mutateList,
   } = useSWR(`/api/admin/inventory/opname?${params}`, fetcher);
 
-  const { contextMenu, openMenu, closeMenu } = useContextMenu<StokOpnameItem>();
+  const { contextMenu, openMenu, openMenuFromButton, closeMenu } =
+    useContextMenu<StokOpnameItem>();
 
-  const totalPages = data?.totalPages ?? 1;
+  const pages = useMemo(
+    () => (data?.count ? Math.ceil(data.count / limit) : 0),
+    [data?.count, limit],
+  );
 
   async function handleDelete(item: StokOpnameItem) {
     setIsDeleting(true);
@@ -157,105 +166,72 @@ export default function OpnamePage() {
       )}
 
       {/* Table */}
-      <div className="rounded-2xl border border-divider overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-default-50 border-b border-divider">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-500 uppercase tracking-wide">
-                Tanggal
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-500 uppercase tracking-wide">
-                Dicatat Oleh
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-500 uppercase tracking-wide hidden md:table-cell">
-                Item Dikoreksi
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-default-500 uppercase tracking-wide hidden lg:table-cell">
-                Keterangan
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={4} className="text-center py-12 text-default-400">
-                  <div className="flex flex-col items-center gap-2">
-                    <Spinner />
-                    <p>Memuat data...</p>
-                  </div>
-                </td>
-              </tr>
-            ) : data?.results.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="text-center py-12 text-default-400">
-                  Belum ada data stok opname
-                </td>
-              </tr>
-            ) : (
-              data?.results.map((item: StokOpnameItem) => {
-                // Only count items that actually have a difference
-                const correctedCount = item.items.filter(
-                  (i) => Number(i.selisih) !== 0,
-                ).length;
+      <DataTable<StokOpnameItem>
+        columns={columns}
+        items={(data?.results ?? []) as StokOpnameItem[]}
+        isLoading={isLoading}
+        selectionMode="none"
+        emptyContent="Belum ada data"
+        renderRow={(item) => {
+          const correctedCount = item.items.filter(
+            (i) => Number(i.selisih) !== 0,
+          ).length;
 
-                return (
-                  <tr
-                    key={item.id}
-                    onContextMenu={(e) => openMenu(e, item)}
-                    onClick={() => setDetailId(item.id)}
-                    className="border-b border-divider hover:bg-default-50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-3 font-medium">
-                      {formatDate(item.tanggal)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {item.addedBy ? (
-                        <User
-                          name={item.addedBy.name}
-                          description={item.addedBy.role}
-                          classNames={{ description: "capitalize text-xs" }}
-                          avatarProps={{
-                            src: item.addedBy.image ?? undefined,
-                            size: "sm",
-                          }}
-                        />
-                      ) : (
-                        <span className="text-default-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      {correctedCount > 0 ? (
-                        <Chip size="sm" variant="flat" color="warning">
-                          {correctedCount} dikoreksi
-                        </Chip>
-                      ) : (
-                        <Chip size="sm" variant="flat" color="success">
-                          Sesuai
-                        </Chip>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-default-500 max-w-[200px]">
-                      <p className="truncate">{item.keterangan || "—"}</p>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination
-            total={totalPages}
-            page={page}
-            onChange={setPage}
-            showControls
-          />
-        </div>
-      )}
+          return (
+            <TableRow
+              key={item.id}
+              onContextMenu={(e) => openMenu(e, item)}
+              onClick={() => setDetailId(item.id)}
+            >
+              <TableCell>
+                <div className="text-sm">{formatDate(item.tanggal)}</div>
+              </TableCell>
+              <TableCell>
+                {item.addedBy ? (
+                  <User
+                    name={item.addedBy.name}
+                    description={item.addedBy.role}
+                    classNames={{ description: "capitalize text-xs" }}
+                    avatarProps={{
+                      src: item.addedBy.image ?? undefined,
+                      size: "sm",
+                    }}
+                  />
+                ) : (
+                  <span className="text-default-400">—</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {correctedCount > 0 ? (
+                  <Chip size="sm" variant="flat" color="warning">
+                    {correctedCount} dikoreksi
+                  </Chip>
+                ) : (
+                  <Chip size="sm" variant="flat" color="success">
+                    Sesuai
+                  </Chip>
+                )}
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-default-500">
+                  {item.keterangan || "—"}
+                </span>
+              </TableCell>
+              {/* Actions (mobile) */}
+              <TableCell className="md:hidden">
+                <Button
+                  className="p-1.5 rounded-md hover:bg-accent"
+                  onClick={(e) => openMenuFromButton(e, item)}
+                  isIconOnly
+                  variant="light"
+                >
+                  <MoreVertical size={16} />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        }}
+      />
 
       {/* Context Menu */}
       {contextMenu && (
@@ -284,6 +260,8 @@ export default function OpnamePage() {
           ]}
         />
       )}
+
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
 
       {/* Detail Modal */}
       <OpnameDetailModal

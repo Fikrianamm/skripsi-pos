@@ -66,7 +66,12 @@ export function DataTable<T extends WithId>({
         <TableBody
           emptyContent={emptyContent}
           items={items}
-          loadingContent={<Spinner />}
+          loadingContent={
+            <div className="flex flex-col items-center gap-2 text-default-400">
+              <Spinner />
+              <p>Memuat data...</p>
+            </div>
+          }
           loadingState={isLoading ? "loading" : "idle"}
         >
           {renderRow}

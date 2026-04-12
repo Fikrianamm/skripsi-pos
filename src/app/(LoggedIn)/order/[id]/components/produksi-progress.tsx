@@ -6,9 +6,7 @@ import { getStatusProduksiBadge } from "../../components/order-badges";
 const STEPS = [
   "PENDING",
   "DESAIN",
-  "POTONG",
-  "SABLON",
-  "JAHIT",
+  "PRODUKSI",
   "PACKING",
   "SELESAI",
 ];

@@ -2,7 +2,7 @@
 import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
-import { Chip, type Selection } from "@heroui/react";
+import { Chip, Divider, type Selection } from "@heroui/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Eye, MoreVertical, PenLine, Trash2 } from "lucide-react";
 import { fetcher, getInitialName } from "@/lib/func";
@@ -24,7 +24,6 @@ import { DataTable } from "@/components/data-table/data-table";
 import { TablePagination } from "@/components/data-table/table-pagination";
 import { columns } from "./components/columns";
 
-const ROWS_PER_PAGE = 10;
 
 export default function Page() {
   const { selectionMode } = useTableMultipleSelection(true);
@@ -34,6 +33,7 @@ export default function Page() {
     new Set([""]),
   );
   const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
 
   const [editCustomer, setEditCustomer] = React.useState<CustomerType | null>(
     null,
@@ -47,14 +47,14 @@ export default function Page() {
     useContextMenu<CustomerType>();
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/customer?page=${page}&search=${debouncedSearch}`,
+    `/api/admin/customer?page=${page}&limit=${limit}&search=${debouncedSearch}`,
     fetcher,
     { keepPreviousData: true },
   );
 
   const pages = React.useMemo(
-    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
-    [data?.count],
+    () => (data?.count ? Math.ceil(data.count / limit) : 0),
+    [data?.count, limit],
   );
 
   const selectedIds = React.useMemo(() => {
@@ -66,7 +66,7 @@ export default function Page() {
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
       <PageHeader
-        title="Manajemen Customer"
+        title="Manajemen Pelanggan"
         description="Kelola data pelanggan dan informasi kontak mereka."
       />
 
@@ -80,6 +80,16 @@ export default function Page() {
         />
         <AddCustomerModal onCustomerAdded={() => mutate()} />
       </div>
+
+      {/* Count */}
+      {data?.count !== undefined && (
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            Menampilkan {data?.results.length} dari {data.count} pelanggan
+          </span>
+          <Divider className="flex-1" />
+        </div>
+      )}
 
       <BulkSelectionBar count={selectedIds.length} label="customer dipilih">
         <BulkDeleteCustomerModal
@@ -216,7 +226,7 @@ export default function Page() {
         />
       )}
 
-      <TablePagination page={page} total={pages} onChange={setPage} />
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
     </div>
   );
 }

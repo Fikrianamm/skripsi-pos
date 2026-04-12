@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { fetcher, formatRupiah, formatDate } from "@/lib/func";
-import { Eye, Receipt } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Button } from "@heroui/button";
 import {
   Modal,
@@ -11,6 +11,7 @@ import {
   ModalBody,
   Divider,
   Skeleton,
+  ModalFooter,
 } from "@heroui/react";
 import type { PenerimaanDetail } from "@/types/types";
 
@@ -38,11 +39,7 @@ interface Props {
   onDeleted?: () => void;
 }
 
-export function PenerimaanDetailModal({
-  id,
-  isOpen,
-  onClose,
-}: Props) {
+export function PenerimaanDetailModal({ id, isOpen, onClose }: Props) {
   const { data, isLoading } = useSWR<PenerimaanDetail>(
     id ? `/api/admin/inventory/in/${id}` : null,
     fetcher,
@@ -59,7 +56,6 @@ export function PenerimaanDetailModal({
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <Receipt size={18} className="text-primary" />
               <span>Detail Penerimaan Barang</span>
             </div>
             {!isLoading && data && (
@@ -153,7 +149,11 @@ export function PenerimaanDetailModal({
               </>
             )}
           </ModalBody>
-
+          <ModalFooter>
+            <Button variant="flat" onPress={onClose}>
+              Tutup
+            </Button>
+          </ModalFooter>
         </ModalContent>
       </Modal>
     </>

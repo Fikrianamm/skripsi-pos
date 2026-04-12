@@ -2,7 +2,7 @@
 import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
-import { type Selection } from "@heroui/react";
+import { Divider, type Selection } from "@heroui/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Factory,
@@ -81,7 +81,6 @@ const ROLE_OPTIONS = [
   ...ROLES.map((r) => ({ key: r.key, label: r.label })),
 ];
 
-const ROWS_PER_PAGE = 10;
 
 export default function Page() {
   const { selectionMode } = useTableMultipleSelection(true);
@@ -94,6 +93,7 @@ export default function Page() {
     new Set(["all"]),
   );
   const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
 
   const [editUser, setEditUser] = React.useState<UserType | null>(null);
   const [deleteUser, setDeleteUser] = React.useState<UserType | null>(null);
@@ -103,14 +103,14 @@ export default function Page() {
   const roleKey = Array.from(selectedRole)[0] as string;
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/user?page=${page}&role=${roleKey}&search=${debouncedSearch}`,
+    `/api/admin/user?page=${page}&limit=${limit}&role=${roleKey}&search=${debouncedSearch}`,
     fetcher,
     { keepPreviousData: true },
   );
 
   const pages = React.useMemo(
-    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
-    [data?.count],
+    () => (data?.count ? Math.ceil(data.count / limit) : 0),
+    [data?.count, limit],
   );
 
   const selectedUserIds = React.useMemo(() => {
@@ -153,6 +153,16 @@ export default function Page() {
           <AddUserModal onUserCreated={() => mutate()} />
         </div>
       </div>
+
+      {/* Count */}
+      {data?.count !== undefined && (
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            Menampilkan {data?.results.length} dari {data.count} pengguna
+          </span>
+          <Divider className="flex-1" />
+        </div>
+      )}
 
       <BulkSelectionBar count={selectedUserIds.length} label="pengguna dipilih">
         <BulkDeleteModal
@@ -296,7 +306,7 @@ export default function Page() {
         />
       )}
 
-      <TablePagination page={page} total={pages} onChange={setPage} />
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
     </div>
   );
 }

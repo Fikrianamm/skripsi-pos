@@ -92,7 +92,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           id: crypto.randomUUID(),
           orderId,
           karyawanId,
-          tahapProduksi: "JAHIT",
+          tahapProduksi: "PRODUKSI",
           model: model?.trim() || null,
           tali: tali?.trim() || null,
           ukuran: ukuran?.trim() || null,
@@ -107,12 +107,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       }),
       prisma.order.update({
         where: { id: orderId },
-        data: { statusProduksi: "JAHIT" },
+        data: { statusProduksi: "PRODUKSI" },
       }),
     ]);
 
     return NextResponse.json(
-      { message: "SPK berhasil dibuat dan status diperbarui ke JAHIT.", spk },
+      { message: "SPK berhasil dibuat dan status diperbarui ke PRODUKSI.", spk },
       { status: 201 },
     );
   } catch (err) {
@@ -183,7 +183,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 }
 
-// PATCH /api/order/[id]/spk — Toggle accCetak
+// PATCH /api/order/[id]/spk — Toggle accCetak or mark SELESAI
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const { error, status } = await requireAccess();
@@ -191,7 +191,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const { id: orderId } = await params;
     const body = await req.json();
-    const { accCetak } = body;
+    const { accCetak, statusSPK } = body;
 
     const existing = await prisma.sPK.findUnique({ where: { orderId } });
     if (!existing)
@@ -201,17 +201,34 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
 
     const session = await auth.api.getSession({ headers: await headers() });
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = {};
+    if (accCetak !== undefined) {
+      data.accCetak = Boolean(accCetak);
+      data.accCetakAt = data.accCetak ? new Date() : null;
+      data.accCetakOleh = data.accCetak ? session?.user?.name || null : null;
+    }
+    if (statusSPK !== undefined) {
+      data.statusSPK = statusSPK;
+      // sync tahap produksi just to be clean
+      data.tahapProduksi = statusSPK === "SELESAI" ? "PACKING" : existing.tahapProduksi;
+    }
+
     const updated = await prisma.sPK.update({
       where: { orderId },
-      data: {
-        accCetak: Boolean(accCetak),
-        accCetakAt: accCetak ? new Date() : null,
-        accCetakOleh: accCetak ? session?.user?.name || null : null,
-      },
+      data,
     });
 
+    if (statusSPK === "SELESAI") {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { statusProduksi: "PACKING" }
+      });
+    }
+
     return NextResponse.json({
-      message: "ACC Cetak diperbarui.",
+      message: "Data SPK diperbarui.",
       spk: updated,
     });
   } catch (err) {

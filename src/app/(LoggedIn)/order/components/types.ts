@@ -15,14 +15,14 @@ export interface OrderRow {
   createdAt: string;
   customer: { id: string; nama: string; nomorHp: string; image: string | null };
   _count: { items: number; designFiles: number };
+  spk: { id: string } | null;
+  items: { nama: string; qty: number }[];
 }
 
 export type StatusProduksiKey =
   | "PENDING"
   | "DESAIN"
-  | "POTONG"
-  | "SABLON"
-  | "JAHIT"
+  | "PRODUKSI"
   | "PACKING"
   | "SELESAI"
   | "BATAL";
@@ -43,9 +43,7 @@ export const STATUS_PRODUKSI_OPTIONS: {
   { key: "", label: "Semua Status Produksi" },
   { key: "PENDING", label: "Pending" },
   { key: "DESAIN", label: "Desain" },
-  { key: "POTONG", label: "Potong" },
-  { key: "SABLON", label: "Sablon" },
-  { key: "JAHIT", label: "Jahit" },
+  { key: "PRODUKSI", label: "Produksi" },
   { key: "PACKING", label: "Packing" },
   { key: "SELESAI", label: "Selesai" },
   { key: "BATAL", label: "Batal" },
@@ -57,9 +55,7 @@ export const STATUS_PRODUKSI_STEPS: {
 }[] = [
   { key: "PENDING", label: "Pending" },
   { key: "DESAIN", label: "Desain" },
-  { key: "POTONG", label: "Potong" },
-  { key: "SABLON", label: "Sablon" },
-  { key: "JAHIT", label: "Jahit" },
+  { key: "PRODUKSI", label: "Produksi" },
   { key: "PACKING", label: "Packing" },
   { key: "SELESAI", label: "Selesai" },
   { key: "BATAL", label: "Batal" },

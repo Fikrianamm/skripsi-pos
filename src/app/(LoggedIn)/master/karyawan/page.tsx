@@ -2,7 +2,7 @@
 import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
-import { Chip, type Selection } from "@heroui/react";
+import { Chip, Divider, type Selection } from "@heroui/react";
 import { Eye, MoreVertical, PenLine, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/func";
 import useSWR from "swr";
@@ -34,7 +34,6 @@ const STATUS_OPTIONS = [
   { key: "false", label: "Tidak Aktif" },
 ];
 
-const ROWS_PER_PAGE = 10;
 
 export default function Page() {
   const { selectionMode } = useTableMultipleSelection(true);
@@ -47,6 +46,7 @@ export default function Page() {
     new Set(["all"]),
   );
   const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
 
   const [editKaryawan, setEditKaryawan] = React.useState<Karyawan | null>(null);
   const [deleteKaryawan, setDeleteKaryawan] = React.useState<Karyawan | null>(
@@ -59,14 +59,14 @@ export default function Page() {
   const statusKey = Array.from(selectedStatus)[0] as string;
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/karyawan?page=${page}&isActive=${statusKey}&search=${debouncedSearch}`,
+    `/api/admin/karyawan?page=${page}&limit=${limit}&isActive=${statusKey}&search=${debouncedSearch}`,
     fetcher,
     { keepPreviousData: true },
   );
 
   const pages = React.useMemo(
-    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
-    [data?.count],
+    () => (data?.count ? Math.ceil(data.count / limit) : 0),
+    [data?.count, limit],
   );
 
   const selectedIds = React.useMemo(() => {
@@ -109,6 +109,16 @@ export default function Page() {
           <AddKaryawanModal onKaryawanAdded={() => mutate()} />
         </div>
       </div>
+
+      {/* Count */}
+      {data?.count !== undefined && (
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            Menampilkan {data?.results.length} dari {data.count} karyawan
+          </span>
+          <Divider className="flex-1" />
+        </div>
+      )}
 
       <BulkSelectionBar count={selectedIds.length} label="karyawan dipilih">
         <BulkDeleteKaryawanModal
@@ -248,7 +258,7 @@ export default function Page() {
         />
       )}
 
-      <TablePagination page={page} total={pages} onChange={setPage} />
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
     </div>
   );
 }

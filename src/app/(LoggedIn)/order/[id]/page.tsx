@@ -136,8 +136,9 @@ export default function Page() {
             nomorOrder={order.nomorOrder}
             currentStatus={order.statusProduksi}
             currentStatusBayar={order.statusPembayaran}
+            hasSPK={!!order.spk}
+            items={order.items}
             onUpdated={() => mutate()}
-            onNeedSPK={() => setShowSpkForm(true)}
           />
           <Tooltip content="Hapus pesanan (admin only)">
             <Button
@@ -174,8 +175,8 @@ export default function Page() {
         <div className="flex flex-col gap-5">
           <PaymentSummary order={order} />
 
-          {/* SPK — muncul saat status JAHIT */}
-          {order.statusProduksi === "JAHIT" && (
+          {/* SPK — muncul saat status PRODUKSI */}
+          {order.statusProduksi === "PRODUKSI" && (
             <>
               {order.spk ? (
                 <SpkCard
@@ -191,7 +192,7 @@ export default function Page() {
                       SPK Belum Dibuat
                     </div>
                     <p className="text-xs text-default-500 leading-relaxed">
-                      Pesanan ini sudah di tahap Jahit tetapi belum memiliki
+                      Pesanan ini sudah di tahap Produksi tetapi belum memiliki
                       SPK.
                     </p>
                     <Button
@@ -210,7 +211,7 @@ export default function Page() {
         </div>
       </div>
 
-      {/* SPK Form Modal — terbuka ketika user memilih status JAHIT */}
+      {/* SPK Form Modal — terbuka ketika user memilih status PRODUKSI */}
       {showSpkForm && (
         <SpkFormModal
           isOpen={showSpkForm}

@@ -123,6 +123,8 @@ export function OrderCard({
               nomorOrder={order.nomorOrder}
               currentStatus={order.statusProduksi}
               currentStatusBayar={order.statusPembayaran}
+              hasSPK={!!order.spk}
+              items={order.items}
               onUpdated={onStatusUpdated}
             />
             <Tooltip content="Lihat detail">

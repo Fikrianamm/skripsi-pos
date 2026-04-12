@@ -60,7 +60,7 @@ export default function CostPage() {
     fetcher,
   );
 
-  const { data: akunData } = useSWR(`/api/finance/akun`, fetcher);
+  const { data: akunData } = useSWR(`/api/finance/akun?isActive=true`, fetcher);
 
   const akunOptions = [
     { key: "", label: "Semua Akun" },

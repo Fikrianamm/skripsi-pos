@@ -37,12 +37,9 @@ type AkunItem = {
   kelompok: string;
 };
 
-const KAS_GROUPS = ["AKTIVA_LANCAR", "AKTIVA_TETAP"];
+const KAS_GROUPS = ["AKTIVA_LANCAR"];
 const PENGELUARAN_GROUPS = [
-  "BEBAN_HPP",
-  "BEBAN_MARKETING",
-  "BEBAN_GAJI",
-  "BEBAN_ADMINISTRASI",
+  "BEBAN_USAHA",
 ];
 const PENDAPATAN_GROUPS = ["PENDAPATAN", "MODAL", "KEWAJIBAN"];
 
@@ -77,9 +74,9 @@ export function JurnalModal({
   }
   if (!isOpen && synced) setSynced(false);
 
-  const { data: akunData } = useSWR("/api/finance/akun", fetcher);
+  const { data: akunData } = useSWR("/api/finance/akun?isActive=true", fetcher);
   const rawAkuns: AkunItem[] = useMemo(() => {
-    return (akunData?.akuns ?? []).filter((a: any) => a.isActive !== false);
+    return (akunData?.akuns ?? []);
   }, [akunData]);
 
   const kasOptions = useMemo(

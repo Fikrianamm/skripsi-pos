@@ -102,7 +102,7 @@ export default function AkunPage() {
     ],
     [kelompokData],
   );
-  console.log(akuns);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader

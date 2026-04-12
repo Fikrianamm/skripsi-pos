@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 
     const search = request.nextUrl.searchParams.get("search") || "";
     const kelompok = request.nextUrl.searchParams.get("kelompok") || "";
+    const isActiveParam = request.nextUrl.searchParams.get("isActive");
 
     const where: any = {};
     if (search) {
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
     }
     if (kelompok) {
       where.kelompok = kelompok;
+    }
+    if (isActiveParam) {
+      where.isActive = isActiveParam === "true";
     }
 
     const akuns = await prisma.akun.findMany({

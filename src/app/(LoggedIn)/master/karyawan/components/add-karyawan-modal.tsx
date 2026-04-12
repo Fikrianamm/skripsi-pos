@@ -110,7 +110,7 @@ export default function AddKaryawanModal({
                   />
                   <Input
                     label="Posisi"
-                    placeholder="Penjahit, Operator Sablon, ..."
+                    placeholder="Pekerja Produksi, Desainer, Admin..."
                     {...form.register("posisi")}
                     isDisabled={form.formState.isSubmitting}
                   />

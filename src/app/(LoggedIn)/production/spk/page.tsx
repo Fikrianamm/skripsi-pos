@@ -5,7 +5,14 @@ import useSWR from "swr";
 import Link from "next/link";
 import { fetcher } from "@/lib/func";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button, Chip, Divider, Skeleton, Switch } from "@heroui/react";
+import {
+  Button,
+  Chip,
+  Divider,
+  Skeleton,
+  Switch,
+  Pagination,
+} from "@heroui/react";
 import {
   AlertCircle,
   Calendar,
@@ -24,6 +31,14 @@ import {
   FilterButtonGroup,
   FilterSelect,
 } from "@/components/filter-lanjutan";
+import {
+  useDisclosure,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface SpkItem {
@@ -100,10 +115,12 @@ function daysUntil(d: string | null): number | null {
 function SpkQueueCard({
   spk,
   onToggleAcc,
+  onAdvance,
   isTogglingId,
 }: {
   spk: SpkItem;
   onToggleAcc: (spk: SpkItem, val: boolean) => void;
+  onAdvance: (spk: SpkItem) => void;
   isTogglingId: string | null;
 }) {
   const badge = statusSPKBadge(spk.statusSPK);
@@ -256,6 +273,25 @@ function SpkQueueCard({
             />
           </div>
         </div>
+
+        {/* ── Advance button ── */}
+        {!isSelesai && badge.color !== "danger" && (
+          <>
+            <Divider className="my-0" />
+            <Button
+              size="sm"
+              color="primary"
+              variant="flat"
+              className="w-full"
+              onPress={() => onAdvance(spk)}
+              isDisabled={!spk.accCetak}
+            >
+              {spk.accCetak
+                ? "Selesai Produksi (Lanjut Packing)"
+                : "Belum ACC Cetak"}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -303,13 +339,18 @@ const ACC_OPTIONS = [
 
 export default function Page() {
   const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [statusFilter, setStatusFilter] = React.useState("AKTIF");
   const [accFilter, setAccFilter] = React.useState("all");
   const [page, setPage] = React.useState(1);
   const [isTogglingId, setIsTogglingId] = React.useState<string | null>(null);
+
+  const [advancingSpk, setAdvancingSpk] = React.useState<SpkItem | null>(null);
+  const [isAdvancing, setIsAdvancing] = React.useState(false);
+  const advanceDisclosure = useDisclosure();
+
   const debouncedSearch = useDebounce(search, 300);
 
-  const limit = 18; // 3 kolom × 6 baris
+  const limit = 12; // 3 kolom × 6 baris
 
   // Load karyawan untuk filter
   const { data: karyawanData } = useSWR(
@@ -328,6 +369,7 @@ export default function Page() {
 
   const spkList: SpkItem[] = data?.results ?? [];
   const totalPages = data?.count ? Math.ceil(data.count / limit) : 0;
+  console.log(spkList);
 
   // Toggle ACC cetak
   async function handleToggleAcc(spk: SpkItem, val: boolean) {
@@ -350,6 +392,33 @@ export default function Page() {
       mutate();
     } finally {
       setIsTogglingId(null);
+    }
+  }
+
+  // Advance SPK to SELESAI
+  async function handleAdvance() {
+    if (!advancingSpk) return;
+    setIsAdvancing(true);
+    try {
+      const res = await fetch(`/api/order/${advancingSpk.orderId}/spk`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statusSPK: "SELESAI" }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({ title: "Gagal", description: json.error, color: "danger" });
+        return;
+      }
+      addToast({
+        title: "Produksi selesai, dilanjut ke tahap Packing! 📦",
+        color: "success",
+      });
+      mutate();
+      advanceDisclosure.onClose();
+      setAdvancingSpk(null);
+    } finally {
+      setIsAdvancing(false);
     }
   }
 
@@ -422,10 +491,29 @@ export default function Page() {
         </div>
       </div>
       {data?.count !== undefined && (
-        <p className="text-xs text-default-400 tabular-nums">
-          {data.count} SPK ditemukan
-        </p>
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            {data.count} SPK ditemukan
+          </span>
+          <Divider className="flex-1" />
+        </div>
       )}
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs text-default-400 flex-wrap pb-2">
+        <div className="flex items-center gap-1.5">
+          <ClipboardList size={12} />
+          <span>Auto-refresh setiap 30 detik</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-danger" />
+          <span>Deadline terlewat</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-warning" />
+          <span>Deadline ≤ 2 hari</span>
+        </div>
+      </div>
 
       {/* ── Content ── */}
       {isLoading ? (
@@ -467,6 +555,10 @@ export default function Page() {
               key={spk.id}
               spk={spk}
               onToggleAcc={handleToggleAcc}
+              onAdvance={(s) => {
+                setAdvancingSpk(s);
+                advanceDisclosure.onOpen();
+              }}
               isTogglingId={isTogglingId}
             />
           ))}
@@ -475,44 +567,56 @@ export default function Page() {
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
+        <div className="flex items-center justify-center pt-2">
+          <Pagination
+            total={totalPages}
+            page={page}
+            onChange={setPage}
+            showControls
             size="sm"
+            color="primary"
             variant="flat"
-            isDisabled={page <= 1}
-            onPress={() => setPage((p) => p - 1)}
-          >
-            ← Sebelumnya
-          </Button>
-          <span className="text-sm text-default-500">
-            Halaman {page} dari {totalPages}
-          </span>
-          <Button
-            size="sm"
-            variant="flat"
-            isDisabled={page >= totalPages}
-            onPress={() => setPage((p) => p + 1)}
-          >
-            Berikutnya →
-          </Button>
+          />
         </div>
       )}
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-default-400 flex-wrap pb-2">
-        <div className="flex items-center gap-1.5">
-          <ClipboardList size={12} />
-          <span>Auto-refresh setiap 30 detik</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-danger" />
-          <span>Deadline terlewat</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-warning" />
-          <span>Deadline ≤ 2 hari</span>
-        </div>
-      </div>
+      {/* ── Modals ── */}
+      {advanceDisclosure.isOpen && (
+        <Modal
+          isOpen={advanceDisclosure.isOpen}
+          onClose={advanceDisclosure.onClose}
+          size="sm"
+        >
+          <ModalContent>
+            <ModalHeader className="text-sm">Selesaikan Produksi</ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-default-600">
+                Tandai SPK untuk pesanan{" "}
+                <strong>{advancingSpk?.order.nomorOrder}</strong> telah selesai?
+                Status pesanan akan berlanjut ke tahap <strong>Packing</strong>.
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                size="sm"
+                variant="flat"
+                onPress={advanceDisclosure.onClose}
+                isDisabled={isAdvancing}
+              >
+                Batal
+              </Button>
+              <Button
+                size="sm"
+                color="primary"
+                onPress={handleAdvance}
+                isLoading={isAdvancing}
+              >
+                Selesai Produksi
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
     </div>
   );
 }

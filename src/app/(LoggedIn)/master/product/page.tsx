@@ -2,7 +2,7 @@
 import React from "react";
 import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
-import { Chip, Image, type Selection } from "@heroui/react";
+import { Chip, Divider, Image, type Selection } from "@heroui/react";
 import { MoreVertical, PenLine, Trash2, Eye } from "lucide-react";
 import { fetcher, getStockStatus } from "@/lib/func";
 import useSWR, { useSWRConfig } from "swr";
@@ -30,7 +30,6 @@ import BulkDeleteProductModal from "./components/bulk-delete-modal";
 import ViewProductModal from "./components/view-product-modal";
 import DrawerManageCategory from "../customer/components/drawer-category";
 
-const ROWS_PER_PAGE = 10;
 
 export default function Page() {
   const { selectionMode } = useTableMultipleSelection(true);
@@ -46,6 +45,7 @@ export default function Page() {
     "all" | "true" | "false"
   >("all");
   const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
   const { mutate: mutateGlobal } = useSWRConfig();
 
   const [editProduct, setEditProduct] = React.useState<ProductType | null>(
@@ -63,7 +63,7 @@ export default function Page() {
   const categoryKey = Array.from(selectedCategory)[0] as string;
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/product?page=${page}&search=${debouncedSearch}${categoryKey !== "all" ? `&categoryId=${categoryKey}` : ""}${selectedType !== "all" ? `&isService=${selectedType}` : ""}`,
+    `/api/admin/product?page=${page}&limit=${limit}&search=${debouncedSearch}${categoryKey !== "all" ? `&categoryId=${categoryKey}` : ""}${selectedType !== "all" ? `&isService=${selectedType}` : ""}`,
     fetcher,
     { keepPreviousData: true },
   );
@@ -71,8 +71,8 @@ export default function Page() {
   const { data: categoryData } = useSWR(`/api/category?limit=100`, fetcher);
 
   const pages = React.useMemo(
-    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
-    [data?.count],
+    () => (data?.count ? Math.ceil(data.count / limit) : 0),
+    [data?.count, limit],
   );
 
   const selectedIds = React.useMemo(() => {
@@ -146,6 +146,16 @@ export default function Page() {
           <AddProductModal onProductCreated={() => mutate()} />
         </div>
       </div>
+
+      {/* Count */}
+      {data?.count !== undefined && (
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-default-400 tabular-nums">
+            Menampilkan {data?.results.length} dari {data.count} produk
+          </span>
+          <Divider className="flex-1" />
+        </div>
+      )}
 
       <BulkSelectionBar count={selectedIds.length} label="produk dipilih">
         <BulkDeleteProductModal
@@ -295,7 +305,7 @@ export default function Page() {
         />
       )}
 
-      <TablePagination page={page} total={pages} onChange={setPage} />
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
     </div>
   );
 }

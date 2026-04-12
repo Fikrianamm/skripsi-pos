@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "@node-rs/argon2";
 import { seedFinance } from "./seed-finance";
 import { seedProduct } from "./seed-product";
+import { seedDummy } from "./seed-dummy";
 
 async function main() {
   const defaultPassword = await hash("password");
@@ -137,6 +138,7 @@ async function main() {
 
   await seedFinance();
   await seedProduct();
+  await seedDummy();
 
   console.log("\n🌱 Seeding completed!");
 }

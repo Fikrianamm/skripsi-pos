@@ -588,9 +588,7 @@ enum OrderChannel {
 enum StatusProduksi {
   PENDING
   DESAIN
-  POTONG
-  SABLON
-  JAHIT
+  PRODUKSI
   PACKING
   SELESAI
   BATAL

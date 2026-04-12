@@ -176,9 +176,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const VALID_STATUS_PRODUKSI = [
       "PENDING",
       "DESAIN",
-      "POTONG",
-      "SABLON",
-      "JAHIT",
+      "PRODUKSI",
       "PACKING",
       "SELESAI",
       "BATAL",

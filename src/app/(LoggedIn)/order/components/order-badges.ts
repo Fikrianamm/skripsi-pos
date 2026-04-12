@@ -15,9 +15,7 @@ export function getStatusProduksiBadge(status: string): {
   const map: Record<string, { label: string; color: BadgeColor }> = {
     PENDING: { label: "Pending", color: "default" },
     DESAIN: { label: "Desain", color: "secondary" },
-    POTONG: { label: "Potong", color: "primary" },
-    SABLON: { label: "Sablon", color: "primary" },
-    JAHIT: { label: "Jahit", color: "warning" },
+    PRODUKSI: { label: "Produksi", color: "primary" },
     PACKING: { label: "Packing", color: "warning" },
     SELESAI: { label: "Selesai", color: "success" },
     BATAL: { label: "Batal", color: "danger" },

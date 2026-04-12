@@ -139,15 +139,6 @@ export function LoginForm({
         Masuk dengan Google
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
-        Belum punya akun?{" "}
-        <a
-          href="/auth/register"
-          className="underline underline-offset-4 hover:text-primary"
-        >
-          Daftar
-        </a>
-      </p>
     </div>
   );
 }

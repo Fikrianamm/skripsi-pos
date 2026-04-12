@@ -123,7 +123,7 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
       <CardHeader className="pb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ClipboardList size={16} className="text-default-500" />
-          <span className="font-semibold text-sm">SPK Jahit</span>
+          <span className="font-semibold text-sm">SPK Produksi</span>
           <Chip size="sm" color={statusBadge.color} variant="flat">
             {statusBadge.label}
           </Chip>
@@ -155,7 +155,7 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
               control={form.control}
               render={({ field }) => (
                 <Select
-                  label="Penjahit"
+                  label="Pekerja Produksi"
                   size="sm"
                   selectedKeys={
                     field.value ? new Set([field.value]) : new Set()
@@ -260,7 +260,7 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
             <div className="flex items-center gap-2">
               <User size={14} className="text-default-400 shrink-0" />
               <div>
-                <p className="text-xs text-default-400">Penjahit</p>
+                <p className="text-xs text-default-400">Pekerja Produksi</p>
                 <p className="font-medium">{spk.karyawan.nama}</p>
                 {spk.karyawan.posisi && (
                   <p className="text-xs text-default-400">

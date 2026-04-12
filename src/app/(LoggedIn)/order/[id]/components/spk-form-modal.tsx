@@ -95,7 +95,7 @@ export function SpkFormModal({
       }
       addToast({
         title: "SPK Dibuat",
-        description: `Status pesanan ${nomorOrder} diperbarui ke JAHIT.`,
+        description: `Status pesanan ${nomorOrder} diperbarui ke PRODUKSI.`,
         color: "success",
       });
       form.reset();
@@ -124,7 +124,7 @@ export function SpkFormModal({
         {(onClose) => (
           <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
             <ModalHeader className="flex flex-col gap-0.5 pb-2">
-              <span>Buat SPK — Tahap Jahit</span>
+              <span>Buat SPK — Tahap Produksi</span>
               <span className="text-sm font-normal text-default-500 font-mono">
                 {nomorOrder}
               </span>
@@ -135,8 +135,8 @@ export function SpkFormModal({
 
               <div className="rounded-lg bg-warning-50 border border-warning-200 px-3 py-2 text-xs text-warning-700">
                 Mengisi form ini akan memindahkan status pesanan ke{" "}
-                <span className="font-semibold">JAHIT</span> sekaligus membuat
-                SPK untuk karyawan yang dipilih.
+                <span className="font-semibold">PRODUKSI</span> sekaligus membuat
+                SPK untuk pekerja yang dipilih.
               </div>
 
               <Controller
@@ -144,8 +144,8 @@ export function SpkFormModal({
                 control={form.control}
                 render={({ field }) => (
                   <Select
-                    label="Penjahit / Karyawan"
-                    placeholder="Pilih karyawan"
+                    label="Pekerja Produksi"
+                    placeholder="Pilih pekerja"
                     isRequired
                     selectedKeys={
                       field.value ? new Set([field.value]) : new Set()
@@ -221,7 +221,7 @@ export function SpkFormModal({
 
               <Textarea
                 label="Catatan"
-                placeholder="Instruksi tambahan untuk penjahit..."
+                placeholder="Instruksi tambahan untuk produksi..."
                 minRows={2}
                 {...form.register("catatan")}
                 isDisabled={form.formState.isSubmitting}
@@ -245,7 +245,7 @@ export function SpkFormModal({
                 isDisabled={form.formState.isSubmitting}
                 size="sm"
               >
-                Buat SPK & Lanjut ke Jahit
+                Buat SPK & Lanjut ke Produksi
               </Button>
             </ModalFooter>
           </form>

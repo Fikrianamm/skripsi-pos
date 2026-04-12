@@ -50,7 +50,7 @@ export function AddCostModal({
   }[] = kasBankData?.kasBanks ?? [];
 
   // Ambil semua akun lalu filter hanya kelompok BEBAN_USAHA di frontend
-  const { data: akunData } = useSWR("/api/finance/akun", fetcher);
+  const { data: akunData } = useSWR("/api/finance/akun?isActive=true", fetcher);
   const akunBeban: { id: string; namaAkun: string; kelompok: string }[] = (
     akunData?.akuns ?? []
   ).filter((a: { kelompok: string }) => a.kelompok === "BEBAN_USAHA");

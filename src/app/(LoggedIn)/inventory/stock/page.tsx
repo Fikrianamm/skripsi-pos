@@ -41,7 +41,6 @@ const STOK_OPTIONS = [
   { key: "habis", label: "🔴 Habis" },
 ];
 
-const ROWS_PER_PAGE = 10;
 
 function getStokStatus(bb: BahanBaku): "normal" | "menipis" | "habis" {
   const stok = Number(bb.stok);
@@ -66,6 +65,7 @@ export default function Page() {
     new Set(["all"]),
   );
   const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
   const { mutate: mutateGlobal } = useSWRConfig();
 
   const [editItem, setEditItem] = React.useState<BahanBaku | null>(null);
@@ -78,14 +78,14 @@ export default function Page() {
   const stokKey = Array.from(selectedStokFilter)[0] as string;
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/admin/bahan-baku?page=${page}&isActive=${statusKey}&search=${debouncedSearch}&stokFilter=${stokKey}`,
+    `/api/admin/bahan-baku?page=${page}&limit=${limit}&isActive=${statusKey}&search=${debouncedSearch}&stokFilter=${stokKey}`,
     fetcher,
     { keepPreviousData: true },
   );
 
   const pages = React.useMemo(
-    () => (data?.count ? Math.ceil(data.count / ROWS_PER_PAGE) : 0),
-    [data?.count],
+    () => (data?.count ? Math.ceil(data.count / limit) : 0),
+    [data?.count, limit],
   );
 
   const selectedIds = React.useMemo(() => {
@@ -179,6 +179,7 @@ export default function Page() {
         selectionMode={selectionMode}
         selectedKeys={selectedKeys}
         onSelectionChange={setSelectedKeys}
+        emptyContent="Belum ada data"
         renderRow={(bb) => {
           const stokStatus = getStokStatus(bb);
           return (
@@ -346,7 +347,7 @@ export default function Page() {
         />
       )}
 
-      <TablePagination page={page} total={pages} onChange={setPage} />
+      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
     </div>
   );
 }

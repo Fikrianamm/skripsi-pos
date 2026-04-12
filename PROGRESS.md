@@ -58,6 +58,8 @@
 - [x] **Refaktor UI Kasir (Payment)** — Menambahkan dropdown pilihan `KasBank` saat Checkout/Bayar Order, wajib diisi agar masuk ke akun yang benar.
 - [x] **Manajemen Pengeluaran (Cost)** — Membuat UI untuk merekam biaya operasional, memanggil API Cost yang sudah ada.
 - [X] **Hutang / Piutang** — Sistem untuk melacak order dengan status `DP` / `BELUM_BAYAR`, serta tagihan ke supplier.
+- [X] **Table Inventory** — sesuaikan table inventory dengan table lainnya agar sama stylenya.
+- [X] **Question** — saya ingin sistem flow harus berjalan sesuai urutan dan harusnya tidak bisa langsung loncat", untuk proses potong, sablon, dan jahit bagaimana kalau dibuat menjadi satu proses yaitu produksi, bagaimana sebaiknya penyesuaian pergantian status ini dan siapa yang pegang kendali.
 
 ## 📝 Todo & Pertimbangan Fitur (Selanjutnya)
 
@@ -70,10 +72,8 @@
 - [ ] **Laporan Laba Rugi** — Menautkan Pendapatan (Omzet) dikurangi pengeluaran (Cost) dan Harga Pokok (HPP) produk.
 - [ ] **Pencetakan Bukti Digital** — Generate Invoice POS / Struk order dalam bentuk PDF atau print otomatis.
 
-- [ ] **Halaman Laporan Barang masuk** — Improve UI.
-- [ ] **Halaman Customer** — Improve UI.
 - [ ] **Pendapatan** — pendapatan masing" nilai pendapatan didapat dari input yang mana? dan apakah benar ketika input pesanan membuat jurnal umum yang kredit dari pendapatan konveksi ke debit piutang usaha?.
-- [ ] **Jurnal Umum** — tambahkan warning ketika akun yang ditambahkan ternyata nonaktif
+- [ ] **Fitur Reversal** — cek fungsi fitur reversal apakah sudah benar.
 
 ### Peningkatan Ekstra (Nice-to-Have)
 

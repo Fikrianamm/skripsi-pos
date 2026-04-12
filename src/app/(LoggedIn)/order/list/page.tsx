@@ -5,19 +5,20 @@ import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { fetcher } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
-import { Spinner, Pagination, Divider } from "@heroui/react";
+import { Spinner, Divider } from "@heroui/react";
 import { ShoppingBag } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { OrderRow } from "../components/types";
 import { OrderToolbar } from "./components/order-toolbar";
 import { OrderCard } from "./components/order-card";
+import { TablePagination } from "@/components/data-table/table-pagination";
 
-const LIMIT = 15;
 
 export default function Page() {
   const router = useRouter();
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [filterStatusProduksi, setFilterStatusProduksi] = useState("");
   const [filterStatusBayar, setFilterStatusBayar] = useState("");
@@ -26,7 +27,7 @@ export default function Page() {
 
   const params = new URLSearchParams({
     page: String(page),
-    limit: String(LIMIT),
+    limit: String(limit),
     sortBy,
     ...(debouncedSearch && { search: debouncedSearch }),
     ...(filterStatusProduksi && { statusProduksi: filterStatusProduksi }),
@@ -115,19 +116,14 @@ export default function Page() {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-2">
-              <Pagination
-                total={totalPages}
-                page={page}
-                onChange={setPage}
-                showControls
-                color="primary"
-                variant="flat"
-                size="sm"
-              />
-            </div>
-          )}
+          <TablePagination
+            page={page}
+            total={totalPages}
+            onChange={setPage}
+            limit={limit}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            totalItems={totalCount}
+          />
         </>
       )}
     </div>

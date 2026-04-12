@@ -106,6 +106,8 @@ export async function GET(request: NextRequest) {
             select: { id: true, nama: true, nomorHp: true, image: true },
           },
           _count: { select: { items: true, designFiles: true } },
+          spk: { select: { id: true } },
+          items: { select: { nama: true, qty: true }, take: 5 },
         },
       }),
       prisma.order.count({ where }),

@@ -5,11 +5,15 @@ import useSWR from "swr";
 import Link from "next/link";
 import { fetcher } from "@/lib/func";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button, Chip, Divider, Skeleton } from "@heroui/react";
+import { Button, Chip, Divider, Pagination, Skeleton } from "@heroui/react";
 import { Eye, Images } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
-import { FilterButtonGroup, FilterLanjutan, FilterSection } from "@/components/filter-lanjutan";
+import {
+  FilterButtonGroup,
+  FilterLanjutan,
+  FilterSection,
+} from "@/components/filter-lanjutan";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface DesignFileItem {
@@ -52,11 +56,9 @@ function statusColor(
     string,
     "success" | "warning" | "danger" | "default" | "primary" | "secondary"
   > = {
-    DESAIN: "default",
-    POTONG: "secondary",
-    SABLON: "warning",
-    JAHIT: "primary",
-    PACKING: "secondary",
+    DESAIN: "secondary",
+    PRODUKSI: "primary",
+    PACKING: "warning",
     SELESAI: "success",
     BATAL: "danger",
     PENDING: "default",
@@ -172,11 +174,9 @@ function FileCardSkeleton() {
 
 // ── Filter options ─────────────────────────────────────────────────────────────
 const TAHAP_OPTIONS = [
-  { key: "all", label: "Semua Tahap" },
+  { key: "PENDING", label: "Pending" },
   { key: "DESAIN", label: "Desain" },
-  { key: "POTONG", label: "Potong" },
-  { key: "SABLON", label: "Sablon" },
-  { key: "JAHIT", label: "Jahit" },
+  { key: "PRODUKSI", label: "Produksi" },
   { key: "PACKING", label: "Packing" },
   { key: "SELESAI", label: "Selesai" },
   { key: "BATAL", label: "Batal" },
@@ -244,8 +244,10 @@ export default function Page() {
       </div>
       {data?.count !== undefined && (
         <div className="flex gap-2 items-center">
-          <span className="text-xs text-default-400 tabular-nums">{data.count} file ditemukan</span>
-          <Divider className="flex-1"/>
+          <span className="text-xs text-default-400 tabular-nums">
+            {data.count} file ditemukan
+          </span>
+          <Divider className="flex-1" />
         </div>
       )}
 
@@ -285,26 +287,16 @@ export default function Page() {
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
+        <div className="flex items-center justify-center pt-2">
+          <Pagination
+            total={totalPages}
+            page={page}
+            onChange={setPage}
+            showControls
             size="sm"
+            color="primary"
             variant="flat"
-            isDisabled={page <= 1}
-            onPress={() => setPage((p) => p - 1)}
-          >
-            ← Sebelumnya
-          </Button>
-          <span className="text-sm text-default-500">
-            Halaman {page} dari {totalPages}
-          </span>
-          <Button
-            size="sm"
-            variant="flat"
-            isDisabled={page >= totalPages}
-            onPress={() => setPage((p) => p + 1)}
-          >
-            Berikutnya →
-          </Button>
+          />
         </div>
       )}
     </div>
