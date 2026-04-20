@@ -11,14 +11,20 @@ import {
 import type { Selection } from "@heroui/react";
 import ProfileSection from "./profile/profile-section";
 import SecuritySection from "./security/security-section";
+import WebSettingSection from "./web-setting/web-setting-section";
+import { Settings } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 // Menu items configuration
 const menuItems: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "profile", label: "Profil", icon: User },
   { key: "security", label: "Keamanan", icon: Shield },
+  { key: "web-setting", label: "Web Setting", icon: Settings },
 ];
 
 export default function Page() {
+  const { data: sessionData } = authClient.useSession();
+  const role = sessionData?.user?.role ?? "";
   const [selectedKeys, setSelectedKeys] = useState<Selection>(
     new Set(["profile"]),
   );
@@ -97,6 +103,9 @@ export default function Page() {
         <div className="col-span-3 space-y-2">
           {selectedItem.key === "profile" && <ProfileSection />}
           {selectedItem.key === "security" && <SecuritySection />}
+          {selectedItem.key === "web-setting" && role === "admin" && (
+            <WebSettingSection />
+          )}
         </div>
       </div>
     </>

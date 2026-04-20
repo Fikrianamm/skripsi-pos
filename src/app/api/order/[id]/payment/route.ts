@@ -155,6 +155,115 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 }
 
+
+// PATCH /api/order/[id]/payment — correct a payment
+export async function PATCH(request: NextRequest, { params }: Params) {
+  try {
+    const { error, status, session } = await requireOrderAccess();
+    if (error || !session) return NextResponse.json({ error }, { status });
+
+    const { id: orderId } = await params;
+    const sp = request.nextUrl.searchParams;
+    const paymentId = sp.get("paymentId");
+    if (!paymentId) return NextResponse.json({ error: "paymentId diperlukan." }, { status: 400 });
+
+    const body = await request.json();
+    const { nominal, metodePembayaran, keterangan, tanggal, kasBankId } = body;
+
+    const oldPayment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        jurnalUmum: { where: { deletedAt: null }, take: 1 },
+      },
+    });
+
+    if (!oldPayment || oldPayment.orderId !== orderId) {
+      return NextResponse.json({ error: "Pembayaran tidak ditemukan." }, { status: 404 });
+    }
+
+    const oldJurnal = oldPayment.jurnalUmum[0];
+
+    const kasBank = kasBankId
+      ? await prisma.kasBank.findUnique({ where: { id: kasBankId }, include: { akun: true } })
+      : null;
+
+    if (kasBankId && (!kasBank || !kasBank.akunId)) {
+      return NextResponse.json({ error: "Rekening Kas/Bank tidak valid." }, { status: 400 });
+    }
+
+    const piutangAkun = await prisma.akun.findUnique({ where: { kodeAkun: "1-003" } });
+    const realTanggal = tanggal ? new Date(tanggal) : oldPayment.tanggal;
+    const now = new Date();
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Soft Delete & Reversal Jurnal Lama (Hanya jika masih ada)
+      if (oldJurnal) {
+        await tx.jurnalUmum.update({
+          where: { id: oldJurnal.id },
+          data: { deletedAt: now },
+        });
+
+        await createJurnalDoubleEntry({
+          ref: `REV-${oldJurnal.ref}`,
+          tanggal: now,
+          keterangan: `Reversal untuk: ${oldJurnal.keterangan}`,
+          akunDebetId: oldJurnal.akunKreditId,
+          akunKreditId: oldJurnal.akunDebetId,
+          nominal: Number(oldJurnal.nominal),
+          paymentId: paymentId,
+          createdById: session.user.id,
+          deletedAt: now,
+        }, tx as any);
+      }
+
+      // 3. Update Data Payment
+      const updatedPayment = await tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          nominal: nominal !== undefined ? Number(nominal) : oldPayment.nominal,
+          metodePembayaran: metodePembayaran || oldPayment.metodePembayaran,
+          keterangan: keterangan !== undefined ? (keterangan || null) : oldPayment.keterangan,
+          tanggal: realTanggal,
+        },
+      });
+
+      // 4. Buat Jurnal Baru (Benar)
+      await createJurnalDoubleEntry({
+        ref: `PYM-${orderId.slice(0, 5)}`,
+        tanggal: realTanggal,
+        keterangan: `Pembayaran Order #${orderId.slice(0, 8)} (Koreksi) - ${updatedPayment.keterangan || ""}`,
+        akunDebetId: kasBank?.akunId || (oldJurnal ? oldJurnal.akunDebetId : ""), // Fallback empty string will fail validation if both null, but usually kasBank is provided or oldJurnal exists
+        akunKreditId: piutangAkun?.id || (oldJurnal ? oldJurnal.akunKreditId : ""),
+        nominal: Number(updatedPayment.nominal),
+        paymentId: paymentId,
+        createdById: session.user.id,
+      }, tx as any);
+
+      // 5. Recalculate Order Status
+      const remaining = await tx.payment.aggregate({
+        _sum: { nominal: true },
+        where: { orderId },
+      });
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        select: { grandTotal: true },
+      });
+      const paid = Number(remaining._sum.nominal ?? 0);
+      const grand = Number(order?.grandTotal ?? 0);
+      const newStatus: "BELUM_BAYAR" | "DP" | "LUNAS" =
+        paid >= grand ? "LUNAS" : paid > 0 ? "DP" : "BELUM_BAYAR";
+      await tx.order.update({ where: { id: orderId }, data: { statusPembayaran: newStatus } });
+
+      return { payment: updatedPayment, statusPembayaran: newStatus };
+    });
+
+    return NextResponse.json({ message: "Pembayaran berhasil dikoreksi (reversal applied)", ...result });
+  } catch (err) {
+    console.error("[PAYMENT PATCH ERROR]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 // DELETE /api/order/[id]/payment — delete a payment (admin only)
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
@@ -172,29 +281,59 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
-      select: { id: true, orderId: true },
+      include: {
+        jurnalUmum: { where: { deletedAt: null }, take: 1 },
+      },
     });
+
     if (!payment || payment.orderId !== orderId)
       return NextResponse.json({ error: "Pembayaran tidak ditemukan." }, { status: 404 });
 
-    await prisma.payment.delete({ where: { id: paymentId } });
+    const oldJurnal = payment.jurnalUmum[0];
+    const now = new Date();
 
-    // Recalculate status
-    const remaining = await prisma.payment.aggregate({
-      _sum: { nominal: true },
-      where: { orderId },
-    });
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: { grandTotal: true },
-    });
-    const paid = Number(remaining._sum.nominal ?? 0);
-    const grand = Number(order?.grandTotal ?? 0);
-    const newStatus: "BELUM_BAYAR" | "DP" | "LUNAS" =
-      paid >= grand ? "LUNAS" : paid > 0 ? "DP" : "BELUM_BAYAR";
-    await prisma.order.update({ where: { id: orderId }, data: { statusPembayaran: newStatus } });
+    await prisma.$transaction(async (tx) => {
+      if (oldJurnal) {
+        // 1. Soft Delete Jurnal Lama
+        await tx.jurnalUmum.update({
+          where: { id: oldJurnal.id },
+          data: { deletedAt: now },
+        });
 
-    return NextResponse.json({ message: "Pembayaran dihapus." });
+        // 2. Buat Jurnal Pembalik
+        await createJurnalDoubleEntry({
+          ref: `REV-${oldJurnal.ref}`,
+          tanggal: now,
+          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan}`,
+          akunDebetId: oldJurnal.akunKreditId,
+          akunKreditId: oldJurnal.akunDebetId,
+          nominal: Number(oldJurnal.nominal),
+          paymentId: paymentId,
+          createdById: session.user.id,
+          deletedAt: now,
+        }, tx as any);
+      }
+
+      // 3. Hapus Data Payment
+      await tx.payment.delete({ where: { id: paymentId } });
+
+      // 4. Recalculate status
+      const remaining = await tx.payment.aggregate({
+        _sum: { nominal: true },
+        where: { orderId },
+      });
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        select: { grandTotal: true },
+      });
+      const paid = Number(remaining._sum.nominal ?? 0);
+      const grand = Number(order?.grandTotal ?? 0);
+      const newStatus: "BELUM_BAYAR" | "DP" | "LUNAS" =
+        paid >= grand ? "LUNAS" : paid > 0 ? "DP" : "BELUM_BAYAR";
+      await tx.order.update({ where: { id: orderId }, data: { statusPembayaran: newStatus } });
+    });
+
+    return NextResponse.json({ message: "Pembayaran dihapus (reversal applied)." });
   } catch (err) {
     console.error("[PAYMENT DELETE ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

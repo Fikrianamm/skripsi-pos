@@ -13,6 +13,26 @@ async function requireAccess() {
   return { error: null, status: 200, session };
 }
 
+async function generateNomorSpk(): Promise<string> {
+  const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
+  const prefix = settings?.prefixSpk || "SPK-";
+  
+  const lastSpk = await prisma.sPK.findFirst({
+    where: { nomorSpk: { startsWith: prefix } },
+    orderBy: { nomorSpk: "desc" },
+    select: { nomorSpk: true },
+  });
+
+  let seq = 1;
+  if (lastSpk?.nomorSpk) {
+    const parts = lastSpk.nomorSpk.split("-");
+    const lastPart = parts[parts.length - 1];
+    seq = parseInt(lastPart || "0", 10) + 1;
+  }
+
+  return `${prefix}${String(seq).padStart(4, "0")}`;
+}
+
 // GET /api/order/[id]/spk — Ambil SPK order ini
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
@@ -85,12 +105,15 @@ export async function POST(req: NextRequest, { params }: Params) {
         { status: 404 },
       );
 
+    const nomorSpk = await generateNomorSpk();
+
     // Atomic: buat SPK + update status order ke JAHIT
     const [spk] = await prisma.$transaction([
       prisma.sPK.create({
         data: {
           id: crypto.randomUUID(),
           orderId,
+          nomorSpk,
           karyawanId,
           tahapProduksi: "PRODUKSI",
           model: model?.trim() || null,

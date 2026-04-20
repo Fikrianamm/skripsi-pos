@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { GalleryVerticalEnd } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -8,12 +9,11 @@ import {
 } from "@/components/ui/sidebar";
 
 export function CompanyHeader({
-  company,
+  name,
+  logoUrl,
 }: {
-  company: {
-    name: string;
-    logo: React.ElementType;
-  };
+  name: string;
+  logoUrl?: string | null;
 }) {
   return (
     <SidebarMenu>
@@ -22,11 +22,19 @@ export function CompanyHeader({
           size="lg"
           className="cursor-default hover:bg-transparent"
         >
-          <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-            <company.logo className="size-4" />
+          <div className={`${logoUrl ? "bg-transparent" : "bg-sidebar-primary"} text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden`}>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={name} 
+                className="size-full object-cover" 
+              />
+            ) : (
+              <GalleryVerticalEnd className="size-4" />
+            )}
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{company.name}</span>
+            <span className="truncate font-medium">{name}</span>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

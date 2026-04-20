@@ -44,6 +44,7 @@ import {
 interface SpkItem {
   id: string;
   orderId: string;
+  nomorSpk: string;
   tahapProduksi: string;
   model: string | null;
   ukuran: string | null;
@@ -151,6 +152,12 @@ function SpkQueueCard({
 
       <div className="p-4 flex flex-col gap-3">
         {/* ── Header row ── */}
+        <div className="flex justify-between items-center">
+          <p className="text-xs text-default-400">No. SPK</p>
+          <p className="font-mono font-semibold text-sm text-primary hover:underline flex items-center gap-1">
+            {spk.nomorSpk}
+          </p>
+        </div>
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col gap-0.5">
             <Link

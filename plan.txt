@@ -1,0 +1,19 @@
+Dokumen perencanaan ini dibuat secara *high-level* untuk memandu _Junior Programmer_ atau model AI lainnya dalam mengimplementasikan fitur tambahan web.
+
+## Objektif Utama
+1. Menambahkan Detail riwayat customer.
+2. Menambahkan UI Dashboard (/Dashboard).
+3. Menerapkan fitur upload pada foto product.
+4. menambahkan setting invoice rekening.
+
+#1. Menambahkan Detail riwayat customer 
+- update tabel customer dan api yang menampilkan pesanan pertama (dan bisa diklik detail order), total pesanan, total belanja.
+
+#2. Menambahkan UI Dashboard (/Dashboard).
+- menampilkan summary cards (Penjualan Hari Ini, Total Customer, dll), _Low Stock Alerts_, dan Grafik Pendapatan. tambahkan informasi yang mungkin diperlukan lainnya.
+
+#3. menerapkan fitur upload pada foto product
+- menambahkan upload file ke storage cloud s3 untuk foto product
+
+#4. menambahkan setting invoice rekening
+- menambahkan setting untuk menampilkan rekening bank pada invoice pada web setting.

@@ -10,7 +10,6 @@ import {
   TrendingUp,
   TrendingDown,
   CircleDollarSign,
-  ShoppingCart,
   Receipt,
   BadgeDollarSign,
 } from "lucide-react";
@@ -20,17 +19,9 @@ type PLData = {
   bulan: number;
   tahun: number;
   pendapatan: PLRow[];
-  hpp: PLRow[];
-  marketing: PLRow[];
-  gaji: PLRow[];
-  administrasi: PLRow[];
+  bebanUsaha: PLRow[];
   totalPendapatan: number;
-  totalHPP: number;
-  labaKotor: number;
-  totalMarketing: number;
-  totalGaji: number;
-  totalAdm: number;
-  totalBebanOperasional: number;
+  totalBebanUsaha: number;
   labaBersih: number;
   margin: number;
 };
@@ -86,19 +77,6 @@ function SectionHeader({
       <td
         colSpan={2}
         className={`py-2.5 px-4 text-xs font-bold uppercase tracking-widest ${colorClass}`}
-      >
-        {label}
-      </td>
-    </tr>
-  );
-}
-
-function SubgroupHeader({ label }: { label: string }) {
-  return (
-    <tr className="bg-default-50/80 dark:bg-default-100/5">
-      <td
-        colSpan={2}
-        className="py-1.5 px-6 text-xs font-semibold text-default-500 uppercase tracking-wide"
       >
         {label}
       </td>
@@ -171,7 +149,7 @@ export default function LabaRugiPage() {
     <div className="flex flex-col gap-6 mb-6">
       <PageHeader
         title="Laporan Laba Rugi"
-        description="Ringkasan pendapatan, beban pokok, dan laba bersih per periode."
+        description="Ringkasan pendapatan, beban usaha, dan laba bersih per periode."
       />
 
       {/* Period controls */}
@@ -213,29 +191,21 @@ export default function LabaRugiPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard
-          label="Pendapatan"
-          sublabel="Total Omzet"
+          label="Total Pendapatan"
+          sublabel="Omzet Penjualan"
           value={data?.totalPendapatan ?? 0}
           icon={<CircleDollarSign size={16} className="text-primary-400" />}
           colorClass="bg-primary-50 dark:bg-primary-950/30 text-primary-800 dark:text-primary-200 border-primary-200 dark:border-primary-800"
           isLoading={isLoading}
         />
         <KpiCard
-          label="HPP"
-          sublabel="Harga Pokok Produksi"
-          value={data?.totalHPP ?? 0}
-          icon={<ShoppingCart size={16} className="text-danger-400" />}
+          label="Total Beban Usaha"
+          sublabel="Biaya Operasional"
+          value={data?.totalBebanUsaha ?? 0}
+          icon={<Receipt size={16} className="text-danger-400" />}
           colorClass="bg-danger-50 dark:bg-danger-950/30 text-danger-800 dark:text-danger-200 border-danger-200 dark:border-danger-800"
-          isLoading={isLoading}
-        />
-        <KpiCard
-          label="Beban Operasional"
-          sublabel="Marketing + Gaji + Adm"
-          value={data?.totalBebanOperasional ?? 0}
-          icon={<Receipt size={16} className="text-warning-500" />}
-          colorClass="bg-warning-50 dark:bg-warning-950/30 text-warning-800 dark:text-warning-200 border-warning-200 dark:border-warning-800"
           isLoading={isLoading}
         />
         <KpiCard
@@ -275,7 +245,7 @@ export default function LabaRugiPage() {
             <thead>
               <tr className="bg-default-100 dark:bg-default-200/10 border-b border-default-200">
                 <th className="py-3 pl-4 text-left text-xs font-semibold text-default-600 uppercase tracking-wide">
-                  Keterangan
+                  Keterangan (Akun)
                 </th>
                 <th className="py-3 px-4 text-right text-xs font-semibold text-default-600 uppercase tracking-wide">
                   Jumlah (Rp)
@@ -308,15 +278,15 @@ export default function LabaRugiPage() {
                 colorClass="text-primary-700"
               />
 
-              {/* HPP */}
+              {/* BEBAN USAHA */}
               <SectionHeader
-                label="II. Harga Pokok Produksi (HPP)"
+                label="II. Beban Usaha"
                 colorClass="bg-danger-50/60 dark:bg-danger-900/20 text-danger-700 dark:text-danger-300"
               />
-              {data.hpp.length === 0 ? (
+              {data.bebanUsaha.length === 0 ? (
                 <EmptyRow />
               ) : (
-                data.hpp.map((r) => (
+                data.bebanUsaha.map((r) => (
                   <DataRow
                     key={r.kode}
                     label={`${r.kode} — ${r.nama}`}
@@ -327,87 +297,10 @@ export default function LabaRugiPage() {
                 ))
               )}
               <DataRow
-                label="Total HPP"
-                amount={data.totalHPP}
+                label="Total Beban Usaha"
+                amount={data.totalBebanUsaha}
                 bold
                 colorClass="text-danger-700"
-              />
-
-              {/* LABA KOTOR */}
-              <DataRow
-                label={`Laba Kotor  (Pendapatan − HPP)`}
-                amount={data.labaKotor}
-                bold
-                colorClass={
-                  data.labaKotor >= 0 ? "text-success-700" : "text-danger-700"
-                }
-              />
-
-              {/* BEBAN OPERASIONAL */}
-              <SectionHeader
-                label="III. Beban Operasional"
-                colorClass="bg-warning-50/80 dark:bg-warning-900/20 text-warning-700 dark:text-warning-300"
-              />
-
-              <SubgroupHeader label="Marketing" />
-              {data.marketing.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                data.marketing.map((r) => (
-                  <DataRow
-                    key={r.kode}
-                    label={`${r.kode} — ${r.nama}`}
-                    amount={r.total}
-                    indent
-                    small
-                  />
-                ))
-              )}
-              <DataRow
-                label="Subtotal Marketing"
-                amount={data.totalMarketing}
-              />
-
-              <SubgroupHeader label="Gaji & SDM" />
-              {data.gaji.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                data.gaji.map((r) => (
-                  <DataRow
-                    key={r.kode}
-                    label={`${r.kode} — ${r.nama}`}
-                    amount={r.total}
-                    indent
-                    small
-                  />
-                ))
-              )}
-              <DataRow label="Subtotal Gaji" amount={data.totalGaji} />
-
-              <SubgroupHeader label="Administrasi & Umum" />
-              {data.administrasi.length === 0 ? (
-                <EmptyRow />
-              ) : (
-                data.administrasi.map((r) => (
-                  <DataRow
-                    key={r.kode}
-                    label={`${r.kode} — ${r.nama}`}
-                    amount={r.total}
-                    indent
-                    small
-                  />
-                ))
-              )}
-              <DataRow
-                label="Subtotal Administrasi"
-                amount={data.totalAdm}
-              />
-
-              <DataRow
-                label="Total Beban Operasional"
-                amount={data.totalBebanOperasional}
-                bold
-                colorClass="text-warning-700"
               />
 
               {/* LABA BERSIH */}
@@ -425,7 +318,7 @@ export default function LabaRugiPage() {
                       : "text-danger-800 dark:text-danger-300"
                   }`}
                 >
-                  {data.labaBersih >= 0 ? "✓ " : "✗ "}LABA BERSIH
+                  {data.labaBersih >= 0 ? "✓ " : "✗ "}LABA BERSIH (Earning After Tax)
                 </td>
                 <td
                   className={`py-4 px-4 text-right text-base font-bold tabular-nums ${

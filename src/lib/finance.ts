@@ -13,6 +13,7 @@ export type JurnalEntryInput = {
   costId?: string;
   penerimaanId?: string;
   createdById?: string;
+  deletedAt?: Date | null;
 };
 
 /**
@@ -38,6 +39,7 @@ export async function createJurnalDoubleEntry(
     costId: input.costId,
     penerimaanId: input.penerimaanId,
     createdById: input.createdById,
+    deletedAt: input.deletedAt,
   };
 
   if (tx) {

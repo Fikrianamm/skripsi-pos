@@ -68,7 +68,7 @@ export function NavUser({ user }: { user: User }) {
               className="data-[state=open]:bg-slate-200 data-[state=open]:text-sidebar-accent-foreground hover:bg-slate-200 text-slate-600"
             >
               <Avatar className="h-8 w-8 rounded-full">
-                <AvatarImage src={user.image as string} alt={user.name} />
+                <AvatarImage src={user.image as string} alt={user.name} className="object-cover"/>
                 <AvatarFallback className="rounded-full">
                   {getInitialName(user.name)}
                 </AvatarFallback>
@@ -157,7 +157,7 @@ export function NavUserSimple({ user }: { user: User }) {
               variant={"ghost"}
             >
               <Avatar className="h-8 w-8 rounded-full">
-                <AvatarImage src={user.image as string} alt={user.name} />
+                <AvatarImage src={user.image as string} alt={user.name} className="object-cover"/>
                 <AvatarFallback className="rounded-full">
                   {getInitialName(user.name)}
                 </AvatarFallback>

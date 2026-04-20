@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadToNeo } from "@/lib/storage";
 import path from "path";
+import { createJurnalDoubleEntry } from "@/lib/finance";
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -172,7 +174,58 @@ export async function PATCH(
       ),
     ]);
 
-    return NextResponse.json({ message: "Penerimaan berhasil diperbarui." });
+    // ── LOGIKA REVERSAL JURNAL ──────────────────────────────────────
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      const oldJurnal = await tx.jurnalUmum.findFirst({
+        where: { penerimaanId: id, deletedAt: null },
+      });
+
+      if (oldJurnal) {
+        // 1. Soft Delete Jurnal Lama
+        await tx.jurnalUmum.update({
+          where: { id: oldJurnal.id },
+          data: { deletedAt: now },
+        });
+
+        // 2. Buat Jurnal Pembalik
+        await createJurnalDoubleEntry({
+          ref: `REV-${oldJurnal.ref}`,
+          tanggal: now,
+          keterangan: `Reversal untuk: ${oldJurnal.keterangan}`,
+          akunDebetId: oldJurnal.akunKreditId,
+          akunKreditId: oldJurnal.akunDebetId,
+          nominal: Number(oldJurnal.nominal),
+          penerimaanId: id,
+          createdById: authResult.session!.user.id,
+          deletedAt: now,
+        }, tx as any);
+      }
+
+      // 3. Buat Jurnal Baru (jika total > 0)
+      if (newTotal > 0) {
+        const [hppAkun, hutangAkun] = await Promise.all([
+          tx.akun.findUnique({ where: { kodeAkun: "5-001" } }),
+          tx.akun.findUnique({ where: { kodeAkun: "2-001" } }),
+        ]);
+
+        if (hppAkun && hutangAkun) {
+          const realTanggal = tanggal ? new Date(tanggal) : existing.tanggal;
+          await createJurnalDoubleEntry({
+            ref: `INV-${id.slice(0, 5)}`,
+            tanggal: realTanggal,
+            keterangan: `Penerimaan Barang (Koreksi)${nomorFaktur ? ` #${nomorFaktur}` : ""} - Total ${newTotal.toLocaleString("id-ID")}`,
+            akunDebetId: hppAkun.id,
+            akunKreditId: hutangAkun.id,
+            nominal: newTotal,
+            penerimaanId: id,
+            createdById: authResult.session!.user.id,
+          }, tx as any);
+        }
+      }
+    });
+
+    return NextResponse.json({ message: "Penerimaan berhasil diperbarui (reversal applied)." });
   } catch (error) {
     console.error("[PATCH PENERIMAAN ERROR]", error);
     return NextResponse.json(
@@ -207,19 +260,46 @@ export async function DELETE(
         { status: 404 },
       );
 
-    await prisma.$transaction([
-      // 1. Rollback stok untuk setiap item
-      ...existing.items.map((item) =>
-        prisma.bahanBaku.update({
+    await prisma.$transaction(async (tx) => {
+      // 1. Rollback stok
+      for (const item of existing.items) {
+        await tx.bahanBaku.update({
           where: { id: item.bahanBakuId },
           data: { stok: { decrement: item.jumlah } },
-        }),
-      ),
-      // 2. Hapus items
-      prisma.stokMasuk.deleteMany({ where: { penerimaanId: id } }),
-      // 3. Hapus header
-      prisma.penerimaanBarang.delete({ where: { id } }),
-    ]);
+        });
+      }
+
+      // 2. Logic Reversal Jurnal
+      const oldJurnal = await tx.jurnalUmum.findFirst({
+        where: { penerimaanId: id, deletedAt: null },
+      });
+
+      if (oldJurnal) {
+        const now = new Date();
+        // Soft delete old
+        await tx.jurnalUmum.update({
+          where: { id: oldJurnal.id },
+          data: { deletedAt: now },
+        });
+
+        // Create reversal
+        await createJurnalDoubleEntry({
+          ref: `REV-${oldJurnal.ref}`,
+          tanggal: now,
+          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan}`,
+          akunDebetId: oldJurnal.akunKreditId,
+          akunKreditId: oldJurnal.akunDebetId,
+          nominal: Number(oldJurnal.nominal),
+          penerimaanId: id,
+          createdById: authResult.session!.user.id,
+          deletedAt: now,
+        }, tx as any);
+      }
+
+      // 3. Hapus records
+      await tx.stokMasuk.deleteMany({ where: { penerimaanId: id } });
+      await tx.penerimaanBarang.delete({ where: { id } });
+    });
 
     return NextResponse.json({
       message: "Penerimaan berhasil dihapus dan stok telah di-rollback.",

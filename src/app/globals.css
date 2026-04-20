@@ -118,11 +118,27 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif,
+    font-family:
+      var(--font-outfit), ui-sans-serif, system-ui, sans-serif,
       "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
       "Noto Color Emoji";
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Menyembunyikan spin button di Chrome, Safari, Edge, Opera */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Menyembunyikan spin button di Firefox */
+  input[type="number"] {
+    -moz-appearance: textfield;
+    text-align: center;
   }
 }

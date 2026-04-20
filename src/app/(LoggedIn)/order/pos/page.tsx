@@ -14,7 +14,6 @@ import {
   SelectItem,
   Textarea,
   Chip,
-  Avatar,
   Card,
   CardBody,
   CardHeader,
@@ -72,12 +71,18 @@ export default function Page() {
   const [ongkir, setOngkir] = useState<number | undefined>(undefined);
 
   const [kasBankId, setKasBankId] = useState<string>("");
-  const [nominalBayar, setNominalBayar] = useState<number | undefined>(undefined);
+  const [nominalBayar, setNominalBayar] = useState<number | undefined>(
+    undefined,
+  );
 
   // Data KasBank
   const { data: kasBankData } = useSWR("/api/finance/kas-bank", fetcher);
-  const kasBanks: { id: string; namaRekening: string; jenisRekening: string; nomorRekening?: string }[] = 
-    kasBankData?.kasBanks ?? [];
+  const kasBanks: {
+    id: string;
+    namaRekening: string;
+    jenisRekening: string;
+    nomorRekening?: string;
+  }[] = kasBankData?.kasBanks ?? [];
 
   // Customer data
   const { data: customerData, mutate: mutateCustomers } = useSWR(
@@ -175,8 +180,16 @@ export default function Page() {
           subtotal: i.harga * i.qty,
           catatan: i.catatan || undefined,
         })),
-        kasBankId: (statusPembayaran === "DP" || statusPembayaran === "LUNAS") ? kasBankId : undefined,
-        nominalBayar: statusPembayaran === "LUNAS" ? grandTotal : (statusPembayaran === "DP" ? nominalBayar : undefined),
+        kasBankId:
+          statusPembayaran === "DP" || statusPembayaran === "LUNAS"
+            ? kasBankId
+            : undefined,
+        nominalBayar:
+          statusPembayaran === "LUNAS"
+            ? grandTotal
+            : statusPembayaran === "DP"
+              ? nominalBayar
+              : undefined,
       };
 
       const res = await fetch("/api/order", {
@@ -307,13 +320,12 @@ export default function Page() {
               <span className="font-semibold text-sm">Customer</span>
             </CardHeader>
             <Divider />
-            <CardBody className="gap-3">
+            <CardBody className="gap-1">
               <Autocomplete
                 defaultItems={customers}
                 label="Customer"
                 placeholder="Cari dan pilih customer..."
                 startContent={<User size={14} className="text-default-400" />}
-                size="sm"
                 selectedKey={customerId || ""}
                 onSelectionChange={(key) =>
                   setCustomerId((key as string) ?? "")
@@ -326,21 +338,8 @@ export default function Page() {
                   <AutocompleteItem
                     key={customer.id!}
                     textValue={customer.nama}
-                    startContent={
-                      <Avatar
-                        src={customer.image ?? undefined}
-                        name={customer.nama}
-                        size="sm"
-                        className="shrink-0"
-                      />
-                    }
                   >
-                    <div>
                       <p className="text-sm">{customer.nama}</p>
-                      <p className="text-xs text-default-400">
-                        {customer.nomorHp}
-                      </p>
-                    </div>
                   </AutocompleteItem>
                 )}
               </Autocomplete>
@@ -448,7 +447,7 @@ export default function Page() {
                   ))}
                 </Select>
               </div>
-              
+
               {/* Tambahan Dropdown Rekening Kas & Input Nominal (jika bukan BELUM_BAYAR) */}
               {statusPembayaran !== "BELUM_BAYAR" && (
                 <div className="flex flex-col gap-3 mt-1">
@@ -456,16 +455,21 @@ export default function Page() {
                     label="Simpan Ke Rekening"
                     placeholder="Pilih Kas/Bank tujuan..."
                     selectedKeys={kasBankId ? [kasBankId] : []}
-                    onSelectionChange={(keys) => setKasBankId(Array.from(keys)[0] as string)}
+                    onSelectionChange={(keys) =>
+                      setKasBankId(Array.from(keys)[0] as string)
+                    }
                     size="sm"
                     isRequired
                   >
                     {kasBanks.map((kb) => (
                       <SelectItem key={kb.id} textValue={kb.namaRekening}>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium">{kb.namaRekening}</span>
+                          <span className="text-sm font-medium">
+                            {kb.namaRekening}
+                          </span>
                           <span className="text-xs text-default-400">
-                            {kb.jenisRekening} {kb.nomorRekening ? `- ${kb.nomorRekening}` : ""}
+                            {kb.jenisRekening}{" "}
+                            {kb.nomorRekening ? `- ${kb.nomorRekening}` : ""}
                           </span>
                         </div>
                       </SelectItem>
@@ -480,14 +484,20 @@ export default function Page() {
                       onChange={(val) => setNominalBayar(Number(val))}
                       size="sm"
                       isRequired
-                      startContent={<span className="text-default-400 text-xs">Rp</span>}
+                      startContent={
+                        <span className="text-default-400 text-xs">Rp</span>
+                      }
                     />
                   )}
                   {statusPembayaran === "LUNAS" && (
-                     <div className="flex items-center justify-between px-3 py-2 bg-success-50 rounded-lg border border-success-200">
-                      <span className="text-xs font-medium text-success-700">Otomatis Lunas</span>
-                      <span className="text-sm font-bold text-success-700">{formatRupiah(grandTotal)}</span>
-                     </div>
+                    <div className="flex items-center justify-between px-3 py-2 bg-success-50 rounded-lg border border-success-200">
+                      <span className="text-xs font-medium text-success-700">
+                        Otomatis Lunas
+                      </span>
+                      <span className="text-sm font-bold text-success-700">
+                        {formatRupiah(grandTotal)}
+                      </span>
+                    </div>
                   )}
                 </div>
               )}

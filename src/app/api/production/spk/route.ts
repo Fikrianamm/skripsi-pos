@@ -61,11 +61,11 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         orderBy: [
-          { tanggalSetor: "asc" }, // yang paling dekat deadline duluan
-          { createdAt: "asc" },
+          { createdAt: "desc" },
         ],
         select: {
           id: true,
+          nomorSpk: true,
           orderId: true,
           tahapProduksi: true,
           model: true,

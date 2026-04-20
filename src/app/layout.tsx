@@ -10,11 +10,29 @@ const outfit = Outfit({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Next.js Starter — RBAC & Auth",
-  description:
-    "Production-ready Next.js starter with Better Auth, Role-Based Access Control, Prisma ORM, and admin dashboard.",
-};
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  let companyName = "CV. Haqi Koleksi";
+  try {
+    const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
+    if (settings?.namaPerusahaan) {
+      companyName = settings.namaPerusahaan;
+    }
+  } catch (error) {
+    console.error("Failed to fetch settings for metadata:", error);
+  }
+
+  return {
+    title: {
+      template: `%s | ${companyName}`,
+      default: `${companyName} - Dashboard POS & Produksi`,
+    },
+    description: `Sistem Manajemen POS & Produksi terintegrasi untuk ${companyName}`,
+  };
+}
 
 export default function RootLayout({
   children,

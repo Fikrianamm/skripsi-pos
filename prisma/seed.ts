@@ -140,6 +140,26 @@ async function main() {
   await seedProduct();
   await seedDummy();
 
+  // 4. Seed AppSettings (Single row table)
+  console.log("⏳ Seeding App Settings...");
+  await prisma.appSetting.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      namaPerusahaan: "CV. Haqi Koleksi",
+      logoUrl: null, // Default icon GalleryVerticalEnd
+      alamat: "Jl. Ruko Permata, No. 12, Jawa Timur",
+      nomorKontak: "081234567890",
+      prefixOrder: "INV-HQ-",
+      catatanKakiStruk: "Terima kasih telah berbelanja! Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan kecuali ada perjanjian sebelumnya.",
+      prefixSpk: "SPK-",
+      estimasiHariPengerjaan: 14,
+      defaultPendapatanAkunId: "akun_4001", // Pendapatan - KONVEKSI
+    },
+  });
+  console.log("✅ Seeding App Settings completed!");
+
   console.log("\n🌱 Seeding completed!");
 }
 

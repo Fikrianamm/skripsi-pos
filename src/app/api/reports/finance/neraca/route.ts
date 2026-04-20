@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
     const endDate = new Date(tahun, bulan, 0, 23, 59, 59, 999); // last day of given month
 
     const jurnals = await prisma.jurnalUmum.findMany({
-      where: { tanggal: { lte: endDate } },
+      where: {
+        tanggal: { lte: endDate },
+        deletedAt: null,
+      },
       include: {
         akunDebet:  { select: { id: true, kodeAkun: true, namaAkun: true, kelompok: true, posisiNormal: true } },
         akunKredit: { select: { id: true, kodeAkun: true, namaAkun: true, kelompok: true, posisiNormal: true } },
@@ -85,15 +88,14 @@ export async function GET(request: NextRequest) {
       (grouped[grp] ?? []).reduce((s, a) => s + a.saldo, 0);
 
     const totalAktivaLancar = sum("AKTIVA_LANCAR");
-    const totalAktivaTetap  = sum("AKTIVA_TETAP");
-    const totalAktiva = totalAktivaLancar + totalAktivaTetap;
+    const totalAktiva = totalAktivaLancar;
 
     const totalKewajiban = sum("KEWAJIBAN");
     const totalModal     = sum("MODAL");
 
     // Laba berjalan (accumulated from income statement accounts)
     const totalPendapatan = sum("PENDAPATAN");
-    const totalBeban = sum("BEBAN_HPP") + sum("BEBAN_MARKETING") + sum("BEBAN_GAJI") + sum("BEBAN_ADMINISTRASI");
+    const totalBeban = sum("BEBAN_USAHA");
     const labaBerjalan = totalPendapatan - totalBeban;
 
     const totalPasiva = totalKewajiban + totalModal + labaBerjalan;
@@ -102,9 +104,7 @@ export async function GET(request: NextRequest) {
       bulan, tahun,
       aktiva: {
         lancar: grouped["AKTIVA_LANCAR"] ?? [],
-        tetap:  grouped["AKTIVA_TETAP"] ?? [],
         totalLancar: totalAktivaLancar,
-        totalTetap:  totalAktivaTetap,
         total:       totalAktiva,
       },
       pasiva: {

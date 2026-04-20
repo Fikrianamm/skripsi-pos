@@ -66,7 +66,7 @@ export default function JurnalPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Jurnal Umum"
         description="Pusat pencatatan seluruh aliran finansial — tersinkronisasi dari Pembayaran, Biaya, dan Tabungan. Input jurnal koreksi di sini."

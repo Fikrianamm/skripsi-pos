@@ -16,6 +16,7 @@ export default function ProfileSection() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [message, setMessage] = useState<{
@@ -59,6 +60,7 @@ export default function ProfileSection() {
         return;
       }
 
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -78,15 +80,37 @@ export default function ProfileSection() {
     setMessage(null);
 
     try {
+      let finalImageUrl = avatarPreview;
+
+      // Only upload if a new file was actually selected
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append("file", avatarFile);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload avatar");
+        }
+
+        const uploadData = await uploadRes.json();
+        finalImageUrl = uploadData.url;
+      }
+
       await authClient.updateUser({
         name: name,
-        image: avatarPreview || undefined,
+        image: finalImageUrl || undefined,
       });
+
       addToast({
         title: "Profil diperbarui!",
         description: "Profil berhasil diperbarui!",
         color: "success",
       });
+      setAvatarFile(null); // Reset file state
       // Refresh server components (sidebar/navbar) to show updated profile
       router.refresh();
     } catch (error) {
@@ -152,7 +176,7 @@ export default function ProfileSection() {
                     className="size-20 cursor-pointer rounded-full"
                     onClick={handleAvatarClick}
                   >
-                    <AvatarImage src={avatarPreview || undefined} alt={name} />
+                    <AvatarImage src={avatarPreview || undefined} alt={name} className="object-cover"/>
                     <AvatarFallback className="text-lg rounded-full">
                       {getInitials(name || session?.user?.email || "U")}
                     </AvatarFallback>

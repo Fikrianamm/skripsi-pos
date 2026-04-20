@@ -368,6 +368,7 @@ model Karyawan {
 model SPK {
   id            String              @id
   orderId       String              @unique
+  nomorSpk      String?             @unique @db.VarChar(50)
   karyawanId    String
   userId        String?
   tahapProduksi StatusProduksi
@@ -482,6 +483,8 @@ model Akun {
   kasBanks       KasBank[]
   costs          Cost[]
 
+  appSettings    AppSetting[]    @relation("AkunPendapatanDefault")
+
   @@index([kodeAkun])
   @@index([kelompok])
   @@map("akun")
@@ -504,6 +507,7 @@ model JurnalUmum {
   penerimaanId String?   @unique
   createdById  String?
   createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
   updatedAt    DateTime  @updatedAt
 
   akunDebet  Akun             @relation("JurnalDebet",  fields: [akunDebetId],  references: [id], onDelete: Restrict)
@@ -616,4 +620,37 @@ enum MetodePembayaran {
 enum PosisiNormal {
   DEBET
   KREDIT
+}
+
+// ============================================================
+// SYSTEM SETTINGS (PENGATURAN WEB)
+// ============================================================
+
+model AppSetting {
+  id                      Int      @id @default(1) // Selalu 1 untuk single-row table
+  
+  namaPerusahaan          String   @default("CV. Haqi Koleksi") @db.VarChar(100)
+  logoUrl                 String?  @db.Text // Path gambar/URL logo perusahaan jika nilai null maka tampilkan icon GalleryVerticalEnd
+  alamat                  String?  @db.Text
+  nomorKontak             String?  @db.VarChar(50)
+  
+  prefixOrder             String   @default("INV-HQ-") @db.VarChar(20)
+  catatanKakiStruk        String?  @db.Text // Syarat & Ketentuan di bawah nota
+  
+  prefixSpk               String   @default("SPK-") @db.VarChar(20)
+  estimasiHariPengerjaan  Int      @default(14) // Penambahan hari otomatis untuk deadline
+  
+  // Ke mana uang pesanan baju otomatis dimasukkan dalam Jurnal
+  defaultPendapatanAkunId String?
+
+  // Rekening yang ditampilkan di invoice (JSON array of KasBank IDs)
+  invoiceRekeningIds      String?  @db.Text
+  
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relasi ke tabel Akun
+  akunPendapatan          Akun?    @relation("AkunPendapatanDefault", fields: [defaultPendapatanAkunId], references: [id], onDelete: SetNull)
+
+  @@map("app_setting")
 }

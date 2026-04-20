@@ -104,43 +104,6 @@ export const NAV_ITEMS: NavGroup[] = [
           },
         ],
       },
-
-      {
-        title: "Laporan",
-        url: "#",
-        icon: FileText,
-        roles: ["admin"],
-        items: [
-          {
-            title: "Laporan Penjualan",
-            url: "/reports/sales",
-          },
-          {
-            title: "Laporan Produksi",
-            url: "/reports/production",
-          },
-          {
-            title: "Laporan Laba Rugi",
-            url: "/reports/laba-rugi",
-          },
-          {
-            title: "Laporan Neraca",
-            url: "/reports/neraca",
-          },
-          {
-            title: "Laporan Tabungan",
-            url: "/reports/tabungan",
-          },
-          {
-            title: "Laporan Pengeluaran",
-            url: "/reports/cost",
-          },
-          {
-            title: "Laporan Piutang",
-            url: "/reports/piutang",
-          },
-        ],
-      },
     ],
   },
   {
@@ -163,6 +126,34 @@ export const NAV_ITEMS: NavGroup[] = [
           {
             title: "Akun",
             url: "/finance/akun",
+          },
+        ],
+      },
+      {
+        title: "Laporan",
+        url: "#",
+        icon: FileText,
+        roles: ["admin"],
+        items: [
+          {
+            title: "Laporan Laba Rugi",
+            url: "/reports/laba-rugi",
+          },
+          {
+            title: "Laporan Neraca",
+            url: "/reports/neraca",
+          },
+          {
+            title: "Laporan Tabungan",
+            url: "/reports/tabungan",
+          },
+          {
+            title: "Laporan Pengeluaran",
+            url: "/reports/cost",
+          },
+          {
+            title: "Laporan Piutang",
+            url: "/reports/piutang",
           },
         ],
       },

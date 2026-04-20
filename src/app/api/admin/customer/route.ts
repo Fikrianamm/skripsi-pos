@@ -35,12 +35,38 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
+        include: {
+          orders: {
+            select: {
+              id: true,
+              nomorOrder: true,
+              grandTotal: true,
+              createdAt: true,
+              statusPembayaran: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
       }),
       prisma.customer.count({ where }),
     ]);
 
+    // Transform: compute firstOrder, totalOrder, totalSpend
+    const transformedResults = results.map((customer) => {
+      const orders = customer.orders ?? [];
+      const firstOrder = orders.length > 0 ? orders[0] : null;
+      const totalOrder = orders.length;
+      const totalSpend = orders.reduce(
+        (sum, o) => sum + Number(o.grandTotal),
+        0,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { orders: _orders, ...rest } = customer;
+      return { ...rest, firstOrder, totalOrder, totalSpend };
+    });
+
     return NextResponse.json({
-      results,
+      results: transformedResults,
       count,
       page,
       limit,

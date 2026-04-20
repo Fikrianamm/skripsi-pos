@@ -4,8 +4,8 @@ import { TableCell, TableRow } from "@heroui/table";
 import { Button } from "@heroui/button";
 import { Chip, Divider, type Selection } from "@heroui/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Eye, MoreVertical, PenLine, Trash2 } from "lucide-react";
-import { fetcher, getInitialName } from "@/lib/func";
+import { Eye, History, MoreVertical, PenLine, Trash2 } from "lucide-react";
+import { fetcher, formatRupiah, getInitialName } from "@/lib/func";
 import useSWR from "swr";
 import { Customer as CustomerType } from "@/types/types";
 import AddCustomerModal from "./components/add-customer-modal";
@@ -13,6 +13,7 @@ import BulkDeleteCustomerModal from "./components/bulk-delete-customer-modal";
 import ViewCustomerModal from "./components/view-customer-modal";
 import DeleteCustomerModal from "./components/delete-customer-modal";
 import EditCustomerModal from "./components/edit-customer-modal";
+import CustomerHistoryModal from "./components/customer-history-modal";
 import { useTableMultipleSelection } from "@/hooks/use-table-multiple-selection";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useContextMenu } from "@/hooks/use-context-menu";
@@ -24,6 +25,12 @@ import { DataTable } from "@/components/data-table/data-table";
 import { TablePagination } from "@/components/data-table/table-pagination";
 import { columns } from "./components/columns";
 
+// Extended type including aggregated fields from API
+interface CustomerWithStats extends CustomerType {
+  firstOrder?: { id: string; nomorOrder: string; createdAt: string } | null;
+  totalOrder?: number;
+  totalSpend?: number;
+}
 
 export default function Page() {
   const { selectionMode } = useTableMultipleSelection(true);
@@ -35,16 +42,17 @@ export default function Page() {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
 
-  const [editCustomer, setEditCustomer] = React.useState<CustomerType | null>(
-    null,
-  );
+  const [editCustomer, setEditCustomer] =
+    React.useState<CustomerWithStats | null>(null);
   const [deleteCustomer, setDeleteCustomer] =
-    React.useState<CustomerType | null>(null);
-  const [viewCustomer, setViewCustomer] = React.useState<CustomerType | null>(
-    null,
-  );
+    React.useState<CustomerWithStats | null>(null);
+  const [viewCustomer, setViewCustomer] =
+    React.useState<CustomerWithStats | null>(null);
+  const [historyCustomer, setHistoryCustomer] =
+    React.useState<CustomerWithStats | null>(null);
+
   const { contextMenu, openMenu, openMenuFromButton, closeMenu } =
-    useContextMenu<CustomerType>();
+    useContextMenu<CustomerWithStats>();
 
   const { data, isLoading, mutate } = useSWR(
     `/api/admin/customer?page=${page}&limit=${limit}&search=${debouncedSearch}`,
@@ -59,7 +67,7 @@ export default function Page() {
 
   const selectedIds = React.useMemo(() => {
     if (selectedKeys === "all")
-      return (data?.results ?? []).map((c: CustomerType) => c.id);
+      return (data?.results ?? []).map((c: CustomerWithStats) => c.id);
     return Array.from(selectedKeys).filter((k) => k !== "");
   }, [selectedKeys, data?.results]);
 
@@ -101,9 +109,9 @@ export default function Page() {
         />
       </BulkSelectionBar>
 
-      <DataTable<CustomerType>
+      <DataTable<CustomerWithStats>
         columns={columns}
-        items={(data?.results ?? []) as CustomerType[]}
+        items={(data?.results ?? []) as CustomerWithStats[]}
         isLoading={isLoading}
         selectionMode={selectionMode}
         selectedKeys={selectedKeys}
@@ -134,9 +142,42 @@ export default function Page() {
                 "-"
               )}
             </TableCell>
-            <TableCell>-</TableCell>
-            <TableCell>-</TableCell>
-            <TableCell>-</TableCell>
+            {/* Pesanan Pertama */}
+            <TableCell>
+              {customer.firstOrder ? (
+                <button
+                  className="text-primary text-sm hover:underline font-medium text-left"
+                  onClick={() => setHistoryCustomer(customer)}
+                >
+                  {new Date(customer.firstOrder.createdAt).toLocaleDateString(
+                    "id-ID",
+                    { day: "numeric", month: "short", year: "numeric" },
+                  )}
+                </button>
+              ) : (
+                <span className="text-default-400 text-sm">-</span>
+              )}
+            </TableCell>
+            {/* Total Pesanan */}
+            <TableCell>
+              {customer.totalOrder !== undefined && customer.totalOrder > 0 ? (
+                <Chip size="sm" variant="flat" color="primary">
+                  {customer.totalOrder} pesanan
+                </Chip>
+              ) : (
+                <span className="text-default-400 text-sm">0</span>
+              )}
+            </TableCell>
+            {/* Total Belanja */}
+            <TableCell>
+              {customer.totalSpend !== undefined && customer.totalSpend > 0 ? (
+                <span className="font-semibold text-sm">
+                  {formatRupiah(customer.totalSpend)}
+                </span>
+              ) : (
+                <span className="text-default-400 text-sm">-</span>
+              )}
+            </TableCell>
             <TableCell className="md:hidden">
               <Button
                 className="p-1.5 rounded-md hover:bg-accent"
@@ -162,6 +203,15 @@ export default function Page() {
               variant: "default",
               onClick: () => {
                 setViewCustomer(contextMenu.item);
+                closeMenu();
+              },
+            },
+            {
+              label: "Riwayat Pesanan",
+              icon: <History size={16} />,
+              variant: "default",
+              onClick: () => {
+                setHistoryCustomer(contextMenu.item);
                 closeMenu();
               },
             },
@@ -197,6 +247,16 @@ export default function Page() {
           }}
         />
       )}
+      {historyCustomer && (
+        <CustomerHistoryModal
+          key={`history-${historyCustomer.id}`}
+          customer={historyCustomer}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setHistoryCustomer(null);
+          }}
+        />
+      )}
       {editCustomer && (
         <EditCustomerModal
           key={`edit-${editCustomer.id}`}
@@ -226,7 +286,17 @@ export default function Page() {
         />
       )}
 
-      <TablePagination page={page} total={pages} onChange={setPage} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }} totalItems={data?.count} />
+      <TablePagination
+        page={page}
+        total={pages}
+        onChange={setPage}
+        limit={limit}
+        onLimitChange={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+        totalItems={data?.count}
+      />
     </div>
   );
 }

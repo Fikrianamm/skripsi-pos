@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/sidebar";
 import { NAV_ITEMS } from "@/config/navigation";
 import type { NavGroup, NavItem } from "@/config/navigation";
-import { COMPANY } from "@/config/company";
 import { User } from "better-auth";
+import { AppSetting } from "@/generated/prisma";
 
 /**
  * Filter navigation items based on the user's role.
@@ -51,8 +51,11 @@ function filterNavByRole(groups: NavGroup[], role: string): NavGroup[] {
 
 export function AppSidebar({
   user,
+  settings,
   ...props
-}: { user: User } & React.ComponentProps<typeof Sidebar>) {
+}: { user: User; settings: AppSetting | null } & React.ComponentProps<
+  typeof Sidebar
+>) {
   const role = (user as User & { role?: string }).role ?? "kasir";
   const filteredNav = React.useMemo(
     () => filterNavByRole(NAV_ITEMS, role),
@@ -62,7 +65,10 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <CompanyHeader company={COMPANY} />
+        <CompanyHeader 
+          name={settings?.namaPerusahaan || "Company"} 
+          logoUrl={settings?.logoUrl} 
+        />
       </SidebarHeader>
       <SidebarContent>
         {filteredNav.map((group) => (

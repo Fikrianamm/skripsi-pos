@@ -20,6 +20,7 @@ import {
   Select,
   SelectItem,
   Textarea,
+  Divider,
 } from "@heroui/react";
 import {
   Table,
@@ -40,7 +41,11 @@ import {
   CreditCard,
 } from "lucide-react";
 import { addToast } from "@heroui/toast";
-import { FilterLanjutan, FilterSection, FilterButtonGroup } from "@/components/filter-lanjutan";
+import {
+  FilterLanjutan,
+  FilterSection,
+  FilterButtonGroup,
+} from "@/components/filter-lanjutan";
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 import { DatePicker } from "@heroui/date-picker";
 import { getLocalTimeZone, today, CalendarDate } from "@internationalized/date";
@@ -101,8 +106,11 @@ function InputPaymentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: kasBankData } = useSWR("/api/finance/kas-bank", fetcher);
-  const kasBanks: { id: string; namaRekening: string; jenisRekening: string }[] =
-    kasBankData?.kasBanks ?? [];
+  const kasBanks: {
+    id: string;
+    namaRekening: string;
+    jenisRekening: string;
+  }[] = kasBankData?.kasBanks ?? [];
 
   function reset() {
     setNominal(0);
@@ -116,15 +124,25 @@ function InputPaymentModal({
   async function handleSubmit() {
     if (!item) return;
     if (nominal <= 0) {
-      addToast({ title: "Validasi", description: "Nominal harus lebih dari 0.", color: "warning" });
+      addToast({
+        title: "Validasi",
+        description: "Nominal harus lebih dari 0.",
+        color: "warning",
+      });
       return;
     }
     if (nominal > item.sisaTagihan) {
-      setNominalError(`Nominal tidak boleh melebihi sisa tagihan (${formatRupiah(item.sisaTagihan)})`);
+      setNominalError(
+        `Nominal tidak boleh melebihi sisa tagihan (${formatRupiah(item.sisaTagihan)})`,
+      );
       return;
     }
     if (!kasBankId) {
-      addToast({ title: "Validasi", description: "Pilih rekening tujuan pembayaran.", color: "warning" });
+      addToast({
+        title: "Validasi",
+        description: "Pilih rekening tujuan pembayaran.",
+        color: "warning",
+      });
       return;
     }
 
@@ -146,12 +164,20 @@ function InputPaymentModal({
         addToast({ title: "Gagal", description: json.error, color: "danger" });
         return;
       }
-      addToast({ title: "Sukses", description: "Pembayaran berhasil dicatat.", color: "success" });
+      addToast({
+        title: "Sukses",
+        description: "Pembayaran berhasil dicatat.",
+        color: "success",
+      });
       reset();
       onSuccess();
       onClose();
     } catch {
-      addToast({ title: "Error", description: "Gagal terhubung ke server.", color: "danger" });
+      addToast({
+        title: "Error",
+        description: "Gagal terhubung ke server.",
+        color: "danger",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -164,7 +190,10 @@ function InputPaymentModal({
     <Modal
       isOpen={isOpen}
       onOpenChange={(v) => {
-        if (!v) { reset(); onClose(); }
+        if (!v) {
+          reset();
+          onClose();
+        }
       }}
       size="lg"
     >
@@ -184,17 +213,25 @@ function InputPaymentModal({
               {item && (
                 <div className="grid grid-cols-3 gap-3 p-3 bg-default-50 rounded-xl text-sm">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs text-default-400">Total Tagihan</span>
-                    <span className="font-semibold">{formatRupiah(item.grandTotal)}</span>
+                    <span className="text-xs text-default-400">
+                      Total Tagihan
+                    </span>
+                    <span className="font-semibold">
+                      {formatRupiah(item.grandTotal)}
+                    </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs text-default-400">Sudah Dibayar</span>
+                    <span className="text-xs text-default-400">
+                      Sudah Dibayar
+                    </span>
                     <span className="font-semibold text-success">
                       {formatRupiah(item.sudahDibayar)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs text-default-400">Sisa Tagihan</span>
+                    <span className="text-xs text-default-400">
+                      Sisa Tagihan
+                    </span>
                     <span className="font-semibold text-danger">
                       {formatRupiah(sisaBefore)}
                     </span>
@@ -210,7 +247,9 @@ function InputPaymentModal({
                   const val = Number(v);
                   setNominal(val);
                   if (item && val > item.sisaTagihan) {
-                    setNominalError(`Maksimal ${formatRupiah(item.sisaTagihan)}`);
+                    setNominalError(
+                      `Maksimal ${formatRupiah(item.sisaTagihan)}`,
+                    );
                   } else {
                     setNominalError("");
                   }
@@ -218,7 +257,9 @@ function InputPaymentModal({
                 isRequired
                 isInvalid={!!nominalError}
                 errorMessage={nominalError}
-                startContent={<span className="text-default-400 text-xs">Rp</span>}
+                startContent={
+                  <span className="text-default-400 text-xs">Rp</span>
+                }
               />
 
               {/* Sisa setelah bayar preview */}
@@ -340,9 +381,7 @@ export default function PiutangPage() {
   // Client-side overdue filter (API gives all non-lunas, we filter overdue locally)
   const results =
     statusFilter === "overdue"
-      ? allResults.filter(
-          (o) => o.deadline && new Date(o.deadline) < today,
-        )
+      ? allResults.filter((o) => o.deadline && new Date(o.deadline) < today)
       : allResults;
 
   // Summary stats from current page data
@@ -460,8 +499,14 @@ export default function PiutangPage() {
         <SearchInput
           value={search}
           placeholder="Cari nomor order atau nama pelanggan..."
-          onChange={(v) => { setSearch(v); setPage(1); }}
-          onClear={() => { setSearch(""); setPage(1); }}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          onClear={() => {
+            setSearch("");
+            setPage(1);
+          }}
           className="w-full"
         />
         <FilterLanjutan
@@ -476,7 +521,10 @@ export default function PiutangPage() {
             <FilterButtonGroup
               options={statusOptions}
               value={statusFilter}
-              onChange={(v) => { setStatusFilter(v as StatusFilter); setPage(1); }}
+              onChange={(v) => {
+                setStatusFilter(v as StatusFilter);
+                setPage(1);
+              }}
             />
           </FilterSection>
         </FilterLanjutan>
@@ -487,10 +535,18 @@ export default function PiutangPage() {
         <div className="flex items-center gap-3 bg-danger-50 border border-danger-200 rounded-xl px-4 py-3">
           <AlertTriangle size={18} className="text-danger shrink-0" />
           <span className="text-sm text-danger-700 font-medium">
-            {totalOverdue} order sudah melewati jatuh tempo — segera tindak lanjuti!
+            {totalOverdue} order sudah melewati jatuh tempo — segera tindak
+            lanjuti!
           </span>
         </div>
       )}
+
+      <div className="flex gap-2 items-center">
+        <span className="text-xs text-default-400 tabular-nums">
+          Menampilkan {results.length} dari {data?.pagination?.total} data
+        </span>
+        <Divider className="flex-1" />
+      </div>
 
       {/* Table */}
       <Table
@@ -498,8 +554,7 @@ export default function PiutangPage() {
         isHeaderSticky
         classNames={{
           base: "max-h-[600px]",
-          wrapper:
-            "flex-1 overflow-auto border border-default-200 shadow-none",
+          wrapper: "flex-1 overflow-auto border border-default-200 shadow-none",
           th: "bg-default-50 text-default-500",
         }}
         bottomContent={
@@ -565,7 +620,10 @@ export default function PiutangPage() {
               : false;
 
             return (
-              <TableRow key={item.id} className="hover:bg-default-50 transition-colors">
+              <TableRow
+                key={item.id}
+                className="hover:bg-default-50 transition-colors"
+              >
                 {/* No. Order — link ke detail */}
                 <TableCell>
                   <Tooltip content="Buka detail order" placement="top">

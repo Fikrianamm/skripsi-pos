@@ -17,6 +17,8 @@ import {
   Skeleton,
   useDisclosure,
   Pagination,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import {
   AlertCircle,
@@ -29,7 +31,7 @@ import {
   Upload,
   ArrowRight,
 } from "lucide-react";
-import { Input } from "@heroui/input";
+import { Input, Textarea } from "@heroui/input";
 import { addToast } from "@heroui/toast";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
@@ -39,6 +41,23 @@ import {
   FilterButtonGroup,
 } from "@/components/filter-lanjutan";
 import { authClient } from "@/lib/auth-client";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
+import { Alert } from "@heroui/alert";
+
+// ── SPK inline form schema ────────────────────────────────────────────────────
+const spkSchema = z.object({
+  karyawanId: z.string().min(1, "Karyawan wajib dipilih"),
+  model: z.string().optional(),
+  tali: z.string().optional(),
+  ukuran: z.string().optional(),
+  jumlah: z.string().min(1, "Jumlah wajib diisi"),
+  tanggalSetor: z.string().optional(),
+  catatan: z.string().optional(),
+});
+type SpkFormData = z.infer<typeof spkSchema>;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface DesignFile {
@@ -59,6 +78,7 @@ interface DesignOrder {
   customer: { id: string; nama: string; nomorHp: string };
   items: { nama: string; qty: number }[];
   designFiles: DesignFile[];
+  spk: { id: string } | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -285,6 +305,64 @@ function DesignOrderCard({
   );
   const deleteDisclosure = useDisclosure();
 
+  // ── SPK Form Logic ──
+  const {
+    isOpen: isSPKOpen,
+    onOpen: onOpenSPK,
+    onClose: onCloseSPK,
+    onOpenChange: onOpenChangeSPK,
+  } = useDisclosure();
+  const [spkGlobalError, setSpkGlobalError] = React.useState("");
+  const totalQty = order.items.reduce((sum, i) => sum + Number(i.qty), 0);
+  const [displayJumlah, setDisplayJumlah] = React.useState<number>(
+    totalQty || 1,
+  );
+
+  const { data: karyawanData } = useSWR(
+    isSPKOpen ? "/api/admin/karyawan?isActive=true&limit=100" : null,
+    fetcher,
+  );
+  const karyawanList: { id: string; nama: string; posisi: string | null }[] =
+    karyawanData?.results ?? [];
+
+  const spkForm = useForm<SpkFormData>({
+    resolver: zodResolver(spkSchema),
+    defaultValues: {
+      karyawanId: "",
+      model: "",
+      tali: "",
+      ukuran: "",
+      jumlah: String(totalQty || 1),
+      tanggalSetor: "",
+      catatan: "",
+    },
+  });
+
+  async function handleSubmitSPK(data: SpkFormData) {
+    setSpkGlobalError("");
+    try {
+      const res = await fetch(`/api/order/${order.id}/spk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, jumlah: Number(data.jumlah) }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setSpkGlobalError(json.error || "Terjadi kesalahan.");
+        return;
+      }
+      addToast({
+        title: "SPK dibuat & status berubah ke Produksi 🎉",
+        description: order.nomorOrder,
+        color: "success",
+      });
+      onMutate();
+      onCloseSPK();
+    } catch {
+      setSpkGlobalError("Terjadi kesalahan jaringan.");
+    }
+  }
+
   async function handleDeleteFile() {
     if (!fileToDelete) return;
     setIsDeletingFile(true);
@@ -340,7 +418,7 @@ function DesignOrderCard({
 
   return (
     <>
-      <div className="rounded-xl border bg-content1 shadow-sm overflow-hidden">
+      <div className="rounded-xl border bg-content1 shadow-sm overflow-hidden flex flex-col h-full">
         {/* ── Deadline warning bar ── */}
         {overdue && (
           <div className="bg-danger-50 border-b border-danger-200 px-4 py-1.5 flex items-center gap-1.5 text-danger text-xs font-medium">
@@ -501,24 +579,30 @@ function DesignOrderCard({
 
           {/* ── Advance button ── */}
           {canEdit && (
-            <>
-              <Divider className="my-0" />
+            <div className="mt-auto">
+              <Divider className="my-3" />
               <Button
                 size="sm"
                 color="success"
                 variant="flat"
                 endContent={<ArrowRight size={14} />}
-                onPress={advanceDisclosure.onOpen}
-                className="self-end"
+                onPress={() => {
+                  if (order.spk) {
+                    advanceDisclosure.onOpen();
+                  } else {
+                    onOpenSPK();
+                  }
+                }}
+                className="w-full"
               >
-                Lanjut ke Produksi
+                {order.spk ? "Lanjut ke Produksi" : "Buat SPK & Produksi"}
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Upload Modal */}
       <UploadModal
         isOpen={uploadDisclosure.isOpen}
         onClose={uploadDisclosure.onClose}
@@ -526,6 +610,7 @@ function DesignOrderCard({
         onSuccess={onMutate}
       />
 
+      {/* Delete File Confirmation */}
       <ConfirmModal
         isOpen={deleteDisclosure.isOpen}
         onClose={deleteDisclosure.onClose}
@@ -537,16 +622,154 @@ function DesignOrderCard({
         confirmColor="danger"
       />
 
+      {/* Advance Confirmation (If SPK already exists) */}
       <ConfirmModal
         isOpen={advanceDisclosure.isOpen}
         onClose={advanceDisclosure.onClose}
         title="Lanjut ke Produksi"
-        description={`Order ${order.nomorOrder} akan dipindahkan ke tahap Produksi. Pastikan semua file desain sudah lengkap.`}
+        description={`Order ${order.nomorOrder} akan dipindahkan ke tahap Produksi. SPK sudah tersedia.`}
         onConfirm={handleAdvance}
         isLoading={isAdvancing}
         confirmLabel="Ya, Lanjutkan"
         confirmColor="primary"
       />
+
+      {/* SPK Form Modal (If NO SPK yet) */}
+      <Modal 
+        isOpen={isSPKOpen} 
+        onOpenChange={onOpenChangeSPK} 
+        placement="center" 
+        size="sm" 
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          <form noValidate onSubmit={spkForm.handleSubmit(handleSubmitSPK)}>
+            <ModalHeader className="flex flex-col gap-0.5 pb-2">
+              <span>Buat SPK — Tahap Produksi</span>
+              <span className="text-sm font-normal text-default-500 font-mono">{order.nomorOrder}</span>
+            </ModalHeader>
+
+            <ModalBody className="gap-3 pt-0">
+              {spkGlobalError && <Alert color="danger" title={spkGlobalError} />}
+
+              <div className="rounded-lg bg-warning-50 border border-warning-200 px-3 py-2 text-xs text-warning-700">
+                Mengisi form ini akan memindahkan status pesanan ke{" "}
+                <span className="font-semibold">PRODUKSI</span> sekaligus membuat SPK.
+              </div>
+
+              <Controller
+                name="karyawanId"
+                control={spkForm.control}
+                render={({ field }) => (
+                  <Select
+                    label="Pekerja Produksi"
+                    placeholder="Pilih pekerja"
+                    isRequired
+                    selectedKeys={field.value ? new Set([field.value]) : new Set()}
+                    onSelectionChange={(keys) => {
+                      const val = Array.from(keys)[0] as string;
+                      field.onChange(val ?? "");
+                    }}
+                    isInvalid={!!spkForm.formState.errors.karyawanId}
+                    errorMessage={spkForm.formState.errors.karyawanId?.message}
+                    isDisabled={spkForm.formState.isSubmitting}
+                    size="sm"
+                  >
+                    {karyawanList.map((k) => (
+                      <SelectItem key={k.id} textValue={k.nama}>
+                        <div className="flex flex-col">
+                          <span className="text-sm">{k.nama}</span>
+                          {k.posisi && (
+                            <span className="text-xs text-default-400">{k.posisi}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  size="sm"
+                  label="Model"
+                  placeholder="Kaos, Kemeja, ..."
+                  {...spkForm.register("model")}
+                  isDisabled={spkForm.formState.isSubmitting}
+                />
+                <Input
+                  size="sm"
+                  label="Ukuran"
+                  placeholder="S/M/L/XL"
+                  {...spkForm.register("ukuran")}
+                  isDisabled={spkForm.formState.isSubmitting}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  size="sm"
+                  label="Tali / Aksesori"
+                  placeholder="Bisban, Polos, ..."
+                  {...spkForm.register("tali")}
+                  isDisabled={spkForm.formState.isSubmitting}
+                />
+                <FormattedNumberInput
+                  size="sm"
+                  label="Jumlah"
+                  isRequired
+                  value={displayJumlah}
+                  onChange={(v) => {
+                    const n = Number(v);
+                    setDisplayJumlah(n);
+                    spkForm.setValue("jumlah", String(n), { shouldValidate: true });
+                  }}
+                  isInvalid={!!spkForm.formState.errors.jumlah}
+                  errorMessage={spkForm.formState.errors.jumlah?.message}
+                  isDisabled={spkForm.formState.isSubmitting}
+                />
+              </div>
+
+              <Input
+                size="sm"
+                label="Tanggal Setor"
+                type="date"
+                {...spkForm.register("tanggalSetor")}
+                isDisabled={spkForm.formState.isSubmitting}
+              />
+
+              <Textarea
+                size="sm"
+                label="Catatan"
+                placeholder="Instruksi tambahan..."
+                minRows={2}
+                {...spkForm.register("catatan")}
+                isDisabled={spkForm.formState.isSubmitting}
+              />
+            </ModalBody>
+
+            <ModalFooter>
+              <Button
+                size="sm"
+                variant="flat"
+                onPress={onCloseSPK}
+                isDisabled={spkForm.formState.isSubmitting}
+              >
+                Batal
+              </Button>
+              <Button
+                size="sm"
+                color="primary"
+                type="submit"
+                isLoading={spkForm.formState.isSubmitting}
+                isDisabled={spkForm.formState.isSubmitting}
+              >
+                Buat SPK & Mulai Produksi
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
     </>
   );
 }
@@ -586,12 +809,13 @@ export default function Page() {
 
   const [search, setSearch] = React.useState("");
   const [hasFileFilter, setHasFileFilter] = React.useState("all");
+  const [sortBy, setSortBy] = React.useState("createdAt");
   const [page, setPage] = React.useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
   const limit = 12;
 
-  const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}`;
+  const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}&sortBy=${sortBy}`;
 
   const { data, isLoading, mutate } = useSWR(apiUrl, fetcher, {
     keepPreviousData: true,
@@ -599,11 +823,11 @@ export default function Page() {
   });
 
   const orders: DesignOrder[] = data?.results ?? [];
-  const totalPages = data?.count ? Math.ceil(data.count / limit) : 0;
+  const totalPages: number = data?.count ? Math.ceil(data.count / limit) : 0;
 
   React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, hasFileFilter]);
+  }, [debouncedSearch, hasFileFilter, sortBy]);
 
   const activeFilters = hasFileFilter !== "all" || search !== "";
 
@@ -625,12 +849,24 @@ export default function Page() {
         />
         <div className="flex flex-row gap-2 items-center justify-start">
           <FilterLanjutan
-            activeCount={hasFileFilter !== "all" ? 1 : 0}
+            activeCount={(hasFileFilter !== "all" ? 1 : 0) + (sortBy !== "createdAt" ? 1 : 0)}
             onReset={() => {
               setSearch("");
               setHasFileFilter("all");
+              setSortBy("createdAt");
             }}
           >
+            <FilterSection label="Urutkan">
+              <FilterButtonGroup
+                options={[
+                  { key: "createdAt", label: "Terbaru" },
+                  { key: "deadline", label: "Deadline" },
+                ]}
+                value={sortBy}
+                onChange={setSortBy}
+              />
+            </FilterSection>
+
             <FilterSection label="File Desain">
               <FilterButtonGroup
                 options={HAS_FILE_OPTIONS}

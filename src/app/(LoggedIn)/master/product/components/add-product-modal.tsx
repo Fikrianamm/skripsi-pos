@@ -29,6 +29,7 @@ export default function AddProductModal({
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [globalError, setGlobalError] = useState<string>("");
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CreateProductFormData>({
@@ -57,14 +58,18 @@ export default function AddProductModal({
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    setImagePreview(objectUrl);
-    // Set form value to filename/objectUrl — sesuaikan dengan logic upload kamu
-    form.setValue("image", objectUrl);
+    if (file.size > 5 * 1024 * 1024) {
+      addToast({ title: "File terlalu besar", description: "Maksimal 5MB", color: "danger" });
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    form.setValue("image", "__pending__"); // placeholder until upload
   }
 
   function handleRemoveImage() {
     setImagePreview("");
+    setImageFile(null);
     form.setValue("image", "");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -83,6 +88,7 @@ export default function AddProductModal({
       image: "",
     });
     setImagePreview("");
+    setImageFile(null);
     setGlobalError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -90,10 +96,26 @@ export default function AddProductModal({
   async function onSubmit(data: CreateProductFormData, onClose: () => void) {
     setGlobalError("");
     try {
+      let imageUrl = "";
+
+      // Upload image to S3 if a file was selected
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json();
+          setGlobalError(err.error || "Gagal mengunggah gambar.");
+          return;
+        }
+        const uploadData = await uploadRes.json();
+        imageUrl = uploadData.url;
+      }
+
       const res = await fetch("/api/admin/product", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data }),
+        body: JSON.stringify({ ...data, image: imageUrl || null }),
       });
 
       const json = await res.json();

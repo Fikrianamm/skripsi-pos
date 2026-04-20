@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -25,8 +26,8 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
     const search = searchParams.get("search")?.trim() ?? "";
     const hasFile = searchParams.get("hasFile") ?? "all"; // "all" | "true" | "false"
+    const sortBy = searchParams.get("sortBy") ?? "createdAt";
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       statusProduksi: "DESAIN",
     };
@@ -45,12 +46,18 @@ export async function GET(req: NextRequest) {
       where.designFiles = { none: {} };
     }
 
+    // Sort order
+    const orderBy: any =
+      sortBy === "deadline"
+        ? [{ deadline: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }]
+        : [{ createdAt: "desc" }];
+
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,
         skip,
         take: limit,
-        orderBy: [{ deadline: "asc" }, { createdAt: "asc" }],
+        orderBy,
         select: {
           id: true,
           nomorOrder: true,
@@ -64,6 +71,9 @@ export async function GET(req: NextRequest) {
           items: {
             select: { nama: true, qty: true },
             take: 5,
+          },
+          spk: {
+            select: { id: true },
           },
           designFiles: {
             select: {

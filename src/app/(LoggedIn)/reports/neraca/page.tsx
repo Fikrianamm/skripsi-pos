@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -15,6 +16,15 @@ import {
   Scale,
 } from "lucide-react";
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as ReChartsTooltip,
+  Legend,
+} from "recharts";
+
 type AccRow = {
   id: string;
   kodeAkun: string;
@@ -28,9 +38,7 @@ type NeracaData = {
   isBalanced: boolean;
   aktiva: {
     lancar: AccRow[];
-    tetap: AccRow[];
     totalLancar: number;
-    totalTetap: number;
     total: number;
   };
   pasiva: {
@@ -42,6 +50,50 @@ type NeracaData = {
     total: number;
   };
 };
+
+const CHART_COLORS = [
+  "#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", 
+  "#82ca9d", "#ffc658", "#8dd1e1", "#a4de6c", "#d0ed57"
+];
+
+function NeracaChart({ data, title, colorScheme }: { data: any[], title: string, colorScheme?: string[] }) {
+  if (data.length === 0) return null;
+  
+  const chartData = data.map(item => ({
+    name: item.namaAkun,
+    value: Math.abs(item.saldo)
+  }));
+
+  return (
+    <div className="flex flex-col items-center bg-content1 p-4 rounded-2xl border border-default-200">
+      <h4 className="text-xs font-bold uppercase tracking-widest mb-4 text-default-500">{title}</h4>
+      <div className="w-full h-[240px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={80}
+              paddingAngle={5}
+              dataKey="value"
+            >
+              {(colorScheme || CHART_COLORS).map((color, index) => (
+                <Cell key={`cell-${index}`} fill={color} />
+              ))}
+            </Pie>
+            <ReChartsTooltip 
+              formattyyer={(value: number) => formatRupiah(value)}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+            />
+            <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
 
 function AccGroup({
   title,
@@ -169,7 +221,7 @@ export default function NeracaPage() {
                 size="sm"
                 variant="flat"
                 color={data.isBalanced ? "success" : "danger"}
-                className="mt-1"
+                className="mt-1 gap-1"
                 startContent={
                   data.isBalanced ? (
                     <CheckCircle size={12} />
@@ -179,8 +231,8 @@ export default function NeracaPage() {
                 }
               >
                 {data.isBalanced
-                  ? "Neraca Seimbang ✓"
-                  : "⚠ Neraca Tidak Seimbang!"}
+                  ? "Neraca Seimbang"
+                  : "Neraca Tidak Seimbang"}
               </Chip>
             )}
           </div>
@@ -220,6 +272,27 @@ export default function NeracaPage() {
         />
       </div>
 
+      {/* Charts Section */}
+      {!isLoading && data && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <NeracaChart 
+            title="Porsi Aktiva Lancar" 
+            data={data.aktiva.lancar} 
+            colorScheme={["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"]} 
+          />
+          <NeracaChart 
+            title="Porsi Kewajiban" 
+            data={data.pasiva.kewajiban} 
+            colorScheme={["#F43F5E", "#FB7185", "#FDA4AF", "#FFF1F2"]}
+          />
+          <NeracaChart 
+            title="Porsi Modal" 
+            data={data.pasiva.modal} 
+            colorScheme={["#10B981", "#34D399", "#6EE7B7", "#A7F3D0"]}
+          />
+        </div>
+      )}
+
       {/* Main content */}
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -237,8 +310,8 @@ export default function NeracaPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* AKTIVA */}
-          <div className="bg-content1 border border-default-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-5 py-4 bg-gradient-to-r from-primary-600 to-primary-500 flex items-center gap-2">
+          <div className="bg-content1 border border-default-200 rounded-2xl overflow-hidden shadow-sm h-max">
+            <div className="px-5 py-4 bg-linear-to-r from-primary-600 to-primary-500 flex items-center gap-2">
               <TrendingUp size={16} className="text-white/80" />
               <h3 className="text-white font-bold text-sm uppercase tracking-widest">
                 Aktiva / Harta
@@ -251,12 +324,6 @@ export default function NeracaPage() {
                 rows={data.aktiva.lancar}
                 total={data.aktiva.totalLancar}
                 accent="bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300"
-              />
-              <AccGroup
-                title="Aktiva Tetap"
-                rows={data.aktiva.tetap}
-                total={data.aktiva.totalTetap}
-                accent="bg-primary-100/60 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400"
               />
             </div>
 
@@ -271,8 +338,8 @@ export default function NeracaPage() {
           </div>
 
           {/* PASIVA */}
-          <div className="bg-content1 border border-default-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-5 py-4 bg-gradient-to-r from-danger-600 to-danger-500 flex items-center gap-2">
+          <div className="bg-content1 border border-default-200 rounded-2xl overflow-hidden shadow-sm h-max">
+            <div className="px-5 py-4 bg-linear-to-r from-danger-600 to-danger-500 flex items-center gap-2">
               <Wallet size={16} className="text-white/80" />
               <h3 className="text-white font-bold text-sm uppercase tracking-widest">
                 Pasiva / Kewajiban + Modal

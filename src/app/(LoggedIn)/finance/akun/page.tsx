@@ -104,7 +104,7 @@ export default function AkunPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Manajemen Akun"
         description="Pusat konfigurasi akun buku besar dan rekening bank untuk penampung nilai transaksi keuangan."

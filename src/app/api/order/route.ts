@@ -24,11 +24,14 @@ async function requireOrderAccess() {
   return { error: null, status: 200, session };
 }
 
-// Generate "ORD-YYYYMMDD-XXXX" order number
+// Generate order number based on settings
 async function generateNomorOrder(): Promise<string> {
+  const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
+  const basePrefix = settings?.prefixOrder || "ORD-";
+  
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
-  const prefix = `ORD-${dateStr}-`;
+  const prefix = `${basePrefix}${dateStr}-`;
 
   const lastOrder = await prisma.order.findFirst({
     where: { nomorOrder: { startsWith: prefix } },
@@ -39,7 +42,8 @@ async function generateNomorOrder(): Promise<string> {
   let seq = 1;
   if (lastOrder) {
     const parts = lastOrder.nomorOrder.split("-");
-    seq = parseInt(parts[parts.length - 1] || "0", 10) + 1;
+    const lastPart = parts[parts.length - 1];
+    seq = parseInt(lastPart || "0", 10) + 1;
   }
 
   return `${prefix}${String(seq).padStart(4, "0")}`;
@@ -208,7 +212,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
     const nomorOrder = await generateNomorOrder();
+    
+    // Apply default deadline if not provided
+    let finalDeadline = deadline ? new Date(deadline) : null;
+    if (!finalDeadline && settings?.estimasiHariPengerjaan) {
+      const d = new Date();
+      d.setDate(d.getDate() + settings.estimasiHariPengerjaan);
+      finalDeadline = d;
+    }
+
     const orderId = crypto.randomUUID();
 
     const order = await prisma.$transaction(async (tx) => {
@@ -222,7 +236,7 @@ export async function POST(request: NextRequest) {
           statusProduksi: "PENDING",
           statusPembayaran: statusPembayaran || "BELUM_BAYAR",
           metodePembayaran: metodePembayaran || "TUNAI",
-          deadline: deadline ? new Date(deadline) : null,
+          deadline: finalDeadline,
           catatan: catatan || null,
           diskon: diskon ?? 0,
           ongkir: ongkir ?? null,
@@ -279,13 +293,15 @@ export async function POST(request: NextRequest) {
       });
 
       // 2. Jurnal Piutang Usaha saat pesanan dibuat (berlaku semua status)
-      //    Debet = Piutang Usaha (1-003), Kredit = Pendapatan (4-001)
+      //    Debet = Piutang Usaha (1-003), Kredit = Pendapatan (Default from Settings or 4-001)
       const piutangAkun    = await tx.akun.findUnique({ where: { kodeAkun: "1-003" } });
-      const pendapatanAkun = await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
+      const pendapatanAkun = settings?.defaultPendapatanAkunId 
+        ? await tx.akun.findUnique({ where: { id: settings.defaultPendapatanAkunId } })
+        : await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
 
       if (piutangAkun && pendapatanAkun) {
         await createJurnalDoubleEntry({
-          ref:          `ORD-${orderId.slice(0, 5)}`,
+          ref:          `${nomorOrder.slice(0, 10)}`, // Using order number as ref part
           tanggal:      new Date(),
           keterangan:   `Piutang Order #${nomorOrder} - ${customer.nama}`,
           akunDebetId:  piutangAkun.id,

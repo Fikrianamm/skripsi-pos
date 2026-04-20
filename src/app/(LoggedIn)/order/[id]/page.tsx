@@ -16,13 +16,16 @@ import { DesignFilesCard } from "./components/design-files-card";
 import { PaymentSummary } from "./components/payment-summary";
 import { SpkFormModal } from "./components/spk-form-modal";
 import { SpkCard } from "./components/spk-card";
+import { PrintInvoiceModal } from "./components/print-invoice-modal";
+import { Printer } from "lucide-react";
 
 export default function Page() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
-  const [isDeleting, setIsDeleting] = useState(false);
+   const [isDeleting, setIsDeleting] = useState(false);
   const [showSpkForm, setShowSpkForm] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(`/api/order/${orderId}`, fetcher);
   const order: OrderDetail | null = data?.order ?? null;
@@ -140,7 +143,7 @@ export default function Page() {
             items={order.items}
             onUpdated={() => mutate()}
           />
-          <Tooltip content="Hapus pesanan (admin only)">
+           <Tooltip content="Hapus pesanan (admin only)">
             <Button
               isIconOnly
               size="sm"
@@ -152,6 +155,15 @@ export default function Page() {
               <Trash2 size={14} />
             </Button>
           </Tooltip>
+          <Button
+            size="sm"
+            color="primary"
+            variant="flat"
+            startContent={<Printer size={14} />}
+            onPress={() => setShowPrintModal(true)}
+          >
+            Cetak Nota
+          </Button>
         </div>
       </div>
 
@@ -223,6 +235,15 @@ export default function Page() {
             setShowSpkForm(false);
             mutate();
           }}
+        />
+      )}
+
+      {/* Print Invoice Modal */}
+      {showPrintModal && (
+        <PrintInvoiceModal
+          isOpen={showPrintModal}
+          onOpenChange={setShowPrintModal}
+          order={order}
         />
       )}
     </div>

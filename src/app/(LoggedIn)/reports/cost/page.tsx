@@ -130,7 +130,7 @@ export default function CostPage() {
     (tahun !== String(now.getFullYear()) ? 1 : 0);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Laporan Pengeluaran"
         description="Kelola dan catat semua biaya operasional, gaji bulanan, tagihan, hingga pembelian yang memotong Kas/Bank Anda."

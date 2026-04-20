@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const search = sp.get("search") || "";
     const limit = parseInt(sp.get("limit") || "500");
 
-    const where: any = {};
+    const where: any = { deletedAt: null };
     if (bulan) {
       where.tanggal = {
         gte: new Date(tahun, bulan - 1, 1),

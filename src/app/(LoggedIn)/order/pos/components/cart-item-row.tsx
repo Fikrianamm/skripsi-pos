@@ -40,9 +40,19 @@ export function CartItemRow({
           >
             <Minus size={12} />
           </Button>
-          <span className="text-sm font-semibold w-6 text-center">
+          {/* <span className="text-sm font-semibold w-6 text-center">
             {item.qty}
-          </span>
+          </span> */}
+          <Input
+            size="sm"
+            placeholder="Jumlah"
+            value={item.qty.toString()}
+            onValueChange={(value) => onQtyChange(parseInt(value) || 1)}
+            variant="underlined"
+            classNames={{ input: "text-xs", inputWrapper: "h-7 min-h-7 " }}
+            type="number"
+            className="w-10"
+          />
           <Button
             isIconOnly
             size="sm"
