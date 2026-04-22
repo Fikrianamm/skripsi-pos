@@ -148,7 +148,7 @@ async function main() {
     create: {
       id: 1,
       namaPerusahaan: "CV. Haqi Koleksi",
-      logoUrl: null, // Default icon GalleryVerticalEnd
+      logoUrl: null, // Default icon
       alamat: "Jl. Ruko Permata, No. 12, Jawa Timur",
       nomorKontak: "081234567890",
       prefixOrder: "INV-HQ-",

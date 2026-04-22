@@ -1,19 +1,29 @@
-Dokumen perencanaan ini dibuat secara *high-level* untuk memandu _Junior Programmer_ atau model AI lainnya dalam mengimplementasikan fitur tambahan web.
+buatkan plan secara *high-level* untuk memandu _Junior Programmer_ atau model AI lainnya dalam mengimplementasikan fitur tambahan web.
 
 ## Objektif Utama
-1. Menambahkan Detail riwayat customer.
-2. Menambahkan UI Dashboard (/Dashboard).
-3. Menerapkan fitur upload pada foto product.
-4. menambahkan setting invoice rekening.
+1. api notifikasi delete all.
+2. tambahkan toast ketika ada notifikasi.
+3. update api logic ketika pesanan.
+4. update api stok bahan baku tambahkan notif stok menipis/habis.
+5. pilihan kasbank diweb setting berdasarkan jenisRekening "bank" saja.
+6. notifikasi stok menipis.
 
-#1. Menambahkan Detail riwayat customer 
-- update tabel customer dan api yang menampilkan pesanan pertama (dan bisa diklik detail order), total pesanan, total belanja.
+#1. api notifikasi delete all.
+- tambahkan update api notifikasi delete all berdasarkan usernya.
+- update schema notifikasi hapus role.
+- update trigger createnotif berdasarkan role yang sesuai bukan hanya untuk admin.
 
-#2. Menambahkan UI Dashboard (/Dashboard).
-- menampilkan summary cards (Penjualan Hari Ini, Total Customer, dll), _Low Stock Alerts_, dan Grafik Pendapatan. tambahkan informasi yang mungkin diperlukan lainnya.
+#2. tambahkan toast ketika ada notifikasi.
+- tambahkan toast ketika ada notifikasi.
 
-#3. menerapkan fitur upload pada foto product
-- menambahkan upload file ke storage cloud s3 untuk foto product
+#3. update api logic pesanan.
+- tambahkan update api logic ketika pesanan sudah pada tahap selesai maka kurangi produk jika status barang yang diorder typenya "produk jadi" (isService = false).
 
-#4. menambahkan setting invoice rekening
-- menambahkan setting untuk menampilkan rekening bank pada invoice pada web setting.
+#4. update api stok bahan baku tambahkan notif stok menipis/habis.
+- tambahkan update api stok bahan baku tambahkan notif stok menipis/habis.
+
+#5. pilihan kasbank diweb setting berdasarkan jenisRekening "bank" saja.
+- update pilihan kasbank diweb setting berdasarkan jenisRekening "bank" saja.
+
+#6. notifikasi stok menipis
+- tambahkan peringatan global dibawah navbar ketika ada bahan baku atau produk yang stoknya menipis/habis.

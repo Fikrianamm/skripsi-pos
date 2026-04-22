@@ -18,8 +18,7 @@ import { addToast } from "@heroui/toast";
 import { DatePicker } from "@heroui/date-picker";
 import { getLocalTimeZone, today, CalendarDate } from "@internationalized/date";
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
-import { ArrowDownCircle, ArrowUpCircle, Plus, RotateCcw } from "lucide-react";
-import type { JurnalItem } from "./jurnal-table";
+import { ArrowDownCircle, ArrowUpCircle, Plus } from "lucide-react";
 
 type Mode = "pengeluaran" | "pemasukan";
 
@@ -27,7 +26,6 @@ interface JurnalModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  reversalItem?: JurnalItem | null;
 }
 
 type AkunItem = {
@@ -38,19 +36,14 @@ type AkunItem = {
 };
 
 const KAS_GROUPS = ["AKTIVA_LANCAR"];
-const PENGELUARAN_GROUPS = [
-  "BEBAN_USAHA",
-];
+const PENGELUARAN_GROUPS = ["BEBAN_USAHA"];
 const PENDAPATAN_GROUPS = ["PENDAPATAN", "MODAL", "KEWAJIBAN"];
 
 export function JurnalModal({
   isOpen,
   onOpenChange,
   onSuccess,
-  reversalItem,
 }: JurnalModalProps) {
-  const isReversal = !!reversalItem;
-
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("pengeluaran");
   const [keterangan, setKeterangan] = useState("");
@@ -61,22 +54,9 @@ export function JurnalModal({
     today(getLocalTimeZone()),
   );
 
-  // Pre-fill when triggered as reversal
-  const [synced, setSynced] = useState(false);
-  if (isReversal && !synced && isOpen) {
-    // Reversal flips debet ↔ kredit
-    setKasAkunId(reversalItem!.akunKreditId ?? "");
-    setKategoriAkunId(reversalItem!.akunDebetId ?? "");
-    setNominal(Number(reversalItem!.nominal));
-    setKeterangan(`[KOREKSI] ${reversalItem!.keterangan}`);
-    setMode("pemasukan");
-    setSynced(true);
-  }
-  if (!isOpen && synced) setSynced(false);
-
   const { data: akunData } = useSWR("/api/finance/akun?isActive=true", fetcher);
   const rawAkuns: AkunItem[] = useMemo(() => {
-    return (akunData?.akuns ?? []);
+    return akunData?.akuns ?? [];
   }, [akunData]);
 
   const kasOptions = useMemo(
@@ -146,8 +126,6 @@ export function JurnalModal({
           akunDebetId,
           akunKreditId,
           nominal,
-          isReversal,
-          reversalOfRef: reversalItem?.ref,
         }),
       });
       const json = await res.json();
@@ -157,9 +135,7 @@ export function JurnalModal({
       }
       addToast({
         title: "Berhasil!",
-        description: isReversal
-          ? "Entri koreksi dicatat"
-          : "Transaksi berhasil dicatat",
+        description: "Transaksi berhasil dicatat",
         color: "success",
       });
       onSuccess();
@@ -195,34 +171,17 @@ export function JurnalModal({
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                {isReversal ? (
-                  <>
-                    <span className="flex items-center gap-2">
-                      <RotateCcw size={16} className="text-warning-600" />
-                      Buat Entri Koreksi
-                    </span>
-                    <span className="text-xs font-normal text-warning-600">
-                      Membalik entri:{" "}
-                      <span className="font-mono">{reversalItem?.ref}</span>
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>Catat Transaksi Manual</span>
-                    <span className="text-xs font-normal text-default-400">
-                      Untuk transaksi di luar Order/POS (penyesuaian, koreksi,
-                      keuangan lain-lain)
-                    </span>
-                  </>
-                )}
+                <span>Catat Transaksi Manual</span>
+                <span className="text-xs font-normal text-default-400">
+                  Untuk transaksi di luar Order/POS (penyesuaian, koreksi,
+                  keuangan lain-lain)
+                </span>
               </ModalHeader>
 
               <ModalBody className="gap-5">
-                {/* Mode Selector — disabled if reversal */}
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    disabled={isReversal}
                     onClick={() => switchMode("pengeluaran")}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left disabled:opacity-60 ${
                       isPengeluaran
@@ -249,7 +208,6 @@ export function JurnalModal({
                   </button>
                   <button
                     type="button"
-                    disabled={isReversal}
                     onClick={() => switchMode("pemasukan")}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left disabled:opacity-60 ${
                       !isPengeluaran
@@ -416,29 +374,23 @@ export function JurnalModal({
                 </Button>
                 <Button
                   color={
-                    isReversal
-                      ? "warning"
-                      : isPengeluaran
-                        ? "danger"
-                        : "success"
+                    isPengeluaran
+                      ? "danger"
+                      : "success"
                   }
                   onPress={handleSubmit}
                   isLoading={isLoading}
                   startContent={
-                    isReversal ? (
-                      <RotateCcw size={16} />
-                    ) : isPengeluaran ? (
+                    isPengeluaran ? (
                       <ArrowDownCircle size={16} />
                     ) : (
                       <ArrowUpCircle size={16} />
                     )
                   }
                 >
-                  {isReversal
-                    ? "Buat Koreksi"
-                    : isPengeluaran
-                      ? "Catat Pengeluaran"
-                      : "Catat Pemasukan"}
+                  {isPengeluaran
+                    ? "Catat Pengeluaran"
+                    : "Catat Pemasukan"}
                 </Button>
               </ModalFooter>
             </>

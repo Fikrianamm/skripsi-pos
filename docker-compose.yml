@@ -27,5 +27,20 @@ services:
     depends_on:
       - db
 
+  # 3. Service Soketi (Self-hosted Pusher compatibility)
+  soketi:
+    image: quay.io/soketi/soketi:latest-16-alpine
+    container_name: nextjs_soketi
+    restart: always
+    ports:
+      - "6001:6001"   # WebSocket
+      - "9601:9601"   # Metrics
+    environment:
+      SOKETI_DEFAULT_APP_ID: "pos-app"
+      SOKETI_DEFAULT_APP_KEY: "pos-key"
+      SOKETI_DEFAULT_APP_SECRET: "pos-secret"
+      SOKETI_DEFAULT_APP_MAX_CONNS: "100"
+      SOKETI_DEBUG: "1"
+
 volumes:
   db_data:

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAndNotifyLowStock } from "@/lib/notifications";
 
 // ── GET /api/admin/inventory/out — List all PengeluaranBarang (Barang Keluar)
 export async function GET(request: NextRequest) {
@@ -177,6 +178,15 @@ export async function POST(request: NextRequest) {
         }),
       ),
     ]);
+
+    // ─── Fitur #4: Cek Stok Menipis (Bahan Baku) ───
+    try {
+      await Promise.all(
+        parsedItems.map((pi) => checkAndNotifyLowStock(pi.bahanBakuId))
+      );
+    } catch (e) {
+      console.error("Failed to check low stock:", e);
+    }
 
     return NextResponse.json(
       { message: "Pengeluaran barang berhasil dicatat.", pengeluaranBarang },

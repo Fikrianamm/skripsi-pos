@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createJurnalDoubleEntry } from "@/lib/finance";
+import { createNotificationForRole } from "@/lib/notifications";
+import { JenisNotif } from "../../../../generated/prisma/enums";
 
 // Shared auth guard: admin or kasir only
 async function requireOrderAccess() {
@@ -212,6 +214,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validasi stok produk (Fitur #3)
+    for (const item of items) {
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+        select: { nama: true, stok: true, isService: true }
+      });
+      if (product && !product.isService) {
+        const currentStok = Number(product.stok || 0);
+        if (currentStok < item.qty) {
+          return NextResponse.json(
+            { error: `Stok produk "${product.nama}" tidak mencukupi (sisa: ${currentStok}).` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
     const nomorOrder = await generateNomorOrder();
     
@@ -356,6 +375,22 @@ export async function POST(request: NextRequest) {
 
       return newOrder;
     });
+
+    // Notify Admins & Kasir about new order (Fitur #1)
+    try {
+      const notifInput = {
+        title: "Pesanan Baru!",
+        message: `Order #${order.nomorOrder} dari ${order.customer.nama} berhasil dibuat.`,
+        jenis: JenisNotif.ORDER_BARU,
+        linkUrl: `/order/${order.id}`,
+      };
+      await Promise.all([
+        createNotificationForRole("admin", notifInput),
+        createNotificationForRole("kasir", notifInput),
+      ]);
+    } catch (e) {
+      console.error("Failed to send notification:", e);
+    }
 
     return NextResponse.json(
       { message: "Pesanan berhasil dibuat.", order },

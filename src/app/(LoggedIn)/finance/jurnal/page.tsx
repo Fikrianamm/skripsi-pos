@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useMemo } from "react";
@@ -14,6 +15,8 @@ import {
 } from "@/components/filter-lanjutan";
 import { Skeleton } from "@heroui/react";
 import { BookOpen, Hash } from "lucide-react";
+import { DeleteConfirmModal } from "./components/delete-confirm-modal";
+import { addToast } from "@heroui/toast";
 
 const MONTHS = [
   { key: "0",  label: "Semua Bulan" },
@@ -42,7 +45,9 @@ export default function JurnalPage() {
   const [tahun, setTahun] = useState(String(now.getFullYear()));
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [reversalItem, setReversalItem] = useState<JurnalItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<JurnalItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const params = new URLSearchParams({ tahun });
   if (bulan !== "0") params.set("bulan", bulan);
@@ -60,10 +65,37 @@ export default function JurnalPage() {
     return bl && bl.key !== "0" ? `${bl.label} ${tahun}` : `Tahun ${tahun}`;
   }, [bulan, tahun]);
 
-  function handleReversal(item: JurnalItem) {
-    setReversalItem(item);
-    setIsModalOpen(true);
-  }
+  const handleDelete = (item: JurnalItem) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedItem) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/finance/jurnal?id=${selectedItem.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus jurnal");
+
+      addToast({
+        title: "Berhasil",
+        description: "Jurnal manual berhasil dihapus.",
+        color: "success",
+      });
+      mutate();
+    } catch (error: any) {
+      addToast({
+        title: "Gagal",
+        description: error.message,
+        color: "danger",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -146,11 +178,9 @@ export default function JurnalPage() {
           <JurnalModal
             isOpen={isModalOpen}
             onOpenChange={(o) => {
-              if (!o) setReversalItem(null);
               setIsModalOpen(o);
             }}
             onSuccess={() => mutate()}
-            reversalItem={reversalItem}
           />
         </div>
       </div>
@@ -159,7 +189,15 @@ export default function JurnalPage() {
         jurnals={jurnals}
         isLoading={isLoading}
         totalNominal={totalNominal}
-        onReversal={handleReversal}
+        onDeleted={handleDelete}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        item={selectedItem}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
       />
     </div>
   );

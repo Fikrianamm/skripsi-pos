@@ -1,40 +1,66 @@
 "use client";
 
-import { GalleryVerticalEnd } from "lucide-react";
-
+import { Building } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { AuthToast } from "@/components/auth-toast";
 import { Suspense } from "react";
-import { GoogleOneTap } from "@/components/google-one-tap";
+import { motion } from "framer-motion";
 
 export default function Page() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
+    <div className="relative min-h-svh w-full flex items-center justify-center bg-[#f8fafc] overflow-hidden p-6">
+      {/* Blurred Decorative Shapes */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 0.35, scale: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="absolute -top-[10%] -right-[5%] w-[500px] h-[500px] bg-blue-200 rounded-full blur-[100px] pointer-events-none"
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 0.3, scale: 1 }}
+        transition={{ duration: 1.8, ease: "easeOut", delay: 0.2 }}
+        className="absolute -bottom-[10%] -left-[5%] w-[450px] h-[450px] bg-violet-200 rounded-full blur-[80px] pointer-events-none"
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 0.2, scale: 1 }}
+        transition={{ duration: 2.1, ease: "easeOut", delay: 0.4 }}
+        className="absolute top-[40%] left-[10%] w-[300px] h-[300px] bg-pink-100 rounded-full blur-[70px] pointer-events-none"
+      />
+
       <Suspense fallback={null}>
         <AuthToast />
       </Suspense>
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-[400px]"
+      >
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col items-center gap-2">
+            <div className="bg-primary text-primary-foreground flex size-12 items-center justify-center rounded-2xl shadow-lg shadow-primary/20">
+              <Building className="size-6" />
             </div>
-            Haqi Koleksi
-          </a>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            <GoogleOneTap />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-2">
+              Haqi Koleksi
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
+              Sistem Manajemen POS & Produksi
+            </p>
+          </div>
+          
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
             <LoginForm />
           </div>
+
+          <p className="text-center text-xs text-slate-400">
+            &copy; {new Date().getFullYear()} CV. Haqi Koleksi. All rights reserved.
+          </p>
         </div>
-      </div>
-      <div className="bg-muted relative hidden lg:flex lg:items-center lg:justify-center p-10">
-        <div className="w-full max-w-2xl">
-          <DotLottieReact src="/assets/login-02.lottie" loop autoplay />
-        </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

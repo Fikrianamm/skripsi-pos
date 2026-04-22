@@ -7,7 +7,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
 import { Checkbox } from "@heroui/checkbox";
-import { Save, GalleryVerticalEnd, Globe, CreditCard, Factory, Landmark } from "lucide-react";
+import { Save, Globe, CreditCard, Factory, Landmark, Building } from "lucide-react";
 import { addToast } from "@heroui/toast";
 
 export default function WebSettingSection() {
@@ -26,7 +26,7 @@ export default function WebSettingSection() {
         const [settingsRes, accountsRes, kasBankRes] = await Promise.all([
           fetch("/api/admin/settings"),
           fetch("/api/finance/akun?isActive=true"),
-          fetch("/api/finance/kas-bank"),
+          fetch("/api/finance/kas-bank?jenisRekening=BANK"),
         ]);
         
         const settingsData = await settingsRes.json();
@@ -168,7 +168,7 @@ export default function WebSettingSection() {
                   {logoPreview ? (
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                   ) : (
-                    <GalleryVerticalEnd className="size-6 text-default-400" />
+                    <Building className="size-6 text-default-400" />
                   )}
                 </div>
                 <div className="flex-1 flex flex-col gap-1">

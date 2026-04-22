@@ -9,9 +9,9 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NavUserSimple } from "@/components/nav-user";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notification-bell";
 import SearchFeature from "@/components/search-feature";
+import { LowStockBanner } from "@/components/low-stock-banner";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 
@@ -57,6 +57,7 @@ export default async function Layout({
     <SidebarProvider>
       <AppSidebar user={session.user} settings={settings} />
       <SidebarInset>
+        <LowStockBanner />
         <header className="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sticky top-0 bg-white/20 backdrop-blur-lg border-b z-50">
           <div className="flex justify-between w-full">
             <div className="flex items-center gap-2 px-4">
@@ -68,9 +69,7 @@ export default async function Layout({
               <SearchFeature />
             </div>
             <div className="flex items-center gap-2 px-4">
-              <Button size="icon" variant={"ghost"}>
-                <Bell />
-              </Button>
+              <NotificationBell userId={session.user.id} />
               <Separator
                 orientation="vertical"
                 className="mr-2 data-[orientation=vertical]:h-4"

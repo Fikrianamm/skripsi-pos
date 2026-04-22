@@ -51,22 +51,6 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          // Bedakan antara social login (Google/OneTap) dengan admin createUser:
-          // - Google OAuth/OneTap: emailVerified = true (Google selalu memverifikasi email)
-          // - Admin createUser: emailVerified = false (default, belum diverifikasi)
-          if (user.emailVerified) {
-            // Ini adalah social login (Google/OneTap)
-            // Cek apakah email sudah terdaftar oleh admin di database
-            const existingUser = await prisma.user.findUnique({
-              where: { email: user.email },
-            });
-            if (!existingUser) {
-              throw new APIError("FORBIDDEN", {
-                message: "Akun anda tidak terdaftar. Hubungi Administrator.",
-              });
-            }
-          }
-
           // Assign random avatar jika tidak punya image
           if (user.image) return;
           return {
@@ -104,16 +88,7 @@ export const auth = betterAuth({
       },
       defaultRole: "kasir",
     }),
-    oneTap(),
   ],
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      accessType: "offline",
-      prompt: "select_account consent",
-    },
-  },
 });
 
 export type ErrorCode = keyof typeof auth.$ERROR_CODES | "UNKNOWN";

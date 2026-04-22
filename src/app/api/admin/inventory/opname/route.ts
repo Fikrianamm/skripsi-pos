@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAndNotifyLowStock } from "@/lib/notifications";
 
 // GET /api/admin/inventory/opname — List stok opname with pagination
 export async function GET(request: NextRequest) {
@@ -20,7 +22,6 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get("dateTo");
     const search = searchParams.get("search") || "";
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (search) {
       where.OR = [
@@ -157,6 +158,15 @@ export async function POST(request: NextRequest) {
         }),
       ),
     ]);
+
+    // ─── Fitur #4: Cek Stok Menipis (Bahan Baku) ───
+    try {
+      await Promise.all(
+        items.map((it: any) => checkAndNotifyLowStock(it.bahanBakuId))
+      );
+    } catch (e) {
+      console.error("Failed to check low stock:", e);
+    }
 
     return NextResponse.json(
       { message: "Stok opname berhasil dicatat dan stok dikoreksi." },

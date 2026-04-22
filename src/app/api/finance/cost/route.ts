@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createJurnalDoubleEntry } from "@/lib/finance";
+import { createNotificationForRole } from "@/lib/notifications";
+import { JenisNotif } from "../../../../../generated/prisma/enums";
 
 async function requireAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -153,6 +155,18 @@ export async function POST(request: NextRequest) {
 
       return [newCost];
     });
+
+    // Notify Admins about new cost (Fitur #1)
+    try {
+      await createNotificationForRole("admin", {
+        title: "Pengeluaran Dicatat",
+        message: `${nama} sebesar ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(nominal)} telah dicatat.`,
+        jenis: JenisNotif.BIAYA_DICATAT,
+        linkUrl: "/finance/biaya",
+      });
+    } catch (e) {
+      console.error("Failed to send notification:", e);
+    }
 
     return NextResponse.json({ message: "Pengeluaran berhasil dicatat", cost }, { status: 201 });
   } catch (err) {

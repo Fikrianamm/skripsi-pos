@@ -16,6 +16,7 @@ import { penerimaanSchema, type PenerimaanFormData } from "../../create/schema";
 import { FakturInfoCard } from "../../create/components/faktur-info-card";
 import { BahanBakuList } from "../../create/components/bahan-baku-list";
 import type { PenerimaanDetail } from "@/types/types";
+import { Spinner } from "@heroui/react";
 
 export default function EditPenerimaanPage({
   params,
@@ -170,8 +171,9 @@ export default function EditPenerimaanPage({
       </div>
 
       {!isReady ? (
-        <div className="flex items-center justify-center py-24 text-default-400">
-          Memuat data...
+        <div className="flex flex-col items-center justify-center py-24 gap-2 text-default-400">
+          <Spinner />
+          <p>Memuat data...</p>
         </div>
       ) : (
         <form onSubmit={form.handleSubmit(onSubmit)}>

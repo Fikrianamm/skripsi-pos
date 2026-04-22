@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { uploadToNeo } from "@/lib/storage";
 import path from "path";
 import { createJurnalDoubleEntry } from "@/lib/finance";
+import { createNotificationForRole, checkAndNotifyLowStock } from "@/lib/notifications";
+import { JenisNotif } from "../../../../../../generated/prisma/enums";
 
 // ── GET /api/admin/inventory/in — List all PenerimaanBarang (Barang Masuk)
 export async function GET(request: NextRequest) {
@@ -234,6 +236,32 @@ export async function POST(request: NextRequest) {
 
       return penerimaan;
     });
+
+    // Notify Admins & Gudang about new inventory reception (Fitur #1)
+    try {
+      const supplier = supplierId ? await prisma.supplier.findUnique({ where: { id: supplierId } }) : null;
+      const notifInput = {
+        title: "Penerimaan Barang Baru",
+        message: `Penerimaan barang${nomorFaktur ? ` #${nomorFaktur}` : ""}${supplier ? ` dari ${supplier.nama}` : ""} senilai ${totalTagihan.toLocaleString("id-ID")} telah dicatat.`,
+        jenis: JenisNotif.PENERIMAAN_BARU,
+        linkUrl: "/inventory/in",
+      };
+      await Promise.all([
+        createNotificationForRole("admin", notifInput),
+        createNotificationForRole("gudang", notifInput),
+      ]);
+    } catch (e) {
+      console.error("Failed to send notification:", e);
+    }
+
+    // ─── Fitur #4: Cek Stok Menipis (Bahan Baku) ───
+    try {
+      await Promise.all(
+        parsedItems.map((pi: any) => checkAndNotifyLowStock(pi.bahanBakuId))
+      );
+    } catch (e) {
+      console.error("Failed to check low stock:", e);
+    }
 
     return NextResponse.json(
       { message: "Penerimaan barang berhasil dicatat.", penerimaanBarang },

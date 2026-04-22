@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createJurnalDoubleEntry } from "@/lib/finance";
+import { createNotificationForRole } from "@/lib/notifications";
+import { JenisNotif } from "../../../../../../generated/prisma/enums";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -55,6 +57,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         id: true,
         grandTotal: true,
         statusPembayaran: true,
+        nomorOrder: true,
+        customer: { select: { nama: true } },
         payments: { select: { nominal: true } },
       },
     });
@@ -144,6 +148,18 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       return [p];
     });
+
+    // Notify Admins about new payment (Fitur #1)
+    try {
+      await createNotificationForRole("admin", {
+        title: "Pembayaran Diterima",
+        message: `Pembayaran sebesar ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(nominal)} diterima untuk Order #${order.nomorOrder} (${order.customer.nama}).`,
+        jenis: JenisNotif.PAYMENT_MASUK,
+        linkUrl: `/order/${order.id}`,
+      });
+    } catch (e) {
+      console.error("Failed to send notification:", e);
+    }
 
     return NextResponse.json(
       { message: "Pembayaran berhasil dicatat.", payment, statusPembayaran: newStatus },

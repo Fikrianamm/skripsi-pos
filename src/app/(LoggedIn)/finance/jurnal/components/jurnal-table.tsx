@@ -12,7 +12,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import { formatRupiah } from "@/lib/func";
-import { RotateCcw } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 export type JurnalItem = {
   id: string;
@@ -24,6 +24,9 @@ export type JurnalItem = {
   akunKredit: { kodeAkun: string; namaAkun: string };
   akunDebetId: string;
   akunKreditId: string;
+  paymentId?: string | null;
+  costId?: string | null;
+  penerimaanId?: string | null;
   createdBy?: { name: string } | null;
 };
 
@@ -31,7 +34,7 @@ interface JurnalTableProps {
   jurnals: JurnalItem[];
   isLoading: boolean;
   totalNominal: number;
-  onReversal: (item: JurnalItem) => void;
+  onDeleted: (item: JurnalItem) => void;
 }
 
 const columns = [
@@ -48,7 +51,7 @@ export function JurnalTable({
   jurnals,
   isLoading,
   totalNominal,
-  onReversal,
+  onDeleted,
 }: JurnalTableProps) {
   return (
     <Table
@@ -157,17 +160,19 @@ export function JurnalTable({
             {/* Aksi */}
             <TableCell>
               <div className="flex items-center justify-end">
-                <Tooltip content="Buat Entri Koreksi (Reversal)" placement="left">
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    color="warning"
-                    onPress={() => onReversal(item)}
-                  >
-                    <RotateCcw size={13} />
-                  </Button>
-                </Tooltip>
+                {(!item.costId && !item.paymentId && !item.penerimaanId) && (
+                  <Tooltip content="Hapus Jurnal" placement="left" color="danger">
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="flat"
+                      color="danger"
+                      onPress={() => onDeleted(item)}
+                    >
+                      <Trash2 size={13} />
+                    </Button>
+                  </Tooltip>
+                )}
               </div>
             </TableCell>
           </TableRow>

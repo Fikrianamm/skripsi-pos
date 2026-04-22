@@ -12,14 +12,18 @@ async function requireAccess() {
   return { error: null, status: 200, session };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const jenisFilter = searchParams.get("jenisRekening");
+
     const kasBanks = await prisma.kasBank.findMany({
+      where: jenisFilter ? { jenisRekening: jenisFilter } : {},
       orderBy: { jenisRekening: "asc" },
       include: {
         akun: true

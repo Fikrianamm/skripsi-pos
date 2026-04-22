@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GalleryVerticalEnd } from "lucide-react";
+import { Building } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -30,7 +30,7 @@ export function CompanyHeader({
                 className="size-full object-cover" 
               />
             ) : (
-              <GalleryVerticalEnd className="size-4" />
+              <Building className="size-4" />
             )}
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">

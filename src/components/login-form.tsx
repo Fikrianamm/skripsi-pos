@@ -2,14 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { FcGoogle } from "react-icons/fc";
 import { loginSchema, type LoginFormData } from "@/lib/schemas";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { signInEmailAction } from "@/actions/sign-in-email.action";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Divider, Input } from "@heroui/react";
-import { authClient } from "@/lib/auth-client";
+import { Alert, Button, Input } from "@heroui/react";
 
 export function LoginForm({
   className,
@@ -17,7 +15,6 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [globalError, setGlobalError] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
 
   const form = useForm<LoginFormData>({
@@ -43,102 +40,86 @@ export function LoginForm({
     router.push("/dashboard");
   }
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      const { error } = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard", // Redirect ke dashboard setelah login
-      });
-      if(error){
-        setGlobalError(error.message as string)
-      }
-    } catch (error) {
-      setGlobalError(error as string);
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
   return (
     <div className={`flex flex-col gap-6 ${className}`} {...props}>
-      <div className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-2xl font-bold">Masuk ke akun Anda</h1>
-        <p className="text-muted-foreground text-sm text-balance">
-          Masukkan email Anda untuk masuk ke akun
-        </p>
-      </div>
+      {globalError && (
+        <Alert 
+          color="danger" 
+          variant="flat"
+          title={globalError} 
+          className="rounded-xl border border-danger-100"
+        />
+      )}
 
-      {globalError && <Alert color="danger" title={globalError} />}
-
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        {/* Email Field */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5">
         <Input
           type="email"
           label="Email"
+          variant="bordered"
           placeholder="m@example.com"
+          labelPlacement="outside"
+          startContent={<Mail className="size-4 text-default-400 shrink-0" />}
           {...form.register("email")}
           isDisabled={form.formState.isSubmitting}
           isInvalid={!!form.formState.errors.email}
           errorMessage={form.formState.errors.email?.message}
+          classNames={{
+            inputWrapper: "h-12 rounded-xl border-slate-200 group-data-[focus=true]:border-primary",
+            label: "text-slate-700 font-semibold",
+          }}
         />
 
-        {/* Password Field */}
-        <Input
-          label="Kata Sandi"
-          type={showPassword ? "text" : "password"}
-          placeholder="••••••••"
-          {...form.register("password")}
-          isDisabled={form.formState.isSubmitting}
-          isInvalid={!!form.formState.errors.password}
-          errorMessage={form.formState.errors.password?.message}
-          endContent={
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={form.formState.isSubmitting}
-              className="focus:outline-none"
+        <div className="flex flex-col gap-1">
+          <Input
+            label="Kata Sandi"
+            variant="bordered"
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            labelPlacement="outside"
+            startContent={<Lock className="size-4 text-default-400 shrink-0" />}
+            {...form.register("password")}
+            isDisabled={form.formState.isSubmitting}
+            isInvalid={!!form.formState.errors.password}
+            errorMessage={form.formState.errors.password?.message}
+            endContent={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={form.formState.isSubmitting}
+                className="focus:outline-none p-1 rounded-md hover:bg-default-100 transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-default-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-default-400" />
+                )}
+              </button>
+            }
+            classNames={{
+              inputWrapper: "h-12 rounded-xl border-slate-200 group-data-[focus=true]:border-primary",
+              label: "text-slate-700 font-semibold",
+            }}
+          />
+          <div className="flex justify-end">
+            <button 
+              type="button" 
+              className="text-xs font-semibold text-primary hover:underline"
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4 text-default-400" />
-              ) : (
-                <Eye className="h-4 w-4 text-default-400" />
-              )}
+              Lupa password?
             </button>
-          }
-        />
+          </div>
+        </div>
 
         <Button
           type="submit"
           color="primary"
+          className="h-12 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 mt-2"
           isDisabled={form.formState.isSubmitting}
           isLoading={form.formState.isSubmitting}
         >
-          Masuk
+          Masuk Sekarang
         </Button>
       </form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Divider />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Atau lanjutkan dengan
-          </span>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        disabled={form.formState.isSubmitting || isGoogleLoading}
-        isLoading={isGoogleLoading}
-        onClick={handleGoogleLogin}
-      >
-        <FcGoogle />
-        Masuk dengan Google
-      </Button>
-
     </div>
   );
 }

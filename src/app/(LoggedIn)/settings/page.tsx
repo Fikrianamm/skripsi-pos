@@ -49,7 +49,7 @@ export default function Page() {
       <div className="grid md:grid-cols-4 grid-cols-1 gap-6">
         {/* Desktop Sidebar */}
         <div className="hidden md:flex flex-col gap-2">
-          {menuItems.map((item) => (
+          {menuItems.filter((item) => role === "admin" || item.key !== "web-setting").map((item) => (
             <Button
               key={item.key}
               radius="sm"
@@ -103,7 +103,7 @@ export default function Page() {
         <div className="col-span-3 space-y-2">
           {selectedItem.key === "profile" && <ProfileSection />}
           {selectedItem.key === "security" && <SecuritySection />}
-          {selectedItem.key === "web-setting" && role === "admin" && (
+          {selectedItem.key === "web-setting" && (
             <WebSettingSection />
           )}
         </div>

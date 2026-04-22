@@ -61,6 +61,9 @@ export async function GET(request: NextRequest) {
         akunKreditId: true,
         akunDebet:  { select: { kodeAkun: true, namaAkun: true, kelompok: true } },
         akunKredit: { select: { kodeAkun: true, namaAkun: true } },
+        paymentId: true,
+        costId: true,
+        penerimaanId: true,
         createdBy:  { select: { name: true } },
       },
     });

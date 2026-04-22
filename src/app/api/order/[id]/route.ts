@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createNotificationForRole } from "@/lib/notifications";
+import { JenisNotif } from "../../../../../generated/prisma/enums";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -133,7 +135,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const { id } = await params;
     const existing = await prisma.order.findUnique({
       where: { id },
-      select: { id: true, statusProduksi: true },
+      select: { 
+        id: true, 
+        statusProduksi: true,
+        items: {
+          select: {
+            productId: true,
+            qty: true,
+            product: { select: { isService: true } }
+          }
+        }
+      },
     });
     if (!existing) {
       return NextResponse.json(
@@ -245,12 +257,41 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (channel !== undefined) data.channel = channel;
     }
 
-    // Update order
     const updated = await prisma.order.update({
       where: { id },
       data,
       select: ORDER_DETAIL_SELECT,
     });
+
+    // ─── Fitur #3: Kurangi Stok Produk Jadi saat Pesanan SELESAI ───
+    if (statusProduksi === "SELESAI" && existing.statusProduksi !== "SELESAI") {
+      const produkItems = existing.items.filter(item => item.product && !item.product.isService);
+      
+      if (produkItems.length > 0) {
+        await prisma.$transaction(
+          produkItems.map(item => 
+            prisma.product.update({
+              where: { id: item.productId },
+              data: { stok: { decrement: Number(item.qty) } }
+            })
+          )
+        );
+      }
+    }
+
+    // Notify Admins about status change if statusProduksi was updated
+    if (statusProduksi !== undefined && statusProduksi !== existing.statusProduksi) {
+      try {
+        await createNotificationForRole("admin", {
+          title: "Update Status Pesanan",
+          message: `Order #${updated.nomorOrder} berubah status menjadi ${statusProduksi}.`,
+          jenis: JenisNotif.STATUS_ORDER_UBAH,
+          linkUrl: `/order/${updated.id}`,
+        });
+      } catch (e) {
+        console.error("Failed to send notification:", e);
+      }
+    }
 
     // Replace items jika admin mengirimkan items baru (full replace)
     if (isAdmin && Array.isArray(items) && items.length > 0) {
