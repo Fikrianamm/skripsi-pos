@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
     const bulan  = sp.get("bulan")  || "";
     const tahun  = sp.get("tahun")  || "";
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, any> = {
+      deletedAt: null,
+    };
 
     if (search) {
       where.OR = [
@@ -195,7 +197,7 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    if (!oldCost) return NextResponse.json({ error: "Data pengeluaran tidak ditemukan." }, { status: 404 });
+    if (!oldCost || oldCost.deletedAt) return NextResponse.json({ error: "Data pengeluaran tidak ditemukan." }, { status: 404 });
 
     const oldJurnal = oldCost.jurnalUmum[0];
 
@@ -283,7 +285,7 @@ export async function DELETE(request: NextRequest) {
       },
     });
 
-    if (!oldCost) return NextResponse.json({ error: "Data pengeluaran tidak ditemukan." }, { status: 404 });
+    if (!oldCost || oldCost.deletedAt) return NextResponse.json({ error: "Data pengeluaran tidak ditemukan." }, { status: 404 });
 
     const oldJurnal = oldCost.jurnalUmum[0];
     const now = new Date();
@@ -310,13 +312,14 @@ export async function DELETE(request: NextRequest) {
         }, tx as any);
       }
 
-      // 3. Hapus Data Cost (Fisik atau bisa soft-delete jika ada fieldnya)
-      // Karena costId di JurnalUmum adalah onDelete: SetNull, 
-      // jurnal akan tetap ada di DB dengan costId = null. Audit trail aman.
-      await tx.cost.delete({ where: { id } });
+      // 3. Soft Delete Data Cost
+      await tx.cost.update({ 
+        where: { id },
+        data: { deletedAt: now }
+      });
     });
 
-    return NextResponse.json({ message: "Pengeluaran dihapus dan jurnal dibalik (reversal)." });
+    return NextResponse.json({ message: "Pengeluaran dipindahkan ke sampah." });
   } catch (err) {
     console.error("[COST DELETE ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

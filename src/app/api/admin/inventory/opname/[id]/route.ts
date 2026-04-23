@@ -34,9 +34,9 @@ export async function GET(
       },
     });
 
-    if (!opname)
+    if (!opname || opname.deletedAt)
       return NextResponse.json(
-        { error: "Data tidak ditemukan." },
+        { error: "Data tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
 
@@ -70,15 +70,18 @@ export async function DELETE(
       },
     });
 
-    if (!opname)
+    if (!opname || opname.deletedAt)
       return NextResponse.json(
-        { error: "Data tidak ditemukan." },
+        { error: "Data tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
 
     // Delete header (cascade deletes items) + rollback stock to stokSistem
     await prisma.$transaction([
-      prisma.stokOpname.delete({ where: { id } }),
+      prisma.stokOpname.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      }),
       ...opname.items.map((item) =>
         prisma.bahanBaku.update({
           where: { id: item.bahanBakuId },
@@ -88,7 +91,7 @@ export async function DELETE(
     ]);
 
     return NextResponse.json({
-      message: "Stok opname dihapus dan stok dikembalikan ke kondisi sebelumnya.",
+      message: "Stok opname dipindahkan ke sampah.",
     });
   } catch (error) {
     console.error("[DELETE STOK OPNAME ERROR]", error);

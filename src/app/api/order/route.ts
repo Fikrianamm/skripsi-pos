@@ -67,7 +67,9 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, any> = {
+      deletedAt: null,
+    };
 
     if (search) {
       where.OR = [

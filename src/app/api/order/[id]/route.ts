@@ -23,6 +23,7 @@ const ORDER_DETAIL_SELECT = {
   grandTotal: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
   customer: { select: { id: true, nama: true, nomorHp: true, image: true } },
   items: {
     select: {
@@ -35,6 +36,7 @@ const ORDER_DETAIL_SELECT = {
       catatan: true,
       product: { select: { id: true, sku: true, nama: true } },
     },
+    where: { deletedAt: null },
     orderBy: { createdAt: "asc" as const },
   },
   designFiles: {
@@ -107,9 +109,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
       select: ORDER_DETAIL_SELECT,
     });
 
-    if (!order) {
+    if (!order || order.deletedAt) {
       return NextResponse.json(
-        { error: "Pesanan tidak ditemukan." },
+        { error: "Pesanan tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
     }
@@ -368,8 +370,30 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
       );
     }
 
-    // OrderItem dan DesignFile akan terhapus cascade (sesuai schema)
-    await prisma.order.delete({ where: { id } });
+    // OrderItem, Payment, SPK, dan JurnalUmum terkait akan di-soft delete
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.order.update({
+        where: { id },
+        data: { deletedAt: now },
+      }),
+      prisma.orderItem.updateMany({
+        where: { orderId: id },
+        data: { deletedAt: now },
+      }),
+      prisma.payment.updateMany({
+        where: { orderId: id },
+        data: { deletedAt: now },
+      }),
+      prisma.sPK.updateMany({
+        where: { orderId: id },
+        data: { deletedAt: now },
+      }),
+      prisma.jurnalUmum.updateMany({
+        where: { payment: { orderId: id } },
+        data: { deletedAt: now },
+      }),
+    ]);
 
     return NextResponse.json({
       message: `Pesanan ${existing.nomorOrder} berhasil dihapus.`,

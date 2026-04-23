@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     const { id } = await params;
     const payments = await prisma.payment.findMany({
-      where: { orderId: id },
+      where: { orderId: id, deletedAt: null },
       orderBy: { tanggal: "desc" },
       select: {
         id: true,
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         statusPembayaran: true,
         nomorOrder: true,
         customer: { select: { nama: true } },
-        payments: { select: { nominal: true } },
+        payments: { select: { nominal: true }, where: { deletedAt: null } },
       },
     });
     if (!order)
@@ -193,8 +193,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       },
     });
 
-    if (!oldPayment || oldPayment.orderId !== orderId) {
-      return NextResponse.json({ error: "Pembayaran tidak ditemukan." }, { status: 404 });
+    if (!oldPayment || oldPayment.deletedAt || oldPayment.orderId !== orderId) {
+      return NextResponse.json({ error: "Pembayaran tidak ditemukan atau sudah dihapus." }, { status: 404 });
     }
 
     const oldJurnal = oldPayment.jurnalUmum[0];
@@ -302,8 +302,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       },
     });
 
-    if (!payment || payment.orderId !== orderId)
-      return NextResponse.json({ error: "Pembayaran tidak ditemukan." }, { status: 404 });
+    if (!payment || payment.deletedAt || payment.orderId !== orderId)
+      return NextResponse.json({ error: "Pembayaran tidak ditemukan atau sudah dihapus." }, { status: 404 });
 
     const oldJurnal = payment.jurnalUmum[0];
     const now = new Date();
@@ -330,13 +330,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         }, tx as any);
       }
 
-      // 3. Hapus Data Payment
-      await tx.payment.delete({ where: { id: paymentId } });
+      // 3. Soft Delete Data Payment
+      await tx.payment.update({
+        where: { id: paymentId },
+        data: { deletedAt: now }
+      });
 
       // 4. Recalculate status
       const remaining = await tx.payment.aggregate({
         _sum: { nominal: true },
-        where: { orderId },
+        where: { orderId, deletedAt: null },
       });
       const order = await tx.order.findUnique({
         where: { id: orderId },

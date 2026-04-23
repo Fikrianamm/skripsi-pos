@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get("dateTo");
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: any = { deletedAt: null };
     if (search) {
       where.OR = [
         { keterangan: { contains: search } },

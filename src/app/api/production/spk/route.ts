@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const accCetak = searchParams.get("accCetak") ?? "all";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {};
+    const where: any = { deletedAt: null };
 
     if (!fetchAll) {
       if (statusSPK !== "all") {

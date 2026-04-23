@@ -12,7 +12,8 @@ import {
   Spinner,
 } from "@heroui/react";
 import { formatRupiah } from "@/lib/func";
-import { Trash2 } from "lucide-react";
+import { Trash2, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export type JurnalItem = {
   id: string;
@@ -25,6 +26,7 @@ export type JurnalItem = {
   akunDebetId: string;
   akunKreditId: string;
   paymentId?: string | null;
+  payment?: { orderId: string } | null;
   costId?: string | null;
   penerimaanId?: string | null;
   createdBy?: { name: string } | null;
@@ -123,6 +125,32 @@ export function JurnalTable({
                     by {item.createdBy.name}
                   </span>
                 )}
+                <div className="mt-1 flex gap-2">
+                  {item.payment?.orderId && (
+                    <Link 
+                      href={`/order/${item.payment.orderId}`}
+                      className="text-[10px] bg-primary-50 text-primary-600 px-1.5 py-0.5 rounded border border-primary-100 hover:bg-primary-100 flex items-center gap-1 w-fit"
+                    >
+                      <ExternalLink size={10} /> Lihat Pesanan
+                    </Link>
+                  )}
+                  {item.costId && (
+                    <Link 
+                      href={`/finance/biaya?id=${item.costId}`}
+                      className="text-[10px] bg-warning-50 text-warning-600 px-1.5 py-0.5 rounded border border-warning-100 hover:bg-warning-100 flex items-center gap-1 w-fit"
+                    >
+                      <ExternalLink size={10} /> Lihat Biaya
+                    </Link>
+                  )}
+                  {item.penerimaanId && (
+                    <Link 
+                      href={`/inventory/in?id=${item.penerimaanId}`}
+                      className="text-[10px] bg-success-50 text-success-600 px-1.5 py-0.5 rounded border border-success-100 hover:bg-success-100 flex items-center gap-1 w-fit"
+                    >
+                      <ExternalLink size={10} /> Lihat Stok In
+                    </Link>
+                  )}
+                </div>
               </div>
             </TableCell>
 
@@ -160,19 +188,17 @@ export function JurnalTable({
             {/* Aksi */}
             <TableCell>
               <div className="flex items-center justify-end">
-                {(!item.costId && !item.paymentId && !item.penerimaanId) && (
-                  <Tooltip content="Hapus Jurnal" placement="left" color="danger">
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      onPress={() => onDeleted(item)}
-                    >
-                      <Trash2 size={13} />
-                    </Button>
-                  </Tooltip>
-                )}
+                <Tooltip content="Hapus Jurnal & Data Terkait" placement="left" color="danger">
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    color="danger"
+                    onPress={() => onDeleted(item)}
+                  >
+                    <Trash2 size={13} />
+                  </Button>
+                </Tooltip>
               </div>
             </TableCell>
           </TableRow>

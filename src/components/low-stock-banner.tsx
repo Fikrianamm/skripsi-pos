@@ -9,7 +9,8 @@ interface LowStockItem {
   nama: string;
   stok: number;
   minStok: number;
-  unit: { nama: string };
+  unit?: { nama: string };
+  type: "produk" | "bahan";
 }
 
 export function LowStockBanner() {
@@ -53,16 +54,24 @@ export function LowStockBanner() {
 
   if (!isVisible || items.length === 0) return null;
 
+  const produkCount = items.filter(i => i.type === "produk").length;
+  const bahanCount = items.filter(i => i.type === "bahan").length;
+
   return (
     <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between animate-in fade-in slide-in-from-top duration-500">
       <div className="flex items-center gap-2 overflow-hidden">
         <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
-        <p className="text-sm font-medium text-amber-800 truncate">
+        <div className="text-sm font-medium text-amber-800 truncate">
           <span className="font-bold">Peringatan Stok:</span>{" "}
-          {items.length} bahan baku membutuhkan pengisian:{" "}
-          {items.slice(0, 3).map(i => `${i.nama} (${i.stok} ${i.unit.nama})`).join(", ")}
-          {items.length > 3 ? " ..." : ""}
-        </p>
+          {produkCount > 0 && <span>{produkCount} produk</span>}
+          {produkCount > 0 && bahanCount > 0 && <span> & </span>}
+          {bahanCount > 0 && <span>{bahanCount} bahan baku</span>}
+          {" menipis: "}
+          <span className="text-xs opacity-80">
+            {items.slice(0, 3).map(i => `${i.nama} (${i.stok} ${i.unit?.nama || "pcs"})`).join(", ")}
+            {items.length > 3 ? " ..." : ""}
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Button 

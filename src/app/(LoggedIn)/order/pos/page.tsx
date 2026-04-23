@@ -209,12 +209,6 @@ export default function Page() {
         return;
       }
 
-      addToast({
-        title: "Pesanan berhasil dibuat! 🎉",
-        description: `Nomor: ${json.order?.nomorOrder}`,
-        color: "success",
-      });
-
       router.push(`/order/list`);
     } catch {
       addToast({

@@ -8,6 +8,7 @@ import {
   Settings,
   ShoppingBag,
   TrendingUp,
+  Trash2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { RoleKey } from "@/config/roles";
@@ -212,10 +213,21 @@ export const NAV_ITEMS: NavGroup[] = [
         ],
       },
       {
-        title: "Settings",
-        url: "/settings",
+        title: "Sampah",
+        url: "/settings/trash",
+        icon: Trash2,
+        roles: ["admin"],
+      },
+      {
+        title: "Pengaturan",
+        url: "#",
         icon: Settings,
-        // semua role bisa akses
+        items: [
+          {
+            title: "Semua Pengaturan",
+            url: "/settings",
+          },
+        ],
       },
     ],
   },

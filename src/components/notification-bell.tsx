@@ -8,6 +8,7 @@ import {
   Badge,
   Button,
   ScrollShadow,
+  Tooltip,
 } from "@heroui/react";
 import {
   Bell,
@@ -18,6 +19,8 @@ import {
   Wallet,
   Info,
   Clock,
+  CheckCheck,
+  Trash2,
 } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/use-notifications";
 import { formatRelative } from "date-fns";
@@ -29,8 +32,13 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ userId }: NotificationBellProps) {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
-    useNotifications(userId, 10);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteAllNotification,
+  } = useNotifications(userId, 10);
   const router = useRouter();
 
   const getIcon = (jenis: string) => {
@@ -103,34 +111,40 @@ export function NotificationBell({ userId }: NotificationBellProps) {
               <Bell className="text-primary size-4" />
               Notifikasi
             </span>
-            {unreadCount > 0 && (
-              <Button
-                size="sm"
-                variant="light"
-                color="primary"
-                className="text-xs h-7 px-2 pointer-events-auto z-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  markAllAsRead();
-                }}
-              >
-                Tandai semua terbaca
-              </Button>
-            )}
-              <Button
-                size="sm"
-                variant="light"
-                color="primary"
-                className="text-xs h-7 px-2 pointer-events-auto z-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  markAllAsRead();
-                }}
-              >
-                
-              </Button>
+            <div className="flex">
+              {unreadCount > 0 && (
+                <Tooltip content="Tandai semua telah dibaca">
+                  <Button
+                    isIconOnly
+                    variant="light"
+                    color="primary"
+                    className="text-xs h-7 px-2 pointer-events-auto z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      markAllAsRead();
+                    }}
+                  >
+                    <CheckCheck size={14} />
+                  </Button>
+                </Tooltip>
+              )}
+              <Tooltip content="Hapus semua notifikasi">
+                <Button
+                  isIconOnly
+                  variant="light"
+                  color="danger"
+                  className="text-xs h-7 px-2 pointer-events-auto z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    deleteAllNotification();
+                  }}
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </Tooltip>
+            </div>
           </div>
         </DropdownItem>
 

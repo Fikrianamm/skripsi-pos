@@ -129,6 +129,7 @@ model Product {
   isService  Boolean     @default(false)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
   category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
@@ -149,6 +150,7 @@ model Customer {
   image     String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
   orders    Order[]
 
   @@index([nama(length: 191)])
@@ -207,6 +209,7 @@ model PenerimaanBarang {
   addedById    String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
   supplier     Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   addedBy      User?       @relation(fields: [addedById], references: [id], onDelete: SetNull)
   items        StokMasuk[]
@@ -257,6 +260,7 @@ model StokOpname {
   addedById  String?
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
+  deletedAt  DateTime?
   addedBy    User?            @relation(fields: [addedById], references: [id], onDelete: SetNull)
   items      StokOpnameItem[]
 
@@ -303,6 +307,7 @@ model Order {
   grandTotal       Decimal          @db.Decimal(12, 2)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
   customer         Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
   user             User?            @relation(fields: [userId], references: [id])
   items            OrderItem[]
@@ -329,6 +334,7 @@ model OrderItem {
   catatan   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 
@@ -385,6 +391,7 @@ model SPK {
   statusSPK     StatusSPK           @default(DRAFT)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
+  deletedAt     DateTime?
   order         Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
   karyawan      Karyawan            @relation(fields: [karyawanId], references: [id], onDelete: Restrict)
   user          User?               @relation(fields: [userId], references: [id])
@@ -403,6 +410,7 @@ model PengeluaranBarang {
   addedById  String?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
   spk        SPK?         @relation(fields: [spkId], references: [id], onDelete: SetNull)
   addedBy    User?        @relation(fields: [addedById], references: [id], onDelete: SetNull)
   items      StokKeluar[]
@@ -427,6 +435,7 @@ model Payment {
   tanggal          DateTime         @default(now())
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
   order            Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   // Relasi ke jurnal — satu payment menghasilkan 2 baris jurnal
@@ -453,6 +462,7 @@ model Cost {
   tanggal        DateTime     @default(now())
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
   akun           Akun         @relation(fields: [akunId], references: [id], onDelete: Cascade)
   user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   jurnalUmum     JurnalUmum[]

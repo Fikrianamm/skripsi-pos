@@ -1,29 +1,44 @@
 buatkan plan secara *high-level* untuk memandu _Junior Programmer_ atau model AI lainnya dalam mengimplementasikan fitur tambahan web.
 
 ## Objektif Utama
-1. api notifikasi delete all.
-2. tambahkan toast ketika ada notifikasi.
-3. update api logic ketika pesanan.
-4. update api stok bahan baku tambahkan notif stok menipis/habis.
-5. pilihan kasbank diweb setting berdasarkan jenisRekening "bank" saja.
-6. notifikasi stok menipis.
+1. update banner low stok untuk produk dan bahan baku.
+2. perbarui modal delete pesanan.
+3. update tampilan tabel jurnal umum.
+4. tampilan invoice pada detail order.
+5. fitu baru sampah (soft delete).
 
-#1. api notifikasi delete all.
-- tambahkan update api notifikasi delete all berdasarkan usernya.
-- update schema notifikasi hapus role.
-- update trigger createnotif berdasarkan role yang sesuai bukan hanya untuk admin.
+#1. update banner low stok produk dan bahan baku.
+- banner low stok bisa untuk produk ketika menipis/habis
 
-#2. tambahkan toast ketika ada notifikasi.
-- tambahkan toast ketika ada notifikasi.
+#2. perbarui modal delete pesanan
+- pada halaman detail pesanan tambahkan modal delete pesanan
 
-#3. update api logic pesanan.
-- tambahkan update api logic ketika pesanan sudah pada tahap selesai maka kurangi produk jika status barang yang diorder typenya "produk jadi" (isService = false).
+#3. update tampilan tabel jurnal umum
+- jurnal umum bisa menampilkan data terkait yang memiliki relasi jadi bisa langsung klik link ke data tersebut.
+- semua jurnal umum bisa didelete dan jika bisa data yang terkait juga ikut terhapus.
 
-#4. update api stok bahan baku tambahkan notif stok menipis/habis.
-- tambahkan update api stok bahan baku tambahkan notif stok menipis/habis.
+#4. tampilan invoice pada detail order
+- pada detail order tambahkan tampilan invoice pada bagian bawah setelah detail  item pesanan
+- buat tampilanya menjadi seperti struk/nota dan bisa di print atau simpan menjadi pdf 
+- sesuaikan tampilanya yang bisa dicustom pad web setting
 
-#5. pilihan kasbank diweb setting berdasarkan jenisRekening "bank" saja.
-- update pilihan kasbank diweb setting berdasarkan jenisRekening "bank" saja.
+#5. fitu baru sampah (soft delete)
+- Data yang perlu menerapkan soft delete
+ Order & OrderItem
+ Payment (Uang masuk)
+ Cost (Uang keluar)
+ JurnalUmum (Buku besar akuntansi)
+ SPK (Riwayat produksi)
+ PenerimaanBarang, PengeluaranBarang, StokOpname (Riwayat pergerakan gudang)
+ Product 
+ Customer
 
-#6. notifikasi stok menipis
-- tambahkan peringatan global dibawah navbar ketika ada bahan baku atau produk yang stoknya menipis/habis.
+- update logic delete menjadi mengisi deletedAt bukan menghapus data permanen dari database
+
+- update logic ui tidak menampilkan data yang sudah disoft delete
+
+- update semua modal untuk informasi bahwa akan masuk ke sampah(soft delete)
+
+- tangani efek domino contoh Jika sebuah pesanan utama (Order) dihapus, maka anak-anaknya (Payment, SPK) juga harus ikut terhapus secara logika agar uangnya tidak tetap terhitung di Laba Rugi. saya ingin anda kembangkan solusi ini
+
+- buatkan tampilan sampah (soft delete) ui front-end dan back-end nya

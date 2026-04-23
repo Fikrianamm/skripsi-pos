@@ -206,12 +206,13 @@ export async function DELETE(
       );
     }
 
-    await prisma.product.delete({
+    await prisma.product.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
 
     return NextResponse.json({
-      message: "Produk berhasil dihapus.",
+      message: "Produk berhasil dipindahkan ke sampah.",
     });
   } catch (error) {
     console.error("[ADMIN DELETE PRODUCT ERROR]", error);

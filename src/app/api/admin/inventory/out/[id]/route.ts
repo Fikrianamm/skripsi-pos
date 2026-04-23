@@ -45,9 +45,9 @@ export async function GET(
       },
     });
 
-    if (!pengeluaran)
+    if (!pengeluaran || pengeluaran.deletedAt)
       return NextResponse.json(
-        { error: "Data tidak ditemukan." },
+        { error: "Data tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
 
@@ -80,15 +80,18 @@ export async function DELETE(
       include: { items: { select: { bahanBakuId: true, jumlah: true } } },
     });
 
-    if (!pengeluaran)
+    if (!pengeluaran || pengeluaran.deletedAt)
       return NextResponse.json(
-        { error: "Data tidak ditemukan." },
+        { error: "Data tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
 
     // Delete header (cascade deletes items) + rollback stock
     await prisma.$transaction([
-      prisma.pengeluaranBarang.delete({ where: { id } }),
+      prisma.pengeluaranBarang.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      }),
       ...pengeluaran.items.map((item) =>
         prisma.bahanBaku.update({
           where: { id: item.bahanBakuId },
@@ -98,7 +101,7 @@ export async function DELETE(
     ]);
 
     return NextResponse.json({
-      message: "Pengeluaran dihapus dan stok telah di-rollback.",
+      message: "Pengeluaran dipindahkan ke sampah.",
     });
   } catch (error) {
     console.error("[DELETE PENGELUARAN ERROR]", error);

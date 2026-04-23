@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, any> = { deletedAt: null };
     if (search) where.nama = { contains: search };
 
     const [results, count] = await Promise.all([
@@ -43,7 +44,9 @@ export async function GET(request: NextRequest) {
               grandTotal: true,
               createdAt: true,
               statusPembayaran: true,
+              deletedAt: true,
             },
+            where: { deletedAt: null },
             orderBy: { createdAt: "asc" },
           },
         },
@@ -177,7 +180,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.customer.deleteMany({ where: { id: { in: ids } } });
+    await prisma.customer.updateMany({ 
+      where: { id: { in: ids } },
+      data: { deletedAt: new Date() }
+    });
     return NextResponse.json({
       message: `${ids.length} customer berhasil dihapus.`,
     });

@@ -45,9 +45,9 @@ export async function GET(
       },
     });
 
-    if (!penerimaan)
+    if (!penerimaan || penerimaan.deletedAt)
       return NextResponse.json(
-        { error: "Penerimaan barang tidak ditemukan." },
+        { error: "Penerimaan barang tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
 
@@ -80,9 +80,9 @@ export async function PATCH(
       where: { id },
       include: { items: true },
     });
-    if (!existing)
+    if (!existing || existing.deletedAt)
       return NextResponse.json(
-        { error: "Penerimaan tidak ditemukan." },
+        { error: "Penerimaan tidak ditemukan atau sudah dihapus." },
         { status: 404 },
       );
 
@@ -296,13 +296,15 @@ export async function DELETE(
         }, tx as any);
       }
 
-      // 3. Hapus records
-      await tx.stokMasuk.deleteMany({ where: { penerimaanId: id } });
-      await tx.penerimaanBarang.delete({ where: { id } });
+      // 3. Soft Delete records
+      await tx.penerimaanBarang.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
     });
 
     return NextResponse.json({
-      message: "Penerimaan berhasil dihapus dan stok telah di-rollback.",
+      message: "Penerimaan berhasil dipindahkan ke sampah.",
     });
   } catch (error) {
     console.error("[DELETE PENERIMAAN ERROR]", error);

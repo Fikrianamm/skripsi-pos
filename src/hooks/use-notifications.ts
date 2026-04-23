@@ -88,7 +88,7 @@ export function useNotifications(userId: string | undefined, limit: number = 50)
     }
   };
 
-  const deleteAll = async () => {
+  const deleteAllNotification = async () => {
     // Optimistic update
     setNotifications([]);
 
@@ -105,6 +105,7 @@ export function useNotifications(userId: string | undefined, limit: number = 50)
     isLoading,
     markAsRead,
     markAllAsRead,
+    deleteAllNotification,
     refresh: fetchNotifications,
   };
 }

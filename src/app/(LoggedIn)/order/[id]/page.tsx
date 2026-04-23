@@ -16,8 +16,10 @@ import { DesignFilesCard } from "./components/design-files-card";
 import { PaymentSummary } from "./components/payment-summary";
 import { SpkFormModal } from "./components/spk-form-modal";
 import { SpkCard } from "./components/spk-card";
-import { PrintInvoiceModal } from "./components/print-invoice-modal";
 import { Printer } from "lucide-react";
+import { DeleteOrderModal } from "./components/delete-order-modal";
+import { PrintInvoiceModal } from "./components/print-invoice-modal";
+import { formatRupiah } from "@/lib/func";
 
 export default function Page() {
   const params = useParams();
@@ -26,6 +28,7 @@ export default function Page() {
    const [isDeleting, setIsDeleting] = useState(false);
   const [showSpkForm, setShowSpkForm] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(`/api/order/${orderId}`, fetcher);
   const order: OrderDetail | null = data?.order ?? null;
@@ -39,13 +42,7 @@ export default function Page() {
     setTimeout(() => setIsSpinning(false), 500); // Putar selama 500ms
   };
 
-  async function handleDelete() {
-    if (
-      !confirm(
-        `Hapus pesanan ${order?.nomorOrder}? Tindakan ini tidak dapat dibatalkan.`,
-      )
-    )
-      return;
+  async function confirmDelete() {
     setIsDeleting(true);
     try {
       const res = await fetch(`/api/order/${orderId}`, { method: "DELETE" });
@@ -149,7 +146,7 @@ export default function Page() {
               size="sm"
               variant="flat"
               color="danger"
-              onPress={handleDelete}
+              onPress={() => setShowDeleteModal(true)}
               isLoading={isDeleting}
             >
               <Trash2 size={14} />
@@ -246,6 +243,118 @@ export default function Page() {
           order={order}
         />
       )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteOrderModal
+          isOpen={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          nomorOrder={order.nomorOrder}
+          onConfirm={confirmDelete}
+        />
+      )}
+
+      {/* Invoice Preview at Bottom */}
+      <div className="mt-8 pt-8 border-t-2 border-dashed border-default-200">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Printer size={20} className="text-primary" />
+            Pratinjau Invoice
+          </h2>
+          <Button 
+            size="sm" 
+            color="primary" 
+            startContent={<Printer size={14} />}
+            onPress={() => setShowPrintModal(true)}
+          >
+            Cetak Sekarang
+          </Button>
+        </div>
+        
+        <Card className="max-w-[800px] mx-auto shadow-lg border border-default-100 overflow-hidden bg-white">
+          <CardBody className="p-0">
+             <iframe 
+                srcDoc={`
+                  <html>
+                    <head>
+                      <style>
+                        body { 
+                          font-family: sans-serif; 
+                          padding: 40px; 
+                          background: #fff;
+                          color: #333;
+                        }
+                        .invoice-container { max-width: 100%; }
+                        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+                        .company h1 { margin: 0; color: #111; font-size: 24px; }
+                        .company p { margin: 5px 0; font-size: 14px; color: #666; }
+                        .meta { text-align: right; }
+                        .meta h2 { margin: 0; font-size: 28px; color: #444; }
+                        .meta p { margin: 5px 0; font-size: 14px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background: #f8f8f8; text-align: left; padding: 12px; border-bottom: 2px solid #eee; font-size: 12px; font-weight: bold; }
+                        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+                        .summary { margin-top: 30px; display: flex; justify-content: flex-end; }
+                        .summary-box { width: 250px; }
+                        .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
+                        .total-row { border-top: 2px solid #333; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 18px; color: #000; }
+                        .footer { margin-top: 50px; text-align: center; color: #999; font-size: 12px; border-top: 1px dashed #eee; padding-top: 20px; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="invoice-container">
+                        <div class="header">
+                          <div class="company">
+                            <h1>POS SYSTEM</h1>
+                            <p>Jl. Contoh No. 123, Jakarta</p>
+                            <p>Telp: 0812-3456-7890</p>
+                          </div>
+                          <div class="meta">
+                            <h2>INVOICE</h2>
+                            <p>#${order.nomorOrder}</p>
+                            <p>${new Date(order.createdAt).toLocaleDateString("id-ID")}</p>
+                          </div>
+                        </div>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>PRODUK</th>
+                              <th>HARGA</th>
+                              <th>QTY</th>
+                              <th style="text-align: right;">SUBTOTAL</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${order.items.map(item => `
+                              <tr>
+                                <td>${item.nama}</td>
+                                <td>${item.harga.toLocaleString()}</td>
+                                <td>${item.qty}</td>
+                                <td style="text-align: right;">${item.subtotal.toLocaleString()}</td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                        <div class="summary">
+                          <div class="summary-box">
+                            <div class="summary-row"><span>Subtotal</span><span>${Number(order.subtotal).toLocaleString("id-ID")}</span></div>
+                            ${Number(order.diskon) > 0 ? `<div class="summary-row"><span>Diskon</span><span>-${Number(order.diskon).toLocaleString("id-ID")}</span></div>` : ''}
+                            ${Number(order.ongkir) > 0 ? `<div class="summary-row"><span>Ongkir</span><span>+${Number(order.ongkir).toLocaleString("id-ID")}</span></div>` : ''}
+                            <div class="summary-row total-row"><span>Total</span><span>${Number(order.grandTotal).toLocaleString("id-ID")}</span></div>
+                          </div>
+                        </div>
+                        <div class="footer">
+                          Terima kasih atas pesanan Anda!
+                        </div>
+                      </div>
+                    </body>
+                  </html>
+                `}
+                className="w-full h-[600px] border-none"
+                title="Invoice Preview"
+              />
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

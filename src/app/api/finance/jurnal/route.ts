@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
         akunDebet:  { select: { kodeAkun: true, namaAkun: true, kelompok: true } },
         akunKredit: { select: { kodeAkun: true, namaAkun: true } },
         paymentId: true,
+        payment: { select: { orderId: true } },
         costId: true,
         penerimaanId: true,
         createdBy:  { select: { name: true } },
@@ -130,15 +131,37 @@ export async function DELETE(request: NextRequest) {
     const jurnal = await prisma.jurnalUmum.findUnique({ where: { id } });
     if (!jurnal) return NextResponse.json({ error: "Jurnal tidak ditemukan" }, { status: 404 });
 
-    // Hanya jurnal manual (tanpa relasi ke modul lain) yang bisa dihapus
-    if (jurnal.paymentId || jurnal.costId || jurnal.penerimaanId) {
-      return NextResponse.json({
-        error: "Tidak dapat menghapus jurnal otomatis. Hapus dari modul asalnya (Payment/Cost/Penerimaan).",
-      }, { status: 403 });
-    }
+    // Cascading soft delete
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      // 1. Soft delete the jurnal entry itself
+      await tx.jurnalUmum.update({
+        where: { id },
+        data: { deletedAt: now },
+      });
 
-    await prisma.jurnalUmum.delete({ where: { id } });
-    return NextResponse.json({ message: "Jurnal berhasil dihapus." });
+      // 2. Cascade to related modules
+      if (jurnal.paymentId) {
+        await tx.payment.update({
+          where: { id: jurnal.paymentId },
+          data: { deletedAt: now },
+        });
+      }
+      if (jurnal.costId) {
+        await tx.cost.update({
+          where: { id: jurnal.costId },
+          data: { deletedAt: now },
+        });
+      }
+      if (jurnal.penerimaanId) {
+        await tx.penerimaanBarang.update({
+          where: { id: jurnal.penerimaanId },
+          data: { deletedAt: now },
+        });
+      }
+    });
+
+    return NextResponse.json({ message: "Jurnal dan data terkait berhasil dipindahkan ke sampah." });
   } catch (err) {
     console.error("[DELETE_JURNAL_ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
