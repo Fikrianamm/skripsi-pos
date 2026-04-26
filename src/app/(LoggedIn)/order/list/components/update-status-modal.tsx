@@ -18,7 +18,7 @@ import {
 import { Input, Textarea } from "@heroui/input";
 import { Alert } from "@heroui/alert";
 import { addToast } from "@heroui/toast";
-import { ArrowRightLeft, ClipboardList } from "lucide-react";
+import { ArrowRightLeft, ClipboardList, Wallet } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,6 +32,7 @@ import {
   getStatusProduksiBadge,
   getStatusBayarBadge,
 } from "../../components/order-badges";
+import Link from "next/link";
 
 // ── SPK inline form schema ────────────────────────────────────────────────────
 const spkSchema = z.object({
@@ -184,6 +185,7 @@ export function UpdateStatusModal({
   const REQUIRES_SPK: StatusProduksiKey[] = ["PACKING", "SELESAI"];
   function isStatusDisabled(key: StatusProduksiKey): boolean {
     if (!hasSPK && REQUIRES_SPK.includes(key)) return true;
+    if (currentStatusBayar === "BELUM_BAYAR") return true;
     return false;
   }
 
@@ -246,8 +248,11 @@ export function UpdateStatusModal({
                           >
                             <div className="flex items-center gap-2">
                               <span>{s.label}</span>
-                              {isStatusDisabled(s.key) && (
-                                <span className="text-xs text-default-400">(butuh SPK)</span>
+                              {isStatusDisabled(s.key) && currentStatusBayar !== "BELUM_BAYAR" && (
+                                <span className="text-xs text-default-500">(butuh SPK)</span>
+                              )}
+                              {currentStatusBayar === "BELUM_BAYAR" && (
+                                <span className="text-xs text-default-500">(status belum bayar)</span>
                               )}
                             </div>
                           </SelectItem>
@@ -274,6 +279,19 @@ export function UpdateStatusModal({
                           <span>
                             Status <strong>Packing</strong> dan <strong>Selesai</strong> hanya
                             tersedia setelah SPK dibuat.
+                          </span>
+                        </div>
+                      )}
+                      {currentStatusBayar === "BELUM_BAYAR" && (
+                        <div className="flex items-start gap-2 rounded-lg bg-danger-50 border border-danger px-3 py-2 text-xs text-danger">
+                          <Wallet size={13} className="mt-0.5 shrink-0" />
+                          <span>
+                            Pesanan ini belum dibayar. Klik <Link
+                              href={`/order/${orderId}`}
+                              className="cursor-pointer text-red-800 underline"
+                            >
+                              Lanjut
+                            </Link> untuk menambahkan riwayat pembayaran.
                           </span>
                         </div>
                       )}

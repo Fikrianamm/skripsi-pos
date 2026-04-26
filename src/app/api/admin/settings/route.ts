@@ -63,6 +63,7 @@ export async function PATCH(req: Request) {
       estimasiHariPengerjaan,
       defaultPendapatanAkunId,
       invoiceRekeningIds,
+      email,
     } = body;
 
     // Serialize array to JSON string if needed
@@ -83,6 +84,7 @@ export async function PATCH(req: Request) {
         estimasiHariPengerjaan: parseInt(estimasiHariPengerjaan) || 14,
         defaultPendapatanAkunId,
         invoiceRekeningIds: invoiceRekeningIdsStr,
+        email,
       },
       create: {
         id: 1,
@@ -96,6 +98,7 @@ export async function PATCH(req: Request) {
         estimasiHariPengerjaan: parseInt(estimasiHariPengerjaan) || 14,
         defaultPendapatanAkunId,
         invoiceRekeningIds: invoiceRekeningIdsStr,
+        email,
       },
     });
 

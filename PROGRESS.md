@@ -10,12 +10,4 @@ src/app/api/admin/inventory/in/route.ts → POST (penerimaan): kirim ke admin + 
 
 ## 📝 Todo & Pertimbangan Fitur (Selanjutnya)
 
-- [ ] **update layout invoice view** —
-- [ ] **header title** — tambahkan semua halaman title yang sesuai
-- [ ] **tampilan sampah** — tambahkan filter untuk menampilkan semua sampah dan bisa klik detail untuk melihat detail dengan memunculkan modal
 - [ ] **Laporan Laba Rugi** — Menautkan Pendapatan (Omzet) dikurangi pengeluaran (Cost) dan Harga Pokok (HPP) produk.
-
-### Peningkatan Ekstra (Nice-to-Have)
-
-- [ ] **Halaman Sampah** — soft delete untuk semua model.
-- [ ] **Audit Log Activity** — Merekam aksi pengguna (hapus produk, edit laporan) untuk keamanan admin.

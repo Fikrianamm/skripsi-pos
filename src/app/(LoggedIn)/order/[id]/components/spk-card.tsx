@@ -119,7 +119,7 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
           : { color: "default" as const, label: spk.statusSPK };
 
   return (
-    <Card shadow="sm" className="border border-default-200">
+    <Card shadow="none" className="border border-default-200">
       <CardHeader className="pb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ClipboardList size={16} className="text-default-500" />

@@ -7,7 +7,14 @@ import { Input, Textarea } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
 import { Checkbox } from "@heroui/checkbox";
-import { Save, Globe, CreditCard, Factory, Landmark, Building } from "lucide-react";
+import {
+  Save,
+  Globe,
+  CreditCard,
+  Factory,
+  Landmark,
+  Building,
+} from "lucide-react";
 import { addToast } from "@heroui/toast";
 
 export default function WebSettingSection() {
@@ -28,15 +35,17 @@ export default function WebSettingSection() {
           fetch("/api/finance/akun?isActive=true"),
           fetch("/api/finance/kas-bank?jenisRekening=BANK"),
         ]);
-        
+
         const settingsData = await settingsRes.json();
         const accountsData = await accountsRes.json();
         const kasBankData = await kasBankRes.json();
-        
+
         setSettings(settingsData);
         setLogoPreview(settingsData.logoUrl || null);
         setAccounts(accountsData.akuns || []);
-        setKasBanks((kasBankData.kasBanks || []).filter((kb: any) => kb.isActive));
+        setKasBanks(
+          (kasBankData.kasBanks || []).filter((kb: any) => kb.isActive),
+        );
 
         // Parse saved rekening IDs
         if (settingsData.invoiceRekeningIds) {
@@ -137,36 +146,34 @@ export default function WebSettingSection() {
     <>
       <h2 className="text-xl font-semibold mb-0">Web Setting</h2>
       <p className="text-muted-foreground">
-        Konfigurasi identitas perusahaan, preferensi sistem, dan pemetaan keuangan.
+        Konfigurasi identitas perusahaan, preferensi sistem, dan pemetaan
+        keuangan.
       </p>
       <Divider />
-      
-      <form onSubmit={handleSubmit} className="space-y-8 py-4 max-w-4xl overflow-y-auto max-h-[calc(100vh-250px)] px-1">
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-8 py-4 max-w-4xl overflow-y-auto max-h-[calc(100vh-250px)] px-1"
+      >
         {/* 1. Profil & Identitas */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-primary">
             <Globe size={18} />
-            <h3 className="font-medium text-lg">Profil & Identitas Perusahaan</h3>
+            <h3 className="font-medium text-lg">
+              Profil & Identitas Perusahaan
+            </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Nama Perusahaan"
-              placeholder="Masukkan nama perusahaan"
-              value={settings.namaPerusahaan}
-              onValueChange={(v) => setSettings({ ...settings, namaPerusahaan: v })}
-            />
-            <Input
-              label="Nomor Kontak"
-              placeholder="Contoh: 081234567890"
-              value={settings.nomorKontak || ""}
-              onValueChange={(v) => setSettings({ ...settings, nomorKontak: v })}
-            />
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Logo Perusahaan</label>
               <div className="flex items-center gap-4">
                 <div className="aspect-square size-16 rounded-md border border-default-200 bg-default-50 flex flex-col items-center justify-center overflow-hidden shrink-0">
                   {logoPreview ? (
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                    <img
+                      src={logoPreview}
+                      alt="Logo"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <Building className="size-6 text-default-400" />
                   )}
@@ -180,7 +187,11 @@ export default function WebSettingSection() {
                       const file = e.target.files?.[0];
                       if (file) {
                         if (file.size > 5 * 1024 * 1024) {
-                          addToast({ title: "File terlalu besar", description: "Maksimal 5MB", color: "danger" });
+                          addToast({
+                            title: "File terlalu besar",
+                            description: "Maksimal 5MB",
+                            color: "danger",
+                          });
                           return;
                         }
                         setLogoFile(file);
@@ -188,10 +199,34 @@ export default function WebSettingSection() {
                       }
                     }}
                   />
-                  <p className="text-xs text-default-500">Maks. 5MB. Format: JPG, PNG.</p>
+                  <p className="text-xs text-default-500">
+                    Maks. 5MB. Format: JPG, PNG.
+                  </p>
                 </div>
               </div>
             </div>
+            <Input
+              label="Nama Perusahaan"
+              placeholder="Masukkan nama perusahaan"
+              value={settings.namaPerusahaan}
+              onValueChange={(v) =>
+                setSettings({ ...settings, namaPerusahaan: v })
+              }
+            />
+            <Input
+              label="Nomor Kontak"
+              placeholder="Contoh: 081234567890"
+              value={settings.nomorKontak || ""}
+              onValueChange={(v) =>
+                setSettings({ ...settings, nomorKontak: v })
+              }
+            />
+            <Input
+              label="Email Perusahaan"
+              placeholder="Masukkan email perusahaan"
+              value={settings.email || ""}
+              onValueChange={(v) => setSettings({ ...settings, email: v })}
+            />
             <Textarea
               label="Alamat"
               placeholder="Masukkan alamat lengkap"
@@ -214,13 +249,17 @@ export default function WebSettingSection() {
               label="Prefix Nomor Order"
               placeholder="Contoh: INV-HQ-"
               value={settings.prefixOrder}
-              onValueChange={(v) => setSettings({ ...settings, prefixOrder: v })}
+              onValueChange={(v) =>
+                setSettings({ ...settings, prefixOrder: v })
+              }
             />
             <Textarea
               label="Catatan Kaki Struk"
               placeholder="Teks yang akan muncul di bawah struk"
               value={settings.catatanKakiStruk || ""}
-              onValueChange={(v) => setSettings({ ...settings, catatanKakiStruk: v })}
+              onValueChange={(v) =>
+                setSettings({ ...settings, catatanKakiStruk: v })
+              }
             />
           </div>
         </div>
@@ -245,8 +284,15 @@ export default function WebSettingSection() {
               label="Estimasi Hari Pengerjaan"
               placeholder="14"
               value={settings.estimasiHariPengerjaan.toString()}
-              onValueChange={(v) => setSettings({ ...settings, estimasiHariPengerjaan: parseInt(v) || 0 })}
-              endContent={<span className="text-default-400 text-small">Hari</span>}
+              onValueChange={(v) =>
+                setSettings({
+                  ...settings,
+                  estimasiHariPengerjaan: parseInt(v) || 0,
+                })
+              }
+              endContent={
+                <span className="text-default-400 text-small">Hari</span>
+              }
             />
           </div>
         </div>
@@ -263,21 +309,32 @@ export default function WebSettingSection() {
             <Select
               label="Akun Pendapatan Default"
               placeholder="Pilih akun pendapatan"
-              selectedKeys={settings.defaultPendapatanAkunId ? [settings.defaultPendapatanAkunId] : []}
+              selectedKeys={
+                settings.defaultPendapatanAkunId
+                  ? [settings.defaultPendapatanAkunId]
+                  : []
+              }
               onSelectionChange={(keys) => {
                 const selected = Array.from(keys)[0];
-                setSettings({ ...settings, defaultPendapatanAkunId: selected as string });
+                setSettings({
+                  ...settings,
+                  defaultPendapatanAkunId: selected as string,
+                });
               }}
             >
               {accounts.map((akun: any) => (
-                <SelectItem key={akun.id} textValue={`${akun.kodeAkun} - ${akun.namaAkun}`}>
+                <SelectItem
+                  key={akun.id}
+                  textValue={`${akun.kodeAkun} - ${akun.namaAkun}`}
+                >
                   {akun.kodeAkun} - {akun.namaAkun}
                 </SelectItem>
               ))}
             </Select>
             <div className="p-3 bg-default-50 rounded-lg border border-default-200">
               <p className="text-xs text-muted-foreground italic">
-                Pilih akun kemana uang hasil pesanan (Order) akan otomatis dicatat dalam jurnal saat pembayaran dilakukan.
+                Pilih akun kemana uang hasil pesanan (Order) akan otomatis
+                dicatat dalam jurnal saat pembayaran dilakukan.
               </p>
             </div>
           </div>
@@ -297,7 +354,8 @@ export default function WebSettingSection() {
           {kasBanks.length === 0 ? (
             <div className="p-3 bg-default-50 rounded-lg border border-default-200">
               <p className="text-xs text-muted-foreground italic">
-                Belum ada rekening kas/bank aktif. Tambahkan terlebih dahulu di menu Kas &amp; Bank.
+                Belum ada rekening kas/bank aktif. Tambahkan terlebih dahulu di
+                menu Kas &amp; Bank.
               </p>
             </div>
           ) : (
@@ -329,11 +387,17 @@ export default function WebSettingSection() {
                     }}
                   />
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium">{kb.namaRekening}</span>
+                    <span className="text-sm font-medium">
+                      {kb.namaRekening}
+                    </span>
                     {kb.nomorRekening && (
-                      <span className="text-xs text-default-400">{kb.nomorRekening}</span>
+                      <span className="text-xs text-default-400">
+                        {kb.nomorRekening}
+                      </span>
                     )}
-                    <span className="text-xs text-default-400 uppercase tracking-wide">{kb.jenisRekening}</span>
+                    <span className="text-xs text-default-400 uppercase tracking-wide">
+                      {kb.jenisRekening}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -341,9 +405,9 @@ export default function WebSettingSection() {
           )}
         </div>
 
-        <Button 
-          type="submit" 
-          color="primary" 
+        <Button
+          type="submit"
+          color="primary"
           isLoading={isUpdating}
           startContent={!isUpdating && <Save size={18} />}
         >

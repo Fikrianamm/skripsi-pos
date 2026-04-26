@@ -67,7 +67,8 @@ export function OrderToolbar({
         onClear={() => onSearchChange("")}
         className="w-full"
       />
-      <div className="flex flex-row gap-2 items-center justify-start">
+
+      <div className="flex items-center gap-2 ml-auto">
         <FilterLanjutan
           activeCount={activeCount}
           onReset={() => {
@@ -105,30 +106,24 @@ export function OrderToolbar({
             />
           </FilterSection>
         </FilterLanjutan>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <Tooltip content="Refresh">
-            <Button
-              isIconOnly
-              variant="bordered"
-              size="sm"
-              onPress={handleRefresh}
-            >
-              <RefreshCw
-                size={15}
-                className={isSpinning ? "animate-spin" : ""}
-              />
-            </Button>
-          </Tooltip>
+        <Tooltip content="Refresh">
           <Button
-            color="primary"
+            isIconOnly
+            variant="bordered"
             size="sm"
-            startContent={<ShoppingBag size={15} />}
-            onPress={onCreateOrder}
+            onPress={handleRefresh}
           >
-            Buat Pesanan
+            <RefreshCw size={15} className={isSpinning ? "animate-spin" : ""} />
           </Button>
-        </div>
+        </Tooltip>
+        <Button
+          color="primary"
+          size="sm"
+          startContent={<ShoppingBag size={15} />}
+          onPress={onCreateOrder}
+        >
+          Buat Pesanan
+        </Button>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export function DesignFilesCard({ files }: DesignFilesCardProps) {
   if (files.length === 0) return null;
 
   return (
-    <Card shadow="sm" className="border border-default-200">
+    <Card shadow="none" className="border border-default-200">
       <CardHeader className="pb-1 pt-4 px-4 flex items-center justify-between">
         <span className="text-sm font-semibold text-default-700">
           File Desain

@@ -1,44 +1,44 @@
 buatkan plan secara *high-level* untuk memandu _Junior Programmer_ atau model AI lainnya dalam mengimplementasikan fitur tambahan web.
 
 ## Objektif Utama
-1. update banner low stok untuk produk dan bahan baku.
-2. perbarui modal delete pesanan.
-3. update tampilan tabel jurnal umum.
-4. tampilan invoice pada detail order.
-5. fitu baru sampah (soft delete).
+1. tampilan modal invoice .
+2. header title page.
+3. tampilan sampah.
 
-#1. update banner low stok produk dan bahan baku.
-- banner low stok bisa untuk produk ketika menipis/habis
+#1. modal invoice.
+- update form web setting untuk menambahkan field email, dan backendnya
+- buatkan tampilan invoice seukuran a4 pada file src\app\(LoggedIn)\order\[id]\components\print-invoice-modal.tsx
+- bisa di print atau disimpan menjadi pdf
+- sesuaikan tampilanya yang bisa dicustom pada web setting
+- tambahkan header untuk menampilkan logo perusahaan hanya jika ada file logo pada data web setting.
+- data yang tampil :
+    - logo
+    - nama perusahaan
+    - alamat
+    - nomor telepon
+    - email
+    - invoice no(nomor order)
+    - tanggal
+    - nama customer
+    - tabel detail order: 
+        - produk
+        - ukuran
+        - bahan
+        - cetak
+        - qty
+        - harga/pcs
+        - total harga
+    - sub total
+    - diskon
+    - ongkir
+    - grand total
+    - catatan footer
+    - informasi rekening
 
-#2. perbarui modal delete pesanan
-- pada halaman detail pesanan tambahkan modal delete pesanan
+#2. header title page.
+- update header title setiap page sesuai dengan nama pagenya. 
 
-#3. update tampilan tabel jurnal umum
-- jurnal umum bisa menampilkan data terkait yang memiliki relasi jadi bisa langsung klik link ke data tersebut.
-- semua jurnal umum bisa didelete dan jika bisa data yang terkait juga ikut terhapus.
+#3. tampilan sampah.
+- update tampilan list pesanan, product, customer, biaya, jurnal. saya butuh tampilan yang detail untuk memastikan data yang mau dikembalikan, update tabel sesuaikan tampilan yang detail
+- tambahkan bagian untuk menampilkan semua sampah 
 
-#4. tampilan invoice pada detail order
-- pada detail order tambahkan tampilan invoice pada bagian bawah setelah detail  item pesanan
-- buat tampilanya menjadi seperti struk/nota dan bisa di print atau simpan menjadi pdf 
-- sesuaikan tampilanya yang bisa dicustom pad web setting
-
-#5. fitu baru sampah (soft delete)
-- Data yang perlu menerapkan soft delete
- Order & OrderItem
- Payment (Uang masuk)
- Cost (Uang keluar)
- JurnalUmum (Buku besar akuntansi)
- SPK (Riwayat produksi)
- PenerimaanBarang, PengeluaranBarang, StokOpname (Riwayat pergerakan gudang)
- Product 
- Customer
-
-- update logic delete menjadi mengisi deletedAt bukan menghapus data permanen dari database
-
-- update logic ui tidak menampilkan data yang sudah disoft delete
-
-- update semua modal untuk informasi bahwa akan masuk ke sampah(soft delete)
-
-- tangani efek domino contoh Jika sebuah pesanan utama (Order) dihapus, maka anak-anaknya (Payment, SPK) juga harus ikut terhapus secara logika agar uangnya tidak tetap terhitung di Laba Rugi. saya ingin anda kembangkan solusi ini
-
-- buatkan tampilan sampah (soft delete) ui front-end dan back-end nya

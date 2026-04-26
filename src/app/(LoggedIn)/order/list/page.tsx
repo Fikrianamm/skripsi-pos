@@ -83,8 +83,9 @@ export default function Page() {
       />
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-24">
+        <div className="flex flex-col gap-2 justify-center items-center py-24">
           <Spinner size="lg" />
+          <p className="text-base font-medium text-default-500">Memuat Data</p>
         </div>
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-default-400 gap-3">

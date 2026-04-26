@@ -644,6 +644,7 @@ model AppSetting {
   logoUrl                 String?  @db.Text // Path gambar/URL logo perusahaan jika nilai null maka tampilkan icon 
   alamat                  String?  @db.Text
   nomorKontak             String?  @db.VarChar(50)
+  email                   String?  @db.VarChar(100)
   
   prefixOrder             String   @default("INV-HQ-") @db.VarChar(20)
   catatanKakiStruk        String?  @db.Text // Syarat & Ketentuan di bawah nota

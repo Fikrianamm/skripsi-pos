@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
       results = await prisma.product.findMany({
         where: { deletedAt: { not: null } },
         orderBy: { deletedAt: "desc" },
+        include: {
+          category: { select: { nama: true } },
+          unit: { select: { nama: true } },
+        },
       });
     } else if (type === "customer") {
       results = await prisma.customer.findMany({
@@ -42,14 +46,15 @@ export async function GET(request: NextRequest) {
       results = await prisma.cost.findMany({
         where: { deletedAt: { not: null } },
         orderBy: { deletedAt: "desc" },
+        include: { akun: { select: { namaAkun: true, kodeAkun: true } } },
       });
     } else if (type === "jurnal") {
       results = await prisma.jurnalUmum.findMany({
         where: { deletedAt: { not: null } },
         orderBy: { deletedAt: "desc" },
         include: {
-          akunDebet: { select: { namaAkun: true } },
-          akunKredit: { select: { namaAkun: true } },
+          akunDebet: { select: { namaAkun: true, kodeAkun: true } },
+          akunKredit: { select: { namaAkun: true, kodeAkun: true } },
         },
       });
     }

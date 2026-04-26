@@ -232,7 +232,7 @@ export default function Page() {
         {/* LEFT: Product Search + Cart */}
         <div className="flex flex-col gap-5 min-h-0">
           {/* Product Search */}
-          <Card className="border border-default-200">
+          <Card className="border border-default-200 shadow-none">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-primary/10">
                 <Search size={15} className="text-primary" />
@@ -248,7 +248,7 @@ export default function Page() {
           </Card>
 
           {/* Cart */}
-          <Card className="border border-default-200 flex-1 min-h-0">
+          <Card className="border border-default-200 shadow-none flex-1 min-h-0">
             <CardHeader className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-md bg-primary/10">
@@ -276,7 +276,7 @@ export default function Page() {
             <Divider />
             <CardBody className="p-0">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-default-400 gap-2">
+                <div className="flex flex-col items-center justify-center py-12 text-default-400 gap-2 h-full">
                   <ShoppingCart size={36} strokeWidth={1.5} />
                   <p className="text-sm">Keranjang masih kosong</p>
                   <p className="text-xs">
@@ -306,7 +306,7 @@ export default function Page() {
         {/* RIGHT: Order Info Panel */}
         <div className="flex flex-col gap-4">
           {/* Customer */}
-          <Card className="border border-default-200">
+          <Card className="border border-default-200 shadow-none">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-blue-500/10">
                 <User size={15} className="text-blue-500" />
@@ -354,7 +354,7 @@ export default function Page() {
           </Card>
 
           {/* Order Detail */}
-          <Card className="border border-default-200">
+          <Card className="border border-default-200 shadow-none">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-warning/10">
                 <ClipboardList size={15} className="text-warning" />
@@ -406,7 +406,7 @@ export default function Page() {
           </Card>
 
           {/* Payment */}
-          <Card className="border border-default-200">
+          <Card className="border border-default-200 shadow-none">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-success/10">
                 <CreditCard size={15} className="text-success" />
@@ -499,7 +499,7 @@ export default function Page() {
           </Card>
 
           {/* Price Summary */}
-          <Card className="border border-default-200">
+          <Card className="border border-default-200 shadow-none">
             <CardHeader className="flex items-center gap-2 pb-2">
               <div className="p-1.5 rounded-md bg-red-500/10">
                 <Tag size={15} className="text-red-500" />

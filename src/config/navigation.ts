@@ -214,20 +214,14 @@ export const NAV_ITEMS: NavGroup[] = [
       },
       {
         title: "Sampah",
-        url: "/settings/trash",
+        url: "/trash",
         icon: Trash2,
         roles: ["admin"],
       },
       {
         title: "Pengaturan",
-        url: "#",
+        url: "/settings",
         icon: Settings,
-        items: [
-          {
-            title: "Semua Pengaturan",
-            url: "/settings",
-          },
-        ],
       },
     ],
   },
