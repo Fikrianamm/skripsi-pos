@@ -560,26 +560,6 @@ model KasBank {
 }
 
 // ============================================================
-// FINANCE — TARGET / ANGGARAN (OPSIONAL)
-// ============================================================
-
-model BudgetTarget {
-  id         String   @id
-  nama       String   @db.Text // "Target Pendapatan" | "Target Margin"
-  tipe       String   @db.VarChar(30) // "PENDAPATAN" | "MARGIN" | "BEBAN"
-  nominal    Decimal  @db.Decimal(14, 2)
-  bulan      Int
-  tahun      Int
-  keterangan String?  @db.Text
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([tipe, bulan, tahun])
-  @@index([bulan, tahun])
-  @@map("budget_target")
-}
-
-// ============================================================
 // ENUMS — EXISTING
 // ============================================================
 

@@ -37,7 +37,16 @@ export interface OrderDetail {
   customer: { id: string; nama: string; nomorHp: string; image: string | null };
   items: OrderItem[];
   designFiles: DesignFile[];
+  payments: Payment[];
   spk: SPKDetail | null;
+}
+
+export interface Payment {
+  id: string;
+  nominal: string;
+  metodePembayaran: string;
+  tanggal: string;
+  user?: { name: string };
 }
 
 export interface OrderItem {

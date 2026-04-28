@@ -11,3 +11,4 @@ src/app/api/admin/inventory/in/route.ts → POST (penerimaan): kirim ke admin + 
 ## 📝 Todo & Pertimbangan Fitur (Selanjutnya)
 
 - [ ] **Laporan Laba Rugi** — Menautkan Pendapatan (Omzet) dikurangi pengeluaran (Cost) dan Harga Pokok (HPP) produk.
+- [ ] **Invoice** — Tambahkan status bayar dan sisa pembayaran jika status belum lunas (dp).

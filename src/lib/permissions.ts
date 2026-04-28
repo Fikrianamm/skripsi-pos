@@ -7,12 +7,13 @@ import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
  */
 const statement = {
   ...defaultStatements,
-  pos: ["create", "view"],
+  pos: ["create", "view", "delete", "update-status"],
   customer: ["create", "view", "update"],
   payment: ["create", "view", "verify"],
   design: ["view", "upload", "update-status"],
   production: ["view", "update-status"],
   inventory: ["view", "create", "update"],
+  finance: ["view", "create", "update", "delete"],
   report: ["view"],
   master: ["create", "view", "update", "delete"],
 } as const;
@@ -23,36 +24,43 @@ export const ac = createAccessControl(statement);
 
 /** Administrator — full access to everything */
 export const adminRole = ac.newRole({
-  pos: ["create", "view"],
+  pos: ["create", "view", "delete", "update-status"],
   customer: ["create", "view", "update"],
   payment: ["create", "view", "verify"],
   design: ["view", "upload", "update-status"],
   production: ["view", "update-status"],
   inventory: ["view", "create", "update"],
+  finance: ["view", "create", "update", "delete"],
   report: ["view"],
   master: ["create", "view", "update", "delete"],
   ...adminAc.statements, // built-in user/session admin perms
 });
 
-/** Admin CS / Kasir — POS, customer, payment, view production */
+/** Admin CS / Kasir — POS, customer, payment, full finance & reports */
 export const kasirRole = ac.newRole({
-  pos: ["create", "view"],
+  pos: ["create", "view", "delete", "update-status"],
   customer: ["create", "view", "update"],
   payment: ["create", "view", "verify"],
-  production: ["view"],
+  finance: ["view", "create", "update", "delete"],
+  report: ["view"],
+  production: ["view"], // can view production status
 });
 
-/** Designer — design queue, upload files, update design status */
+/** Designer — design queue, bank desain, and view orders */
 export const designerRole = ac.newRole({
+  pos: ["view"],
   design: ["view", "upload", "update-status"],
 });
 
-/** Produksi — track & update production status */
+/** Produksi — SPK and view orders */
 export const produksiRole = ac.newRole({
+  pos: ["view"],
   production: ["view", "update-status"],
 });
 
-/** Gudang — manage raw material inventory */
+/** Gudang — manage inventory and view suppliers/orders */
 export const gudangRole = ac.newRole({
+  pos: ["view"],
   inventory: ["view", "create", "update"],
+  master: ["view"], // view only (for supplier)
 });

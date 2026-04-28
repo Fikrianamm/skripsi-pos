@@ -26,10 +26,16 @@ export const getInitialName = (name: string) => {
 export const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export const getStockStatus = (product: Product): StockStatus => {
+  // Jasa tidak memiliki stok fisik
+  if (product.isService) return { label: "Jasa", color: "secondary" };
+
   const stok = Number(product.stok ?? 0);
-  const minStok = Number(product.minStok ?? 0);
+  const minStok = product.minStok != null ? Number(product.minStok) : null;
+
   if (stok <= 0) return { label: "Habis", color: "danger" };
-  if (stok <= minStok) return { label: "Menipis", color: "warning" };
+  // Hanya tampilkan "Menipis" jika minStok sudah dikonfigurasi (tidak null/0)
+  if (minStok !== null && minStok > 0 && stok <= minStok)
+    return { label: "Menipis", color: "warning" };
   return { label: "Aman", color: "success" };
 };
 

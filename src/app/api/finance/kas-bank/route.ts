@@ -7,7 +7,8 @@ async function requireAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session)
     return { error: "Unauthorized", status: 401, session: null };
-  if (session.user.role !== "admin")
+  const allowed = ["admin", "kasir"];
+  if (!allowed.includes(session.user.role))
     return { error: "Forbidden", status: 403, session: null };
   return { error: null, status: 200, session };
 }
@@ -17,6 +18,10 @@ export async function GET(request: NextRequest) {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const allowed = ["admin", "kasir"];
+    if (!allowed.includes(session.user.role || "")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

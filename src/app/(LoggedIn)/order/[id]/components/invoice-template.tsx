@@ -154,10 +154,30 @@ export const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateP
             )}
             <div className="flex justify-between items-center pt-3 border-t border-slate-200">
               <span className="font-bold text-slate-900">Grand Total</span>
-              <span className="text-lg font-black text-primary">
+              <span className="text-lg font-black text-slate-900">
                 {formatRupiah(Number(order.grandTotal))}
               </span>
             </div>
+
+            {/* Payment Summary */}
+            {order.payments && order.payments.length > 0 && (
+              <div className="pt-3 space-y-2 border-t border-slate-100 mt-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500">Terbayar</span>
+                  <span className="font-medium text-slate-800">
+                    {formatRupiah(order.payments.reduce((acc, p) => acc + Number(p.nominal), 0))}
+                  </span>
+                </div>
+                {Math.max(0, Number(order.grandTotal) - order.payments.reduce((acc, p) => acc + Number(p.nominal), 0)) > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-bold text-slate-700">Sisa Tagihan</span>
+                    <span className="font-bold text-slate-900">
+                      {formatRupiah(Math.max(0, Number(order.grandTotal) - order.payments.reduce((acc, p) => acc + Number(p.nominal), 0)))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

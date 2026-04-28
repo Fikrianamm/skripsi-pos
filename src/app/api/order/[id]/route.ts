@@ -69,6 +69,17 @@ const ORDER_DETAIL_SELECT = {
       karyawan: { select: { id: true, nama: true, posisi: true } },
     },
   },
+  payments: {
+    select: {
+      id: true,
+      nominal: true,
+      metodePembayaran: true,
+      tanggal: true,
+      user: { select: { name: true } },
+    },
+    where: { deletedAt: null },
+    orderBy: { tanggal: "asc" as const },
+  },
 } as const;
 
 async function requireOrderAccess() {
@@ -80,7 +91,7 @@ async function requireOrderAccess() {
       session: null,
       isAdmin: false,
     };
-  const ALLOWED = ["admin", "kasir", "designer"];
+  const ALLOWED = ["admin", "kasir", "designer", "produksi", "gudang"];
   if (!session.user.role || !ALLOWED.includes(session.user.role)) {
     return {
       error: "Forbidden. Anda tidak memiliki akses.",

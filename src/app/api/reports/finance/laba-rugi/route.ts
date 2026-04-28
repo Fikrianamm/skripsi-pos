@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized", status: 401 };
-  if (session.user.role !== "admin") return { error: "Forbidden", status: 403 };
+  const allowed = ["admin", "kasir"];
+  if (!allowed.includes(session.user.role || "")) return { error: "Forbidden", status: 403 };
   return { error: null, status: 200 };
 }
 
@@ -14,24 +15,40 @@ async function requireAdmin() {
 // PENDAPATAN is increased by KREDIT, BEBAN_* is increased by DEBET.
 async function aggregateByKelompok(bulan: number, tahun: number) {
   const startDate = new Date(tahun, bulan - 1, 1);
-  const endDate   = new Date(tahun, bulan, 0, 23, 59, 59, 999);
+  const endDate = new Date(tahun, bulan, 0, 23, 59, 59, 999);
 
+  // 1. Ambil semua akun yang relevan untuk Laba Rugi (Pendapatan & Beban)
+  const allAccounts = await prisma.akun.findMany({
+    where: {
+      kelompok: { in: ["PENDAPATAN", "BEBAN_USAHA"] },
+      isActive: true,
+    },
+    select: { id: true, kodeAkun: true, namaAkun: true, kelompok: true },
+    orderBy: { kodeAkun: "asc" },
+  });
+
+  // 2. Inisialisasi saldoMap dengan semua akun tersebut
+  const saldoMap: Record<string, Record<string, number>> = {
+    PENDAPATAN: {},
+    BEBAN_USAHA: {},
+  };
+
+  for (const acc of allAccounts) {
+    const key = `${acc.kodeAkun}|${acc.namaAkun}`;
+    saldoMap[acc.kelompok][key] = 0;
+  }
+
+  // 3. Ambil data jurnal
   const jurnals = await prisma.jurnalUmum.findMany({
     where: {
       tanggal: { gte: startDate, lte: endDate },
       deletedAt: null,
     },
     include: {
-      akunDebet:  { select: { kelompok: true, kodeAkun: true, namaAkun: true } },
+      akunDebet: { select: { kelompok: true, kodeAkun: true, namaAkun: true } },
       akunKredit: { select: { kelompok: true, kodeAkun: true, namaAkun: true } },
     },
   });
-
-  // Per-account saldo (grouped)
-  const saldoMap: Record<string, Record<string, number>> = {
-    PENDAPATAN: {},
-    BEBAN_USAHA: {},
-  };
 
   for (const j of jurnals) {
     const nom = Number(j.nominal);
@@ -40,31 +57,30 @@ async function aggregateByKelompok(bulan: number, tahun: number) {
 
     // PENDAPATAN increases on KREDIT side
     if (j.akunKredit.kelompok === "PENDAPATAN") {
-      saldoMap.PENDAPATAN[kreditKey] = (saldoMap.PENDAPATAN[kreditKey] ?? 0) + nom;
+      saldoMap.PENDAPATAN[kreditKey] =
+        (saldoMap.PENDAPATAN[kreditKey] ?? 0) + nom;
     }
     if (j.akunDebet.kelompok === "PENDAPATAN") {
-      saldoMap.PENDAPATAN[debetKey] = (saldoMap.PENDAPATAN[debetKey] ?? 0) - nom;
+      saldoMap.PENDAPATAN[debetKey] =
+        (saldoMap.PENDAPATAN[debetKey] ?? 0) - nom;
     }
 
     // BEBAN increases on DEBET side
-    const bebanGroups = ["BEBAN_USAHA"] as const;
-    for (const grp of bebanGroups) {
-      if (j.akunDebet.kelompok === grp) {
-        saldoMap[grp][debetKey] = (saldoMap[grp][debetKey] ?? 0) + nom;
-      }
-      if (j.akunKredit.kelompok === grp) {
-        saldoMap[grp][kreditKey] = (saldoMap[grp][kreditKey] ?? 0) - nom;
-      }
+    const grp = "BEBAN_USAHA";
+    if (j.akunDebet.kelompok === grp) {
+      saldoMap[grp][debetKey] = (saldoMap[grp][debetKey] ?? 0) + nom;
+    }
+    if (j.akunKredit.kelompok === grp) {
+      saldoMap[grp][kreditKey] = (saldoMap[grp][kreditKey] ?? 0) - nom;
     }
   }
 
   function toRows(group: Record<string, number>) {
-    return Object.entries(group)
-      .map(([key, total]) => {
-        const [kode, nama] = key.split("|");
-        return { kode, nama, total };
-      })
-      .filter((r) => r.total !== 0);
+    return Object.entries(group).map(([key, total]) => {
+      const [kode, nama] = key.split("|");
+      return { kode, nama, total };
+    });
+    // Menghilangkan filter total !== 0 agar semua tampil sesuai permintaan user
   }
 
   const pendapatan = toRows(saldoMap.PENDAPATAN);
@@ -76,8 +92,11 @@ async function aggregateByKelompok(bulan: number, tahun: number) {
   const margin = totalPendapatan > 0 ? (labaBersih / totalPendapatan) * 100 : 0;
 
   return {
-    pendapatan, bebanUsaha,
-    totalPendapatan, totalBebanUsaha, labaBersih,
+    pendapatan,
+    bebanUsaha,
+    totalPendapatan,
+    totalBebanUsaha,
+    labaBersih,
     margin: Number(margin.toFixed(2)),
   };
 }

@@ -208,7 +208,7 @@ export default function Page() {
               </TableCell>
               <TableCell>{`Rp.${String(product.hpp)}`}</TableCell>
               <TableCell>{`Rp.${String(product.hargaJual)}`}</TableCell>
-              <TableCell>-</TableCell>
+              <TableCell>{product.terjual ?? 0}</TableCell>
               <TableCell>
                 <Chip color={status.color} size="sm" variant="flat">
                   {status.label}

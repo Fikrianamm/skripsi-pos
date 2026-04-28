@@ -15,10 +15,6 @@ import {
   ArrowDownCircle,
   AlertCircle,
   Activity,
-  ShoppingCart,
-  Megaphone,
-  Users,
-  FileText,
 } from "lucide-react";
 import {
   LineChart,
@@ -67,15 +63,11 @@ type DashboardData = {
 type AkunRow = { kode: string; nama: string; total: number };
 type LabaRugiData = {
   pendapatan:  AkunRow[];
-  marketing:   AkunRow[];
-  totalPendapatan:       number;
-  totalHPP:             number;
-  totalMarketing:       number;
-  totalGaji:            number;
-  totalAdm:             number;
-  totalBebanOperasional: number;
-  labaBersih:           number;
-  margin:               number;
+  bebanUsaha:  AkunRow[];
+  totalPendapatan: number;
+  totalBebanUsaha: number;
+  labaBersih:      number;
+  margin:          number;
 };
 
 // ─── Small Components ────────────────────────────────────────────────────────
@@ -194,12 +186,10 @@ export default function DashboardKeuanganPage() {
   const isLoading = loadingDash || loadingPL;
 
   // Operational cost chart data
-  const biayaData = [
-    { name: "HPP",             value: pl?.totalHPP       ?? 0, icon: <ShoppingCart size={13} /> },
-    { name: "Marketing",       value: pl?.totalMarketing ?? 0, icon: <Megaphone    size={13} /> },
-    { name: "Gaji Karyawan",   value: pl?.totalGaji      ?? 0, icon: <Users        size={13} /> },
-    { name: "Adm & Umum",      value: pl?.totalAdm       ?? 0, icon: <FileText     size={13} /> },
-  ];
+  const biayaData = (pl?.bebanUsaha ?? [])
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5) // Top 5
+    .map((b) => ({ name: b.nama, value: b.total }));
 
   const totalPendapatanPL = pl?.totalPendapatan ?? 0;
 
@@ -244,7 +234,7 @@ export default function DashboardKeuanganPage() {
         />
         <KpiCard
           title="Total Pengeluaran"
-          value={pl?.totalBebanOperasional ?? 0}
+          value={pl?.totalBebanUsaha ?? 0}
           persen={dash?.persenPengeluaran}
           icon={<ArrowDownCircle size={16} />}
           accentColor="bg-danger-500"
@@ -278,7 +268,9 @@ export default function DashboardKeuanganPage() {
       <div className="bg-content1 border border-default-200 rounded-xl p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-default-700 mb-4">
           Tren Pendapatan &amp; Pengeluaran
-          <span className="ml-2 text-xs font-normal text-default-400">(per minggu)</span>
+          <span className="ml-2 text-xs font-normal text-default-400">
+            (per bulan)
+          </span>
         </h3>
         {isLoading ? (
           <Skeleton className="h-64 w-full rounded-xl" />
@@ -288,12 +280,11 @@ export default function DashboardKeuanganPage() {
               data={dash?.chartData ?? []}
               margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--heroui-default-200))" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11 }}
-                tickFormatter={(v: string) => `Minggu ${v.split("-")[0]}`}
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--heroui-default-200))"
               />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
               <YAxis
                 tick={{ fontSize: 11 }}
                 tickFormatter={fmtAxis}
@@ -326,19 +317,22 @@ export default function DashboardKeuanganPage() {
 
       {/* ── Section 3: 2-col — Biaya Operasional + Rincian Pendapatan ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         {/* Biaya Operasional — horizontal bar chart */}
         <div className="bg-content1 border border-default-200 rounded-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-default-700 mb-1">Biaya Operasional</h3>
+          <h3 className="text-sm font-semibold text-default-700 mb-1">
+            Biaya Operasional
+          </h3>
           <p className="text-xs text-default-400 mb-4">
             Total:{" "}
             <span className="font-semibold text-default-700">
-              {formatRupiah(pl?.totalBebanOperasional ?? 0)}
+              {formatRupiah(pl?.totalBebanUsaha ?? 0)}
             </span>
           </p>
           {isLoading ? (
             <div className="flex flex-col gap-3">
-              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded-lg" />
+              ))}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
@@ -347,13 +341,34 @@ export default function DashboardKeuanganPage() {
                 data={biayaData}
                 margin={{ top: 0, right: 16, left: 8, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--heroui-default-200))" />
-                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={fmtAxis} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={100} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  horizontal={false}
+                  stroke="hsl(var(--heroui-default-200))"
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={fmtAxis}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  width={100}
+                />
                 <Tooltip formatter={fmtTooltip} />
-                <Bar dataKey="value" name="Nominal" radius={[0, 4, 4, 0]} maxBarSize={28}>
+                <Bar
+                  dataKey="value"
+                  name="Nominal"
+                  radius={[0, 4, 4, 0]}
+                  maxBarSize={28}
+                >
                   {biayaData.map((_, i) => (
-                    <Cell key={i} fill={BIAYA_COLORS[i % BIAYA_COLORS.length]} />
+                    <Cell
+                      key={i}
+                      fill={BIAYA_COLORS[i % BIAYA_COLORS.length]}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -363,7 +378,9 @@ export default function DashboardKeuanganPage() {
 
         {/* Rincian Pendapatan — progress bar list */}
         <div className="bg-content1 border border-default-200 rounded-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-default-700 mb-1">Rincian Pendapatan</h3>
+          <h3 className="text-sm font-semibold text-default-700 mb-1">
+            Rincian Pendapatan
+          </h3>
           <p className="text-xs text-default-400 mb-4">
             Total:{" "}
             <span className="font-semibold text-default-700">
@@ -372,26 +389,34 @@ export default function DashboardKeuanganPage() {
           </p>
           {isLoading ? (
             <div className="flex flex-col gap-3">
-              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded-lg" />
+              ))}
             </div>
           ) : (pl?.pendapatan ?? []).length === 0 ? (
-            <p className="text-xs text-default-400 text-center py-8">Belum ada data pendapatan</p>
+            <p className="text-xs text-default-400 text-center py-8">
+              Belum ada data pendapatan
+            </p>
           ) : (
             <div className="flex flex-col gap-4">
               {(pl?.pendapatan ?? [])
                 .sort((a, b) => b.total - a.total)
                 .map((row) => {
-                  const pct = totalPendapatanPL > 0
-                    ? (row.total / totalPendapatanPL) * 100
-                    : 0;
+                  const pct =
+                    totalPendapatanPL > 0 ? (row.total / totalPendapatanPL) * 100 : 0;
                   return (
                     <div key={row.kode} className="flex flex-col gap-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-default-700 font-medium truncate max-w-[60%]" title={row.nama}>
+                        <span
+                          className="text-default-700 font-medium truncate max-w-[60%]"
+                          title={row.nama}
+                        >
                           {row.nama}
                         </span>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-default-400">{pct.toFixed(1)}%</span>
+                          <span className="text-default-400">
+                            {pct.toFixed(1)}%
+                          </span>
                           <span className="font-semibold text-default-800 tabular-nums">
                             {formatRupiah(row.total)}
                           </span>
@@ -411,73 +436,303 @@ export default function DashboardKeuanganPage() {
         </div>
       </div>
 
-      {/* ── Section 4: Rincian Biaya Marketing ── */}
-      <div className="bg-content1 border border-default-200 rounded-xl p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-default-700 mb-1">Rincian Biaya Marketing</h3>
-        <p className="text-xs text-default-400 mb-4">
-          Total:{" "}
-          <span className="font-semibold text-default-700">
-            {formatRupiah(pl?.totalMarketing ?? 0)}
-          </span>
-        </p>
+      {/* ── Section 4: Laporan Detail Komprehensif ── */}
+      <div className="bg-content1 border border-default-200 rounded-xl p-6 shadow-sm overflow-hidden">
+        <h3 className="text-base font-bold text-default-900 mb-6">
+          Laporan Detail Komprehensif
+        </h3>
+
         {isLoading ? (
-          <Skeleton className="h-32 w-full rounded-xl" />
-        ) : (pl?.marketing ?? []).length === 0 ? (
-          <p className="text-xs text-default-400 text-center py-6">
-            Belum ada biaya marketing pada periode ini
-          </p>
+          <div className="flex flex-col gap-4">
+            {[...Array(10)].map((_, i) => (
+              <Skeleton key={i} className="h-8 w-full rounded-lg" />
+            ))}
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-default-200">
-                <th className="py-2 text-left text-xs font-semibold text-default-500 uppercase">
-                  Akun
-                </th>
-                <th className="py-2 text-left text-xs font-semibold text-default-500 uppercase">
-                  Kode
-                </th>
-                <th className="py-2 text-right text-xs font-semibold text-default-500 uppercase">
-                  Nominal
-                </th>
-                <th className="py-2 text-right text-xs font-semibold text-default-500 uppercase">
-                  % dari Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {(pl?.marketing ?? [])
-                .sort((a, b) => b.total - a.total)
-                .map((row) => {
-                  const pct =
-                    (pl?.totalMarketing ?? 0) > 0
-                      ? (row.total / (pl?.totalMarketing ?? 1)) * 100
-                      : 0;
+          <div className="flex flex-col gap-8">
+            {/* PENDAPATAN */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-success-700 mb-3 bg-success-50 px-3 py-1 rounded-md inline-block">
+                Pendapatan
+              </h4>
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-default-100">
+                  {[
+                    "pendapatan - konveksi",
+                    "pendapatan - R printing",
+                    "pendapatan - textile",
+                  ].map((nama) => {
+                    const row = (pl?.pendapatan ?? []).find(
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                    );
+                    const total = row?.total ?? 0;
+                    const pct = totalPendapatanPL > 0 ? (total / totalPendapatanPL) * 100 : 0;
+                    return (
+                      <tr key={nama} className="hover:bg-default-50 transition-colors">
+                        <td className="py-2.5 text-default-700 capitalize">
+                          {nama}
+                        </td>
+                        <td className="py-2.5 text-right font-semibold tabular-nums text-default-900">
+                          {formatRupiah(total)}
+                        </td>
+                        <td className="py-2.5 text-right text-default-400 w-24">
+                          {pct.toFixed(1)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="bg-success-50/50 font-bold">
+                    <td className="py-3 text-default-900">Total Pendapatan</td>
+                    <td className="py-3 text-right tabular-nums text-success-700">
+                      {formatRupiah(totalPendapatanPL)}
+                    </td>
+                    <td className="py-3 text-right">100%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* PENGELUARAN */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-danger-700 mb-3 bg-danger-50 px-3 py-1 rounded-md inline-block">
+                Pengeluaran
+              </h4>
+              <div className="flex flex-col gap-6">
+                {/* HPP GROUP */}
+                {(() => {
+                  const items = ["B. HPP", "B. Gaji Borongan"];
+                  const totalHPP = items.reduce((sum, nama) => {
+                    const row = (pl?.bebanUsaha ?? []).find(
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                    );
+                    return sum + (row?.total ?? 0);
+                  }, 0);
                   return (
-                    <tr key={row.kode} className="border-b border-default-100 hover:bg-default-50 transition-colors">
-                      <td className="py-2.5 text-default-700">{row.nama}</td>
-                      <td className="py-2.5 font-mono text-xs text-default-400">{row.kode}</td>
-                      <td className="py-2.5 text-right font-semibold tabular-nums text-default-900">
-                        {formatRupiah(row.total)}
-                      </td>
-                      <td className="py-2.5 text-right text-default-500 tabular-nums">
-                        {pct.toFixed(1)}%
-                      </td>
-                    </tr>
+                    <div className="border border-default-100 rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <tbody className="divide-y divide-default-100">
+                          {items.map((nama) => {
+                            const row = (pl?.bebanUsaha ?? []).find(
+                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                            );
+                            const total = row?.total ?? 0;
+                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            return (
+                              <tr key={nama}>
+                                <td className="py-2 px-3 text-default-600">
+                                  {nama}
+                                </td>
+                                <td className="py-2 px-3 text-right font-medium">
+                                  {formatRupiah(total)}
+                                </td>
+                                <td className="py-2 px-3 text-right text-default-400 w-20">
+                                  {pct.toFixed(1)}%
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="bg-default-50 font-bold">
+                            <td className="py-2.5 px-3 text-default-900">
+                              Total HPP
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-danger-600">
+                              {formatRupiah(totalHPP)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              {(pl?.totalBebanUsaha ? (totalHPP / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   );
-                })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-default-200 bg-default-50">
-                <td colSpan={2} className="py-2.5 font-bold text-default-700 text-sm">
-                  Total Marketing
-                </td>
-                <td className="py-2.5 text-right font-bold tabular-nums text-default-900">
-                  {formatRupiah(pl?.totalMarketing ?? 0)}
-                </td>
-                <td className="py-2.5 text-right font-bold text-default-500">100%</td>
-              </tr>
-            </tfoot>
-          </table>
+                })()}
+
+                {/* MARKETING GROUP */}
+                {(() => {
+                  const items = ["Biaya Iklan - MARKETPLACE", "Biaya Iklan - ADS"];
+                  const totalMkt = items.reduce((sum, nama) => {
+                    const row = (pl?.bebanUsaha ?? []).find(
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                    );
+                    return sum + (row?.total ?? 0);
+                  }, 0);
+                  return (
+                    <div className="border border-default-100 rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <tbody className="divide-y divide-default-100">
+                          {items.map((nama) => {
+                            const row = (pl?.bebanUsaha ?? []).find(
+                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                            );
+                            const total = row?.total ?? 0;
+                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            return (
+                              <tr key={nama}>
+                                <td className="py-2 px-3 text-default-600">
+                                  {nama}
+                                </td>
+                                <td className="py-2 px-3 text-right font-medium">
+                                  {formatRupiah(total)}
+                                </td>
+                                <td className="py-2 px-3 text-right text-default-400 w-20">
+                                  {pct.toFixed(1)}%
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="bg-default-50 font-bold">
+                            <td className="py-2.5 px-3 text-default-900">
+                              TOTAL BIAYA MARKETING
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-danger-600">
+                              {formatRupiah(totalMkt)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              {(pl?.totalBebanUsaha ? (totalMkt / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+
+                {/* GAJI GROUP */}
+                {(() => {
+                  const items = [
+                    "B. Gaji Semua Karyawan",
+                    "B. Konsumsi/Catering",
+                    "B. Gaji CEO",
+                    "B. THR",
+                  ];
+                  const totalGaji = items.reduce((sum, nama) => {
+                    const row = (pl?.bebanUsaha ?? []).find(
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                    );
+                    return sum + (row?.total ?? 0);
+                  }, 0);
+                  return (
+                    <div className="border border-default-100 rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <tbody className="divide-y divide-default-100">
+                          {items.map((nama) => {
+                            const row = (pl?.bebanUsaha ?? []).find(
+                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                            );
+                            const total = row?.total ?? 0;
+                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            return (
+                              <tr key={nama}>
+                                <td className="py-2 px-3 text-default-600">
+                                  {nama}
+                                </td>
+                                <td className="py-2 px-3 text-right font-medium">
+                                  {formatRupiah(total)}
+                                </td>
+                                <td className="py-2 px-3 text-right text-default-400 w-20">
+                                  {pct.toFixed(1)}%
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="bg-default-50 font-bold">
+                            <td className="py-2.5 px-3 text-default-900">
+                              TOTAL BIAYA GAJI KARYAWAN
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-danger-600">
+                              {formatRupiah(totalGaji)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              {(pl?.totalBebanUsaha ? (totalGaji / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+
+                {/* ADM UMUM GROUP */}
+                {(() => {
+                  const items = [
+                    "B.CSR",
+                    "B. Kuota Data",
+                    "B. Perlengkapan / ATK",
+                    "B. Internet / Wifi",
+                    "B. PDAM + Listrik",
+                    "B. Kebersihan / Sampah",
+                    "B. BBM Operasional",
+                    "B. Obat-obatan / Kesehatan",
+                    "B. Service",
+                    "B. Gathering / Piknik / Kegiatan Kantor",
+                    "B. Langganan Tools",
+                    "B. Kirim Manual/Pengiriman Resi Manual",
+                    "B. Admin Bulanan bank",
+                    "B. Pengembangan SDM",
+                    "B. Kado/ Kenang-kenangan / Buah tangan",
+                    "B. Pembangunan",
+                  ];
+                  const totalAdm = items.reduce((sum, nama) => {
+                    const row = (pl?.bebanUsaha ?? []).find(
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                    );
+                    return sum + (row?.total ?? 0);
+                  }, 0);
+                  return (
+                    <div className="border border-default-100 rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <tbody className="divide-y divide-default-100">
+                          {items.map((nama) => {
+                            const row = (pl?.bebanUsaha ?? []).find(
+                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                            );
+                            const total = row?.total ?? 0;
+                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            return (
+                              <tr key={nama}>
+                                <td className="py-2 px-3 text-default-600">
+                                  {nama}
+                                </td>
+                                <td className="py-2 px-3 text-right font-medium">
+                                  {formatRupiah(total)}
+                                </td>
+                                <td className="py-2 px-3 text-right text-default-400 w-20">
+                                  {pct.toFixed(1)}%
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="bg-default-50 font-bold">
+                            <td className="py-2.5 px-3 text-default-900">
+                              TOTAL BEBAN ADMINISTRASI & UMUM
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-danger-600">
+                              {formatRupiah(totalAdm)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              {(pl?.totalBebanUsaha ? (totalAdm / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+
+                <div className="mt-4 pt-4 border-t-2 border-default-200">
+                  <div className="flex justify-between items-center bg-default-900 text-white p-4 rounded-xl shadow-lg">
+                    <span className="text-sm font-bold uppercase tracking-widest">
+                      Total Seluruh Pengeluaran
+                    </span>
+                    <span className="text-xl font-black tabular-nums">
+                      {formatRupiah(pl?.totalBebanUsaha ?? 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

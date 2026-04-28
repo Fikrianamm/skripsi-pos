@@ -100,14 +100,6 @@ export function LoginForm({
               label: "text-slate-700 font-semibold",
             }}
           />
-          <div className="flex justify-end">
-            <button 
-              type="button" 
-              className="text-xs font-semibold text-primary hover:underline"
-            >
-              Lupa password?
-            </button>
-          </div>
         </div>
 
         <Button

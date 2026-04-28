@@ -16,8 +16,10 @@ import {
   TableCell, 
   Button, 
   Spinner,
+  Chip,
+  Tooltip as HeroTooltip,
 } from "@heroui/react";
-import { RotateCcw, AlertTriangle } from "lucide-react";
+import { RotateCcw, AlertTriangle, ShoppingCart, Package, Users, Receipt, BookOpen, Trash2 } from "lucide-react";
 import { fetcher, formatRupiah } from "@/lib/func";
 import { addToast } from "@heroui/toast";
 
@@ -34,199 +36,309 @@ export default function TrashPage() {
         body: JSON.stringify({ type: activeTab, id, action: "restore" }),
       });
       if (res.ok) {
-        addToast({ title: "Berhasil", description: "Data telah dipulihkan", color: "success" });
+        addToast({ title: "Berhasil", description: "Data telah dipulihkan ke posisi semula", color: "success" });
         mutate();
       } else {
         const json = await res.json();
         addToast({ title: "Gagal", description: json.error, color: "danger" });
       }
-    } catch{
+    } catch {
       addToast({ title: "Error", description: "Terjadi kesalahan koneksi", color: "danger" });
     }
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Sampah (Recycle Bin)</h1>
-        <p className="text-sm text-default-500">
-          Kelola data yang telah dihapus secara lembut. Anda dapat memulihkan data kembali ke modul asalnya.
-        </p>
+    <div className="flex flex-col gap-8 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-extrabold tracking-tight text-default-900 flex items-center gap-3">
+            <div className="p-2 rounded-2xl bg-danger-100 text-danger-600">
+               <Trash2 size={24} />
+            </div>
+            Tempat Sampah
+          </h1>
+          <p className="text-default-500 max-w-2xl">
+            Pulihkan data yang tidak sengaja dihapus. Data di sini masih tersimpan secara aman dan dapat dikembalikan ke modul masing-masing tanpa merusak integrasi laporan.
+          </p>
+        </div>
       </div>
 
-      <Tabs 
-        aria-label="Kategori Sampah" 
-        selectedKey={activeTab} 
-        onSelectionChange={(k) => setActiveTab(k as string)}
-        variant="underlined"
-        color="primary"
-      >
-        <Tab key="order" title="Pesanan" />
-        <Tab key="product" title="Produk" />
-        <Tab key="customer" title="Customer" />
-        <Tab key="cost" title="Biaya" />
-        <Tab key="jurnal" title="Jurnal" />
-      </Tabs>
+      <div className="flex flex-col gap-4">
+        <Tabs 
+          aria-label="Kategori Sampah" 
+          selectedKey={activeTab} 
+          onSelectionChange={(k) => setActiveTab(k as string)}
+          variant="solid"
+          color="danger"
+          radius="lg"
+          classNames={{
+            tabList: "bg-default-100 p-1.5",
+            cursor: "shadow-md",
+            tab: "h-10",
+            tabContent: "font-semibold text-xs uppercase tracking-wider"
+          }}
+        >
+          <Tab 
+            key="order" 
+            title={
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={16} />
+                <span>Pesanan</span>
+              </div>
+            } 
+          />
+          <Tab 
+            key="product" 
+            title={
+              <div className="flex items-center gap-2">
+                <Package size={16} />
+                <span>Produk</span>
+              </div>
+            } 
+          />
+          <Tab 
+            key="customer" 
+            title={
+              <div className="flex items-center gap-2">
+                <Users size={16} />
+                <span>Customer</span>
+              </div>
+            } 
+          />
+          <Tab 
+            key="cost" 
+            title={
+              <div className="flex items-center gap-2">
+                <Receipt size={16} />
+                <span>Biaya</span>
+              </div>
+            } 
+          />
+          <Tab 
+            key="jurnal" 
+            title={
+              <div className="flex items-center gap-2">
+                <BookOpen size={16} />
+                <span>Jurnal</span>
+              </div>
+            } 
+          />
+        </Tabs>
 
-      <Card shadow="sm" className="border border-default-200">
-        <CardBody className="p-0">
-          <Table 
-            aria-label="Tabel Data Terhapus"
-            removeWrapper
-            classNames={{
-              th: "bg-default-50 text-default-600 border-b border-default-100",
-            }}
-          >
-            <TableHeader>
-              {activeTab === "order" ? (
-                <>
-                  <TableColumn>NOMOR ORDER</TableColumn>
-                  <TableColumn>PELANGGAN</TableColumn>
-                  <TableColumn>TOTAL</TableColumn>
-                  <TableColumn>TANGGAL HAPUS</TableColumn>
-                  <TableColumn align="end">AKSI</TableColumn>
-                </>
-              ) : activeTab === "product" ? (
-                <>
-                  <TableColumn>PRODUK</TableColumn>
-                  <TableColumn>KATEGORI</TableColumn>
-                  <TableColumn>HARGA / STOK</TableColumn>
-                  <TableColumn>TANGGAL HAPUS</TableColumn>
-                  <TableColumn align="end">AKSI</TableColumn>
-                </>
-              ) : activeTab === "customer" ? (
-                <>
-                  <TableColumn>PELANGGAN</TableColumn>
-                  <TableColumn>NOMOR HP</TableColumn>
-                  <TableColumn>TANGGAL HAPUS</TableColumn>
-                  <TableColumn align="end">AKSI</TableColumn>
-                </>
-              ) : activeTab === "cost" ? (
-                <>
-                  <TableColumn>BIAYA</TableColumn>
-                  <TableColumn>NOMINAL</TableColumn>
-                  <TableColumn>AKUN</TableColumn>
-                  <TableColumn>TANGGAL HAPUS</TableColumn>
-                  <TableColumn align="end">AKSI</TableColumn>
-                </>
-              ) : (
-                <>
-                  <TableColumn>REFERENSI</TableColumn>
-                  <TableColumn>KETERANGAN</TableColumn>
-                  <TableColumn>DEBET / KREDIT</TableColumn>
-                  <TableColumn>TANGGAL HAPUS</TableColumn>
-                  <TableColumn align="end">AKSI</TableColumn>
-                </>
-              )}
-            </TableHeader>
-            <TableBody 
-              items={results} 
-              isLoading={isLoading}
-              loadingContent={<Spinner label="Memuat data sampah..." />}
-              emptyContent="Tidak ada data di tempat sampah."
+        <Card shadow="none" className="border border-default-200 rounded-2xl overflow-hidden bg-content1/50 backdrop-blur-sm">
+          <CardBody className="p-0">
+            <Table 
+              aria-label="Tabel Data Terhapus"
+              removeWrapper
+              classNames={{
+                th: "bg-default-100/50 text-default-600 h-12 uppercase text-[10px] tracking-[0.1em] font-bold border-b border-default-200",
+                td: "py-4 text-sm",
+                tr: "border-b border-default-100 last:border-0 hover:bg-default-50/80 transition-colors"
+              }}
             >
-              {(item: any) => (
-                <TableRow key={item.id}>
-                  {activeTab === "order" ? (
-                    <>
-                      <TableCell className="font-bold">{item.nomorOrder}</TableCell>
-                      <TableCell>{item.customer?.nama || "-"}</TableCell>
-                      <TableCell className="font-semibold text-primary">{formatRupiah(Number(item.grandTotal))}</TableCell>
-                    </>
-                  ) : activeTab === "product" ? (
-                    <>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-bold">{item.nama}</span>
-                          <span className="text-xs text-default-400">{item.sku}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.category?.nama || "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-semibold">{formatRupiah(Number(item.hargaJual))}</span>
-                          <span className="text-xs text-default-400">Stok: {item.stok} {item.unit?.nama}</span>
-                        </div>
-                      </TableCell>
-                    </>
-                  ) : activeTab === "customer" ? (
-                    <>
-                      <TableCell className="font-bold">{item.nama}</TableCell>
-                      <TableCell>{item.nomorHp || "-"}</TableCell>
-                    </>
-                  ) : activeTab === "cost" ? (
-                    <>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-bold">{item.nama}</span>
-                          <span className="text-xs text-default-400 line-clamp-1">{item.keterangan || "-"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-semibold text-danger">{formatRupiah(Number(item.nominal))}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col text-xs">
-                          <span className="font-medium">{item.akun?.namaAkun}</span>
-                          <span className="text-default-400">{item.akun?.kodeAkun}</span>
-                        </div>
-                      </TableCell>
-                    </>
-                  ) : (
-                    <>
-                      <TableCell className="font-bold">{item.ref}</TableCell>
-                      <TableCell className="text-xs max-w-[200px] truncate">{item.keterangan}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col text-xs gap-1">
-                          <div className="flex items-center gap-1">
-                            <span className="text-emerald-600 font-bold">D:</span>
-                            <span>{item.akunDebet?.namaAkun}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-rose-600 font-bold">K:</span>
-                            <span>{item.akunKredit?.namaAkun}</span>
-                          </div>
-                          <span className="font-semibold">{formatRupiah(Number(item.nominal))}</span>
-                        </div>
-                      </TableCell>
-                    </>
-                  )}
-                  <TableCell>
-                    <span className="text-sm text-default-500">
-                      {new Date(item.deletedAt).toLocaleString("id-ID", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="flat" 
-                        color="primary"
-                        startContent={<RotateCcw size={14} />}
-                        onPress={() => handleRestore(item.id)}
-                      >
-                        Pulihkan
-                      </Button>
+              <TableHeader>
+                {activeTab === "order" ? (
+                  <>
+                    <TableColumn>NOMOR ORDER</TableColumn>
+                    <TableColumn>PELANGGAN</TableColumn>
+                    <TableColumn>GRAND TOTAL</TableColumn>
+                    <TableColumn>TANGGAL HAPUS</TableColumn>
+                    <TableColumn align="end">AKSI</TableColumn>
+                  </>
+                ) : activeTab === "product" ? (
+                  <>
+                    <TableColumn>INFORMASI PRODUK</TableColumn>
+                    <TableColumn>KATEGORI</TableColumn>
+                    <TableColumn>HARGA & STOK</TableColumn>
+                    <TableColumn>TANGGAL HAPUS</TableColumn>
+                    <TableColumn align="end">AKSI</TableColumn>
+                  </>
+                ) : activeTab === "customer" ? (
+                  <>
+                    <TableColumn>NAMA PELANGGAN</TableColumn>
+                    <TableColumn>KONTAK</TableColumn>
+                    <TableColumn>TANGGAL HAPUS</TableColumn>
+                    <TableColumn align="end">AKSI</TableColumn>
+                  </>
+                ) : activeTab === "cost" ? (
+                  <>
+                    <TableColumn>URAIAN BIAYA</TableColumn>
+                    <TableColumn>NOMINAL</TableColumn>
+                    <TableColumn>AKUN SUMBER</TableColumn>
+                    <TableColumn>TANGGAL HAPUS</TableColumn>
+                    <TableColumn align="end">AKSI</TableColumn>
+                  </>
+                ) : (
+                  <>
+                    <TableColumn>NOMOR REF</TableColumn>
+                    <TableColumn>KETERANGAN JURNAL</TableColumn>
+                    <TableColumn>AGREGASI NOMINAL</TableColumn>
+                    <TableColumn>TANGGAL HAPUS</TableColumn>
+                    <TableColumn align="end">AKSI</TableColumn>
+                  </>
+                )}
+              </TableHeader>
+              <TableBody 
+                items={results} 
+                isLoading={isLoading}
+                loadingContent={
+                  <div className="flex flex-col items-center gap-4 py-20">
+                     <Spinner size="lg" color="danger" />
+                     <p className="text-default-400 font-medium animate-pulse">Menghubungkan ke server...</p>
+                  </div>
+                }
+                emptyContent={
+                  <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+                    <div className="size-20 rounded-full bg-default-100 flex items-center justify-center text-default-300 mb-6">
+                       <Trash2 size={40} />
                     </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardBody>
-      </Card>
+                    <h3 className="text-xl font-bold text-default-900 mb-2">Tempat Sampah Kosong</h3>
+                    <p className="text-default-500 max-w-[300px]">
+                      Bagus! Tidak ada data yang menumpuk di sini. Semua data Anda saat ini tersimpan secara aktif.
+                    </p>
+                  </div>
+                }
+              >
+                {(item: any) => (
+                  <TableRow key={item.id}>
+                    {activeTab === "order" ? (
+                      <>
+                        <TableCell>
+                          <div className="flex flex-col">
+                             <span className="font-extrabold text-default-900">{item.nomorOrder}</span>
+                             <span className="text-[10px] font-bold text-default-400 uppercase tracking-tighter">ORDER REF: {item.id.slice(-6)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                           <div className="flex items-center gap-2">
+                              <div className="size-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs">
+                                 {item.customer?.nama?.charAt(0) || "C"}
+                              </div>
+                              <span className="font-medium">{item.customer?.nama || "-"}</span>
+                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <Chip variant="flat" color="primary" size="sm" className="font-bold">
+                              {formatRupiah(Number(item.grandTotal))}
+                           </Chip>
+                        </TableCell>
+                      </>
+                    ) : activeTab === "product" ? (
+                      <>
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-default-800">{item.nama}</span>
+                            <span className="text-[10px] font-mono text-default-400">{item.sku || "TANPA SKU"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Chip size="sm" variant="dot" color="default" className="border-default-200">
+                             {item.category?.nama || "Umum"}
+                          </Chip>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs">
+                            <span className="font-bold text-default-700">{formatRupiah(Number(item.hargaJual))}</span>
+                            <span className="text-default-400 italic">Sisa Stok: {item.stok}</span>
+                          </div>
+                        </TableCell>
+                      </>
+                    ) : activeTab === "customer" ? (
+                      <>
+                        <TableCell>
+                           <div className="flex items-center gap-3">
+                              <div className="size-10 rounded-xl bg-linear-to-br from-default-100 to-default-200 flex items-center justify-center font-black text-default-500">
+                                 {item.nama.charAt(0)}
+                              </div>
+                              <span className="font-bold text-default-800">{item.nama}</span>
+                           </div>
+                        </TableCell>
+                        <TableCell>
+                           <span className="text-default-500 font-mono text-xs">{item.nomorHp || "-"}</span>
+                        </TableCell>
+                      </>
+                    ) : activeTab === "cost" ? (
+                      <>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-bold text-default-900">{item.nama}</span>
+                            <span className="text-xs text-default-400 max-w-[200px] truncate italic">{item.keterangan || "-"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                           <span className="font-black text-danger-600">{formatRupiah(Number(item.nominal))}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs font-bold text-default-700">{item.akun?.namaAkun}</span>
+                            <span className="text-[10px] font-mono text-default-400">{item.akun?.kodeAkun}</span>
+                          </div>
+                        </TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell><Chip size="sm" className="font-mono font-bold" variant="flat">{item.ref}</Chip></TableCell>
+                        <TableCell>
+                           <p className="text-xs text-default-500 leading-relaxed max-w-[220px] line-clamp-2">{item.keterangan}</p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1.5">
+                             <div className="flex items-center justify-between gap-4 bg-default-50 px-2 py-1 rounded border border-default-100">
+                                <span className="text-[10px] font-bold text-emerald-600">DEBET</span>
+                                <span className="text-[10px] font-bold truncate max-w-[100px]">{item.akunDebet?.namaAkun}</span>
+                             </div>
+                             <div className="flex items-center justify-between gap-4 bg-default-50 px-2 py-1 rounded border border-default-100">
+                                <span className="text-[10px] font-bold text-rose-600">KREDIT</span>
+                                <span className="text-[10px] font-bold truncate max-w-[100px]">{item.akunKredit?.namaAkun}</span>
+                             </div>
+                             <span className="font-black text-center mt-1">{formatRupiah(Number(item.nominal))}</span>
+                          </div>
+                        </TableCell>
+                      </>
+                    )}
+                    <TableCell>
+                       <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-default-700">
+                            {new Date(item.deletedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                          <span className="text-[10px] text-default-400 font-medium">
+                            {new Date(item.deletedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
+                          </span>
+                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end">
+                        <HeroTooltip content="Kembalikan data ke daftar aktif" closeDelay={0}>
+                          <Button 
+                            size="sm" 
+                            variant="shadow" 
+                            color="danger"
+                            startContent={<RotateCcw size={14} className="group-hover:-rotate-45 transition-transform" />}
+                            className="font-bold group"
+                            onPress={() => handleRestore(item.id)}
+                          >
+                            Restore
+                          </Button>
+                        </HeroTooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardBody>
+        </Card>
+      </div>
 
-      <div className="bg-danger-50 border border-danger-100 p-4 rounded-xl flex gap-3 items-start">
-        <AlertTriangle className="text-danger shrink-0 mt-0.5" size={18} />
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-danger-700">Informasi Penting</p>
-          <p className="text-xs text-danger-600 leading-relaxed">
-            Data yang dipulihkan akan muncul kembali di laporan keuangan dan dashboard stok. 
-            Pastikan Anda melakukan pengecekan ulang setelah proses pemulihan untuk menjaga integritas data.
+      <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 rounded-2xl flex gap-4 items-start shadow-sm">
+        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+           <AlertTriangle shrink-0 size={20} />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-sm font-black text-amber-800 uppercase tracking-wide">Peringatan Integritas Data</p>
+          <p className="text-sm text-amber-700/80 leading-relaxed font-medium">
+            Data yang dipulihkan akan kembali mempengaruhi <strong>laba rugi, saldo neraca, dan ketersediaan stok</strong>. 
+            Pastikan data yang Anda pulihkan adalah data yang benar-benar dibutuhkan kembali untuk menjaga keakuratan pembukuan.
           </p>
         </div>
       </div>

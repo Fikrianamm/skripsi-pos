@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session)
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (session.user.role !== "admin")
+    if (!["admin", "gudang"].includes(session.user.role || ""))
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
     const searchParams = request.nextUrl.searchParams;
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session)
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (session.user.role !== "admin")
+    if (!["admin", "gudang"].includes(session.user.role || ""))
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
     const formData = await request.formData();

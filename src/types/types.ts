@@ -40,8 +40,9 @@ export interface Product {
   hpp: number;
   hargaJual: number;
   stok: number;
-  minStok: number;
+  minStok: number | null;
   isService: boolean;
+  terjual?: number;
   createdAt?: Date;
   updatedAt?: Date;
   category: Category;

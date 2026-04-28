@@ -16,6 +16,7 @@ import {
   PackageX,
   ArrowUpRight,
 } from "lucide-react";
+import Link from "next/link";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -63,6 +64,7 @@ interface DashboardData {
   lowStockAlerts: LowStockItem[];
   recentOrders: RecentOrder[];
   chartData: { label: string; pendapatan: number; pengeluaran: number }[];
+  chartDataWeekly: { label: string; pendapatan: number; pengeluaran: number }[];
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -263,7 +265,7 @@ export default function Page() {
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart
-                data={data?.chartData ?? []}
+                data={data?.chartDataWeekly ?? []}
                 margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
               >
                 <defs>
@@ -374,9 +376,10 @@ export default function Page() {
                     ? Math.round((item.stok / item.minStok) * 100)
                     : 0;
                 return (
-                  <div
+                  <Link
+                    href={item.type === "bahan_baku" ? "/master/bahan-baku" : "/master/product"}
                     key={item.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-rose-50 border border-rose-100"
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-rose-50 border border-rose-100 hover:bg-rose-100 transition-colors cursor-pointer"
                   >
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <span className="text-sm font-medium truncate">
@@ -395,7 +398,7 @@ export default function Page() {
                     >
                       {item.stok} {item.unit.nama}
                     </Chip>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -420,9 +423,10 @@ export default function Page() {
               </p>
             ) : (
               (data?.recentOrders ?? []).map((order) => (
-                <div
+                <Link
+                  href={`/order/${order.id}`}
                   key={order.id}
-                  className="flex items-center justify-between py-3 gap-3"
+                  className="flex items-center justify-between py-3 gap-3 hover:bg-default-50 px-2 -mx-2 rounded-lg transition-colors cursor-pointer"
                 >
                   <div className="flex flex-col gap-0.5 min-w-0">
                     <span className="font-medium text-sm">
@@ -437,9 +441,6 @@ export default function Page() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-semibold text-sm">
-                      {formatRupiah(Number(order.grandTotal))}
-                    </span>
                     <Chip
                       size="sm"
                       variant="flat"
@@ -448,8 +449,11 @@ export default function Page() {
                       {paymentLabel[order.statusPembayaran] ??
                         order.statusPembayaran}
                     </Chip>
+                    <span className="font-semibold text-sm">
+                      {formatRupiah(Number(order.grandTotal))}
+                    </span>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>

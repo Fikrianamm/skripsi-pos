@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized", status: 401 };
-  if (session.user.role !== "admin") return { error: "Forbidden", status: 403 };
+  const allowed = ["admin", "kasir"];
+  if (!allowed.includes(session.user.role || "")) return { error: "Forbidden", status: 403 };
   return { error: null, status: 200 };
 }
 
@@ -36,41 +37,49 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Calculate running balance per account
-    // posisiNormal=DEBET: saldo = totalDebet - totalKredit
-    // posisiNormal=KREDIT: saldo = totalKredit - totalDebet
+    // 1. Ambil semua akun yang relevan untuk Neraca
+    const allAccounts = await prisma.akun.findMany({
+      where: {
+        kelompok: { in: ["AKTIVA_LANCAR", "KEWAJIBAN", "MODAL", "PENDAPATAN", "BEBAN_USAHA"] },
+        isActive: true,
+      },
+      select: { id: true, kodeAkun: true, namaAkun: true, kelompok: true, posisiNormal: true },
+    });
+
+    // 2. Inisialisasi balanceMap dengan semua akun tersebut
     const balanceMap: Record<string, {
       id: string; kodeAkun: string; namaAkun: string;
       kelompok: string; posisiNormal: string; saldo: number;
     }> = {};
 
-    function ensureAccount(akun: { id: string; kodeAkun: string; namaAkun: string; kelompok: string; posisiNormal: string }) {
-      if (!balanceMap[akun.id]) {
-        balanceMap[akun.id] = { ...akun, saldo: 0 };
-      }
+    for (const acc of allAccounts) {
+      balanceMap[acc.id] = { ...acc, saldo: 0 };
     }
 
+    // 3. Masukkan saldo dari jurnal
     for (const j of jurnals) {
       const nom = Number(j.nominal);
-      ensureAccount(j.akunDebet);
-      ensureAccount(j.akunKredit);
-
+      
       // Debet side: increases DEBET-normal accounts, decreases KREDIT-normal accounts
-      if (j.akunDebet.posisiNormal === "DEBET") {
-        balanceMap[j.akunDebet.id].saldo += nom;
-      } else {
-        balanceMap[j.akunDebet.id].saldo -= nom;
+      if (balanceMap[j.akunDebet.id]) {
+        if (j.akunDebet.posisiNormal === "DEBET") {
+          balanceMap[j.akunDebet.id].saldo += nom;
+        } else {
+          balanceMap[j.akunDebet.id].saldo -= nom;
+        }
       }
 
       // Kredit side: increases KREDIT-normal accounts, decreases DEBET-normal accounts
-      if (j.akunKredit.posisiNormal === "KREDIT") {
-        balanceMap[j.akunKredit.id].saldo += nom;
-      } else {
-        balanceMap[j.akunKredit.id].saldo -= nom;
+      if (balanceMap[j.akunKredit.id]) {
+        if (j.akunKredit.posisiNormal === "KREDIT") {
+          balanceMap[j.akunKredit.id].saldo += nom;
+        } else {
+          balanceMap[j.akunKredit.id].saldo -= nom;
+        }
       }
     }
 
-    const accounts = Object.values(balanceMap).filter((a) => a.saldo !== 0);
+    const accounts = Object.values(balanceMap);
 
     // Group by kelompok
     const grouped: Record<string, typeof accounts> = {};

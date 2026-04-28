@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized", status: 401 };
-  if (session.user.role !== "admin") return { error: "Forbidden", status: 403 };
+  const allowed = ["admin", "kasir"];
+  if (!allowed.includes(session.user.role || "")) return { error: "Forbidden", status: 403 };
   return { error: null, status: 200 };
 }
 
@@ -24,7 +25,22 @@ export async function GET(request: NextRequest) {
     const startDate = new Date(tahun, 0, 1);
     const endDate   = new Date(tahun, 11, 31, 23, 59, 59, 999);
 
-    // Ambil semua jurnal dalam tahun tersebut yang sisi DEBET-nya adalah akun Tabungan
+    // 1. Ambil semua akun tabungan yang aktif
+    const allTabunganAccounts = await prisma.akun.findMany({
+      where: {
+        namaAkun: { contains: "Tabungan" },
+        isActive: true,
+      },
+      select: { namaAkun: true },
+    });
+
+    // 2. Inisialisasi jenisMap dengan semua akun tersebut
+    const jenisMap: Record<string, { nama: string; byBulan: Record<number, number>; total: number }> = {};
+    for (const acc of allTabunganAccounts) {
+      jenisMap[acc.namaAkun] = { nama: acc.namaAkun, byBulan: {}, total: 0 };
+    }
+
+    // 3. Ambil data jurnal
     const jurnals = await prisma.jurnalUmum.findMany({
       where: {
         tanggal: { gte: startDate, lte: endDate },
@@ -37,9 +53,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { tanggal: "asc" },
     });
-
-    // Pivot: per jenis tabungan × bulan
-    const jenisMap: Record<string, { nama: string; byBulan: Record<number, number>; total: number }> = {};
 
     for (const j of jurnals) {
       const jenis = j.akunDebet.namaAkun;

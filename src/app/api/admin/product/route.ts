@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       where.isService = isService === "true";
     }
 
-    const [results, count] = await Promise.all([
+    const [rawResults, count] = await Promise.all([
       prisma.product.findMany({
         where,
         select: {
@@ -72,6 +72,16 @@ export async function GET(request: NextRequest) {
           unit: {
             select: { id: true, nama: true },
           },
+          orderItems: {
+            where: {
+              order: {
+                statusProduksi: { not: "BATAL" },
+                deletedAt: null,
+              },
+              deletedAt: null,
+            },
+            select: { qty: true },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -79,6 +89,12 @@ export async function GET(request: NextRequest) {
       }),
       prisma.product.count({ where }),
     ]);
+
+    const results = rawResults.map((p) => {
+      const { orderItems, ...rest } = p;
+      const terjual = orderItems.reduce((acc, item) => acc + Number(item.qty), 0);
+      return { ...rest, terjual };
+    });
 
     return NextResponse.json({
       results,

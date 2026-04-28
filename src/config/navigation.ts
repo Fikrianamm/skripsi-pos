@@ -46,11 +46,12 @@ export const NAV_ITEMS: NavGroup[] = [
         title: "Pesanan",
         url: "#",
         icon: ShoppingBag,
-        roles: ["admin", "kasir"],
+        roles: ["admin", "kasir", "designer", "produksi", "gudang"],
         items: [
           {
             title: "Input Pesanan",
             url: "/order/pos",
+            roles: ["admin", "kasir"],
           },
           {
             title: "Daftar Pesanan",
@@ -114,7 +115,7 @@ export const NAV_ITEMS: NavGroup[] = [
         title: "Keuangan",
         url: "#",
         icon: TrendingUp,
-        roles: ["admin"],
+        roles: ["admin", "kasir"],
         items: [
           {
             title: "Dashboard Keuangan",
@@ -134,7 +135,7 @@ export const NAV_ITEMS: NavGroup[] = [
         title: "Laporan",
         url: "#",
         icon: FileText,
-        roles: ["admin"],
+        roles: ["admin", "kasir"],
         items: [
           {
             title: "Laporan Laba Rugi",
@@ -197,20 +198,10 @@ export const NAV_ITEMS: NavGroup[] = [
         ],
       },
       {
-        title: "RBAC",
-        url: "#",
+        title: "Role & Permission",
+        url: "/rbac",
         icon: Shield,
         roles: ["admin"],
-        items: [
-          {
-            title: "Roles",
-            url: "/rbac/roles",
-          },
-          {
-            title: "Permissions",
-            url: "/rbac/permissions",
-          },
-        ],
       },
       {
         title: "Sampah",

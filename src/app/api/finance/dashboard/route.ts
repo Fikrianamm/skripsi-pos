@@ -3,16 +3,17 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-async function requireAdmin() {
+async function requireDashboardAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized", status: 401 };
-  if (session.user.role !== "admin") return { error: "Forbidden", status: 403 };
+  const allowed = ["admin", "kasir"];
+  if (!session.user.role || !allowed.includes(session.user.role)) return { error: "Forbidden", status: 403 };
   return { error: null, status: 200 };
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const { error, status } = await requireAdmin();
+    const { error, status } = await requireDashboardAccess();
     if (error) return NextResponse.json({ error }, { status });
 
     const { searchParams } = new URL(request.url);
@@ -50,8 +51,8 @@ export async function GET(request: NextRequest) {
       newOrdersToday,
       activeOrders,
       piutangOrders,
-      lowStockBahanBaku,
-      lowStockProducts,
+      allBahanBaku,
+      allProducts,
       recentOrders,
       chartPayments,
       chartCosts,
@@ -80,47 +81,34 @@ export async function GET(request: NextRequest) {
         where: { tanggal: { gte: startOfToday } },
       }),
       // Total customers
-      prisma.customer.count(),
+      prisma.customer.count({ where: { deletedAt: null } }),
       // New orders today
-      prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      prisma.order.count({ where: { createdAt: { gte: startOfToday }, deletedAt: null } }),
       // Active orders (not SELESAI or BATAL)
       prisma.order.count({
-        where: { statusProduksi: { notIn: ["SELESAI", "BATAL"] } },
+        where: { statusProduksi: { notIn: ["SELESAI", "BATAL"] }, deletedAt: null },
       }),
       // Piutang
       prisma.order.findMany({
-        where: { statusPembayaran: { in: ["BELUM_BAYAR", "DP"] } },
+        where: { statusPembayaran: { in: ["BELUM_BAYAR", "DP"] }, deletedAt: null },
         select: {
           grandTotal: true,
           payments: { select: { nominal: true } },
         },
       }),
-      // Low stock bahan baku (stok < minStok and minStok not null)
-      prisma.$queryRaw<
-        { id: string; nama: string; stok: number; minStok: number; unitNama: string }[]
-      >`
-        SELECT b.id, b.nama, CAST(b.stok AS DECIMAL(10,2)) as stok, 
-               CAST(b.min_stok AS DECIMAL(10,2)) as minStok, u.nama as unitNama
-        FROM bahan_baku b
-        LEFT JOIN unit u ON u.id = b.unit_id
-        WHERE b.is_active = 1 AND b.min_stok IS NOT NULL AND b.stok < b.min_stok
-        ORDER BY b.stok ASC
-        LIMIT 10
-      `,
-      // Low stock products (stok < minStok and isService=false)
-      prisma.$queryRaw<
-        { id: string; nama: string; stok: number; minStok: number; unitNama: string }[]
-      >`
-        SELECT p.id, p.nama, CAST(p.stok AS DECIMAL(10,2)) as stok,
-               CAST(p.min_stok AS DECIMAL(10,2)) as minStok, u.nama as unitNama
-        FROM product p
-        LEFT JOIN unit u ON u.id = p.unit_id
-        WHERE p.is_service = 0 AND p.min_stok IS NOT NULL AND p.stok < p.min_stok
-        ORDER BY p.stok ASC
-        LIMIT 10
-      `,
+      // Fetch all active materials with minStok to filter in JS
+      prisma.bahanBaku.findMany({
+        where: { isActive: true, minStok: { not: null } },
+        select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
+      }),
+      // Fetch all products with minStok to filter in JS
+      prisma.product.findMany({
+        where: { isService: false, minStok: { not: null }, deletedAt: null },
+        select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
+      }),
       // Recent orders (last 5)
       prisma.order.findMany({
+        where: { deletedAt: null },
         select: {
           id: true,
           nomorOrder: true,
@@ -135,15 +123,26 @@ export async function GET(request: NextRequest) {
       }),
       // Chart payments
       prisma.payment.findMany({
-        where: { tanggal: { gte: startCurrent, lte: endCurrent } },
+        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
         select: { nominal: true, tanggal: true },
       }),
       // Chart costs
       prisma.cost.findMany({
-        where: { tanggal: { gte: startCurrent, lte: endCurrent } },
+        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
         select: { nominal: true, tanggal: true },
       }),
     ]);
+
+    // Filter low stock in JS
+    const lowStockBahanBaku = allBahanBaku
+      .filter((b) => Number(b.stok) < Number(b.minStok))
+      .sort((a, b) => Number(a.stok) - Number(b.stok))
+      .slice(0, 10);
+
+    const lowStockProducts = allProducts
+      .filter((p) => Number(p.stok) < Number(p.minStok))
+      .sort((a, b) => Number(a.stok) - Number(b.stok))
+      .slice(0, 10);
 
     const totalPendapatan = Number(paymentCurrent._sum.nominal ?? 0);
     const totalPengeluaran = Number(costCurrent._sum.nominal ?? 0);
@@ -156,30 +155,56 @@ export async function GET(request: NextRequest) {
       return sum + Math.max(0, Number(o.grandTotal) - dibayar);
     }, 0);
 
-    // Chart data: grouped by week in current month
-    const daysInMonth = endCurrent.getDate();
-    const weeks: { label: string; pendapatan: number; pengeluaran: number }[] =
-      [];
-    let weekStart = 1;
-    while (weekStart <= daysInMonth) {
-      const weekEnd = Math.min(weekStart + 6, daysInMonth);
-      weeks.push({
-        label: `${weekStart}-${weekEnd}`,
-        pendapatan: 0,
-        pengeluaran: 0,
-      });
-      weekStart += 7;
-    }
+    // Weekly chart data for the current month
+    const weeks = Array.from({ length: 5 }, (_, i) => ({
+      label: `Minggu ${i + 1}`,
+      pendapatan: 0,
+      pengeluaran: 0,
+    }));
 
     for (const p of chartPayments) {
       const day = new Date(p.tanggal).getDate();
-      const weekIndex = Math.min(Math.floor((day - 1) / 7), weeks.length - 1);
-      weeks[weekIndex].pendapatan += Number(p.nominal);
+      const w = Math.min(Math.floor((day - 1) / 7), 4); // 0 to 4
+      weeks[w].pendapatan += Number(p.nominal);
     }
     for (const c of chartCosts) {
       const day = new Date(c.tanggal).getDate();
-      const weekIndex = Math.min(Math.floor((day - 1) / 7), weeks.length - 1);
-      weeks[weekIndex].pengeluaran += Number(c.nominal);
+      const w = Math.min(Math.floor((day - 1) / 7), 4);
+      weeks[w].pengeluaran += Number(c.nominal);
+    }
+
+    // Chart data: grouped by month in the selected year
+    const months: { label: string; pendapatan: number; pengeluaran: number }[] =
+      Array.from({ length: 12 }, (_, i) => ({
+        label: new Date(year, i, 1).toLocaleDateString("id-ID", {
+          month: "short",
+        }),
+        pendapatan: 0,
+        pengeluaran: 0,
+      }));
+
+    // Re-fetch journals for the whole year for chart data
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    const [yearPayments, yearCosts] = await Promise.all([
+      prisma.payment.findMany({
+        where: { tanggal: { gte: startOfYear, lte: endOfYear }, deletedAt: null },
+        select: { nominal: true, tanggal: true },
+      }),
+      prisma.cost.findMany({
+        where: { tanggal: { gte: startOfYear, lte: endOfYear }, deletedAt: null },
+        select: { nominal: true, tanggal: true },
+      }),
+    ]);
+
+    for (const p of yearPayments) {
+      const m = new Date(p.tanggal).getMonth();
+      months[m].pendapatan += Number(p.nominal);
+    }
+    for (const c of yearCosts) {
+      const m = new Date(c.tanggal).getMonth();
+      months[m].pengeluaran += Number(c.nominal);
     }
 
     const pctChange = (curr: number, prev: number) => {
@@ -212,7 +237,7 @@ export async function GET(request: NextRequest) {
           type: "bahan_baku" as const,
           stok: Number(b.stok),
           minStok: Number(b.minStok),
-          unit: { nama: b.unitNama ?? "" },
+          unit: { nama: b.unit.nama ?? "" },
         })),
         ...lowStockProducts.map((p) => ({
           id: p.id,
@@ -220,12 +245,13 @@ export async function GET(request: NextRequest) {
           type: "product" as const,
           stok: Number(p.stok),
           minStok: Number(p.minStok),
-          unit: { nama: p.unitNama ?? "" },
+          unit: { nama: p.unit.nama ?? "" },
         })),
       ],
       recentOrders,
       // Chart
-      chartData: weeks,
+      chartData: months,
+      chartDataWeekly: weeks,
     });
   } catch (err) {
     console.error("[FINANCE DASHBOARD ERROR]", err);

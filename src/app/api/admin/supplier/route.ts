@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (session.user.role !== "admin") {
+    if (!["admin", "gudang"].includes(session.user.role || "")) {
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },
         { status: 403 },
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (session.user.role !== "admin") {
+    if (!["admin", "gudang"].includes(session.user.role || "")) {
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },
         { status: 403 },
