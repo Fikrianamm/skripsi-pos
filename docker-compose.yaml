@@ -11,7 +11,7 @@ services:
       MYSQL_ROOT_PASSWORD: root # Password database (bebas diganti)
       MYSQL_DATABASE: my_app_db # Nama database awal
     ports:
-      - "3306:3306" # Membuka port ke laptop agar bisa diakses
+      - "3307:3306" # Membuka port ke laptop agar bisa diakses
     volumes:
       - db_data:/var/lib/mysql # Agar data tidak hilang saat docker dimatikan
 
@@ -33,8 +33,8 @@ services:
     container_name: nextjs_soketi
     restart: always
     ports:
-      - "6001:6001"   # WebSocket
-      - "9601:9601"   # Metrics
+      - "6002:6001"   # WebSocket
+      - "9602:9601"   # Metrics
     environment:
       SOKETI_DEFAULT_APP_ID: "pos-app"
       SOKETI_DEFAULT_APP_KEY: "pos-key"
