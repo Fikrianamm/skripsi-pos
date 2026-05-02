@@ -84,7 +84,7 @@ function NeracaChart({ data, title, colorScheme }: { data: any[], title: string,
               ))}
             </Pie>
             <ReChartsTooltip 
-              formattyyer={(value: number) => formatRupiah(value)}
+              formatter={(value: any) => formatRupiah(Number(value))}
               contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
             />
             <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px' }} />
