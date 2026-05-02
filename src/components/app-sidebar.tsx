@@ -13,7 +13,7 @@ import {
 import { NAV_ITEMS } from "@/config/navigation";
 import type { NavGroup, NavItem } from "@/config/navigation";
 import { User } from "better-auth";
-import { AppSetting } from "@/generated/prisma";
+import { AppSetting } from "../../generated/prisma/client";
 
 /**
  * Filter navigation items based on the user's role.
