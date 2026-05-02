@@ -1,0 +1,28 @@
+name: POS System CD (Deploy to VPS)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' # Only deploy on push to main
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy to VPS via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          cd /path/to/your/app
+          git pull origin main
+          npm install
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run build
+          pm2 restart pos-app || pm2 start npm --name "pos-app" -- start

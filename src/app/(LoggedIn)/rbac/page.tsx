@@ -35,8 +35,8 @@ const ROLE_DETAILS = [
     },
   },
   {
-    key: "kasir",
-    label: "Kasir",
+    key: "admincs",
+    label: "Admin CS",
     icon: <User className="size-4" />,
     iconText: "text-blue-600 dark:text-blue-400",
     permissions: {

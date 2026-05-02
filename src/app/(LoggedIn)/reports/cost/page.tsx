@@ -214,7 +214,7 @@ export default function CostPage() {
       </div>
 
       {/* Table */}
-      <CostTable costs={costs} isLoading={isLoading} />
+      <CostTable costs={costs} isLoading={isLoading} onSuccess={() => mutate()} />
     </div>
   );
 }

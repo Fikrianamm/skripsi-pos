@@ -58,7 +58,7 @@ export default function TrashPage() {
             Tempat Sampah
           </h1>
           <p className="text-default-500 max-w-2xl">
-            Pulihkan data yang tidak sengaja dihapus. Data di sini masih tersimpan secara aman dan dapat dikembalikan ke modul masing-masing tanpa merusak integrasi laporan.
+            Pulihkan data yang tidak sengaja dihapus. Data di sini akan tersimpan selama <strong>60 hari</strong> sebelum dihapus permanen secara otomatis oleh sistem untuk menjaga efisiensi database.
           </p>
         </div>
       </div>
@@ -199,10 +199,42 @@ export default function TrashPage() {
                   </div>
                 }
               >
-                {(item: any) => (
-                  <TableRow key={item.id}>
-                    {activeTab === "order" ? (
-                      <>
+                {(item: any) => {
+                  const deletedAtCell = (
+                    <TableCell>
+                       <div className="flex flex-col gap-0.5">
+                          <span className="font-bold text-default-700">
+                            {new Date(item.deletedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                          <span className="text-[10px] text-default-400 font-medium">
+                            {new Date(item.deletedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
+                          </span>
+                       </div>
+                    </TableCell>
+                  );
+
+                  const actionCell = (
+                    <TableCell>
+                      <div className="flex items-center justify-end">
+                        <HeroTooltip content="Kembalikan data ke daftar aktif" closeDelay={0}>
+                          <Button 
+                            size="sm" 
+                            variant="shadow" 
+                            color="danger"
+                            startContent={<RotateCcw size={14} className="group-hover:-rotate-45 transition-transform" />}
+                            className="font-bold group"
+                            onPress={() => handleRestore(item.id)}
+                          >
+                            Restore
+                          </Button>
+                        </HeroTooltip>
+                      </div>
+                    </TableCell>
+                  );
+
+                  if (activeTab === "order") {
+                    return (
+                      <TableRow key={item.id}>
                         <TableCell>
                           <div className="flex flex-col">
                              <span className="font-extrabold text-default-900">{item.nomorOrder}</span>
@@ -222,9 +254,15 @@ export default function TrashPage() {
                               {formatRupiah(Number(item.grandTotal))}
                            </Chip>
                         </TableCell>
-                      </>
-                    ) : activeTab === "product" ? (
-                      <>
+                        {deletedAtCell}
+                        {actionCell}
+                      </TableRow>
+                    );
+                  }
+
+                  if (activeTab === "product") {
+                    return (
+                      <TableRow key={item.id}>
                         <TableCell>
                           <div className="flex flex-col gap-0.5">
                             <span className="font-bold text-default-800">{item.nama}</span>
@@ -242,9 +280,15 @@ export default function TrashPage() {
                             <span className="text-default-400 italic">Sisa Stok: {item.stok}</span>
                           </div>
                         </TableCell>
-                      </>
-                    ) : activeTab === "customer" ? (
-                      <>
+                        {deletedAtCell}
+                        {actionCell}
+                      </TableRow>
+                    );
+                  }
+
+                  if (activeTab === "customer") {
+                    return (
+                      <TableRow key={item.id}>
                         <TableCell>
                            <div className="flex items-center gap-3">
                               <div className="size-10 rounded-xl bg-linear-to-br from-default-100 to-default-200 flex items-center justify-center font-black text-default-500">
@@ -256,9 +300,15 @@ export default function TrashPage() {
                         <TableCell>
                            <span className="text-default-500 font-mono text-xs">{item.nomorHp || "-"}</span>
                         </TableCell>
-                      </>
-                    ) : activeTab === "cost" ? (
-                      <>
+                        {deletedAtCell}
+                        {actionCell}
+                      </TableRow>
+                    );
+                  }
+
+                  if (activeTab === "cost") {
+                    return (
+                      <TableRow key={item.id}>
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className="font-bold text-default-900">{item.nama}</span>
@@ -274,56 +324,36 @@ export default function TrashPage() {
                             <span className="text-[10px] font-mono text-default-400">{item.akun?.kodeAkun}</span>
                           </div>
                         </TableCell>
-                      </>
-                    ) : (
-                      <>
-                        <TableCell><Chip size="sm" className="font-mono font-bold" variant="flat">{item.ref}</Chip></TableCell>
-                        <TableCell>
-                           <p className="text-xs text-default-500 leading-relaxed max-w-[220px] line-clamp-2">{item.keterangan}</p>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1.5">
-                             <div className="flex items-center justify-between gap-4 bg-default-50 px-2 py-1 rounded border border-default-100">
-                                <span className="text-[10px] font-bold text-emerald-600">DEBET</span>
-                                <span className="text-[10px] font-bold truncate max-w-[100px]">{item.akunDebet?.namaAkun}</span>
-                             </div>
-                             <div className="flex items-center justify-between gap-4 bg-default-50 px-2 py-1 rounded border border-default-100">
-                                <span className="text-[10px] font-bold text-rose-600">KREDIT</span>
-                                <span className="text-[10px] font-bold truncate max-w-[100px]">{item.akunKredit?.namaAkun}</span>
-                             </div>
-                             <span className="font-black text-center mt-1">{formatRupiah(Number(item.nominal))}</span>
-                          </div>
-                        </TableCell>
-                      </>
-                    )}
-                    <TableCell>
-                       <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-default-700">
-                            {new Date(item.deletedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
-                          </span>
-                          <span className="text-[10px] text-default-400 font-medium">
-                            {new Date(item.deletedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
-                          </span>
-                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end">
-                        <HeroTooltip content="Kembalikan data ke daftar aktif" closeDelay={0}>
-                          <Button 
-                            size="sm" 
-                            variant="shadow" 
-                            color="danger"
-                            startContent={<RotateCcw size={14} className="group-hover:-rotate-45 transition-transform" />}
-                            className="font-bold group"
-                            onPress={() => handleRestore(item.id)}
-                          >
-                            Restore
-                          </Button>
-                        </HeroTooltip>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
+                        {deletedAtCell}
+                        {actionCell}
+                      </TableRow>
+                    );
+                  }
+
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell><Chip size="sm" className="font-mono font-bold" variant="flat">{item.ref}</Chip></TableCell>
+                      <TableCell>
+                         <p className="text-xs text-default-500 leading-relaxed max-w-[220px] line-clamp-2">{item.keterangan}</p>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1.5">
+                           <div className="flex items-center justify-between gap-4 bg-default-50 px-2 py-1 rounded border border-default-100">
+                              <span className="text-[10px] font-bold text-emerald-600">DEBET</span>
+                              <span className="text-[10px] font-bold truncate max-w-[100px]">{item.akunDebet?.namaAkun}</span>
+                           </div>
+                           <div className="flex items-center justify-between gap-4 bg-default-50 px-2 py-1 rounded border border-default-100">
+                              <span className="text-[10px] font-bold text-rose-600">KREDIT</span>
+                              <span className="text-[10px] font-bold truncate max-w-[100px]">{item.akunKredit?.namaAkun}</span>
+                           </div>
+                           <span className="font-black text-center mt-1">{formatRupiah(Number(item.nominal))}</span>
+                        </div>
+                      </TableCell>
+                      {deletedAtCell}
+                      {actionCell}
+                    </TableRow>
+                  );
+                }}
               </TableBody>
             </Table>
           </CardBody>
@@ -332,7 +362,7 @@ export default function TrashPage() {
 
       <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 p-5 rounded-2xl flex gap-4 items-start shadow-sm">
         <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
-           <AlertTriangle shrink-0 size={20} />
+           <AlertTriangle className="shrink-0" size={20} />
         </div>
         <div className="space-y-1.5">
           <p className="text-sm font-black text-amber-800 uppercase tracking-wide">Peringatan Integritas Data</p>

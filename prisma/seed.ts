@@ -37,8 +37,8 @@ async function main() {
     },
     {
       id: "a5m1pZeT4dUMhioUkoYpyBTGYkQRXeMY",
-      name: "Nursya",
-      email: "nursya@gmail.com",
+      name: "Budii",
+      email: "budi@gmail.com",
       image: "/assets/avatar/male/41.png",
       role: "kasir",
       banned: false,
@@ -149,12 +149,12 @@ async function main() {
       id: 1,
       namaPerusahaan: "CV. Haqi Koleksi",
       logoUrl: null, // Default icon
-      alamat: "Jl. Ruko Permata, No. 12, Jawa Timur",
-      nomorKontak: "081234567890",
+      alamat: "DAREN RT 04/RW 04 NALUMSARI JEPARA 59466",
+      nomorKontak: "085712220484/088706695114",
       prefixOrder: "INV-HQ-",
-      catatanKakiStruk: "Terima kasih telah berbelanja! Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan kecuali ada perjanjian sebelumnya.",
+      catatanKakiStruk: "Terima kasih telah berbelanja!",
       prefixSpk: "SPK-",
-      estimasiHariPengerjaan: 14,
+      estimasiHariPengerjaan: 7,
       defaultPendapatanAkunId: "akun_4001", // Pendapatan - KONVEKSI
     },
   });

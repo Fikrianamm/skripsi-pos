@@ -111,13 +111,14 @@ export default function DeleteProductModal({
                 </span>
               </ModalHeader>
               <ModalBody>
-                <Alert color="danger" title="Peringatan">
+                <Alert color="danger" title="Konfirmasi Penghapusan">
                   <p className="mb-2">
-                    Data produk akan dihapus secara permanen beserta data
-                    terkait berikut:
+                    Data produk ini akan dipindahkan ke <strong>Tempat Sampah</strong>.
+                    Anda masih dapat memulihkannya nanti jika diperlukan.
                   </p>
                   <ul className="list-disc list-inside text-sm">
-                    <li>Data item produk pada riwayat Order</li>
+                    <li>Produk tidak akan muncul lagi di daftar aktif.</li>
+                    <li>Data terkait pada riwayat Order akan tetap tersimpan namun ditandai sebagai produk terhapus.</li>
                   </ul>
                 </Alert>
               </ModalBody>
@@ -131,7 +132,7 @@ export default function DeleteProductModal({
                   isDisabled={isDeleting}
                   isLoading={isDeleting}
                 >
-                  Hapus
+                  Pindahkan ke Sampah
                 </Button>
               </ModalFooter>
             </>

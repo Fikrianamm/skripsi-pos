@@ -9,7 +9,7 @@ async function requireAccess() {
   if (!session)
     return { error: "Unauthorized", status: 401, session: null };
   const allowed = ["admin", "kasir"];
-  if (!allowed.includes(session.user.role))
+  if (!allowed.includes(session.user.role!))
     return { error: "Forbidden", status: 403, session: null };
   return { error: null, status: 200, session };
 }

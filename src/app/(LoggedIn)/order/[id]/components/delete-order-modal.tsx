@@ -65,12 +65,12 @@ export function DeleteOrderModal({
                     Apakah Anda yakin ingin menghapus pesanan <span className="text-primary">{nomorOrder}</span>?
                   </p>
                   <div className="text-sm text-default-500 bg-default-50 p-3 rounded-lg border border-default-200">
-                    <p className="font-medium text-default-700 mb-1">Dampak Penghapusan:</p>
+                    <p className="font-medium text-default-700 mb-1 text-left">Apa yang terjadi?</p>
                     <ul className="text-left list-disc list-inside space-y-1">
-                      <li>Pesanan akan dipindahkan ke Sampah</li>
+                      <li>Pesanan dipindahkan ke <strong>Tempat Sampah</strong></li>
                       <li>Seluruh riwayat pembayaran akan di-soft delete</li>
-                      <li>Jurnal keuangan terkait akan dibalik/dibatalkan</li>
-                      <li>SPK produksi terkait akan ikut dihapus</li>
+                      <li>Jurnal keuangan terkait akan dibatalkan otomatis</li>
+                      <li>Anda masih dapat memulihkan data ini nanti</li>
                     </ul>
                   </div>
                   <p className="text-xs text-danger font-medium italic pt-2">

@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@heroui/button";
 import {
   Modal,
@@ -9,20 +7,22 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/modal";
-import { useState } from "react";
+import { Trash2, Receipt } from "lucide-react";
 import { Alert } from "@heroui/alert";
+import { Tooltip } from "@heroui/react";
 import { addToast } from "@heroui/toast";
-import { Customer } from "@/types/types";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useState } from "react";
+import { CostData } from "./cost-table";
+import { formatRupiah } from "@/lib/func";
 
-export default function DeleteCustomerModal({
-  customer,
-  onCustomerDeleted,
+export function DeleteCostModal({
+  cost,
+  onSuccess,
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
 }: {
-  customer: Customer;
-  onCustomerDeleted?: () => void;
+  cost: CostData;
+  onSuccess?: () => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -31,18 +31,22 @@ export default function DeleteCustomerModal({
     onOpen,
     onOpenChange: internalOnOpenChange,
   } = useDisclosure();
+
   const isOpen =
     controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const onOpenChange = controlledOnOpenChange ?? internalOnOpenChange;
+
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDelete(onClose: () => void) {
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/admin/customer/${customer.id}`, {
+      const res = await fetch(`/api/finance/cost?id=${cost.id}`, {
         method: "DELETE",
       });
+
       const json = await res.json();
+
       if (!res.ok) {
         addToast({
           title: "Gagal",
@@ -51,13 +55,14 @@ export default function DeleteCustomerModal({
         });
         return;
       }
+
       addToast({
         title: "Berhasil",
-        description: "Customer berhasil dihapus.",
+        description: "Data pengeluaran berhasil dipindahkan ke sampah.",
         color: "success",
       });
       onClose();
-      onCustomerDeleted?.();
+      onSuccess?.();
     } catch {
       addToast({
         title: "Gagal",
@@ -72,15 +77,17 @@ export default function DeleteCustomerModal({
   return (
     <>
       {controlledIsOpen === undefined && (
-        <Button
-          color="danger"
-          variant="light"
-          size="sm"
-          onPress={onOpen}
-          isIconOnly
-        >
-          Hapus
-        </Button>
+        <Tooltip content="Hapus Pengeluaran">
+          <Button
+            color="danger"
+            variant="light"
+            onPress={onOpen}
+            size="sm"
+            isIconOnly
+          >
+            <Trash2 size={16} />
+          </Button>
+        </Tooltip>
       )}
       <Modal
         isOpen={isOpen}
@@ -91,39 +98,24 @@ export default function DeleteCustomerModal({
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
-                <div className="flex items-center gap-3">
-                  <Avatar className="size-10 rounded-full">
-                    <AvatarImage
-                      src={customer.image || undefined}
-                      alt={customer.nama}
-                    />
-                    <AvatarFallback>
-                      {customer.nama.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <span className="block text-base font-semibold">
-                      Hapus Customer
-                    </span>
-                    <span className="font-normal text-sm text-slate-500">
-                      {customer.nama}
-                    </span>
+              <ModalHeader className="flex flex-col gap-2">
+                Hapus Pengeluaran
+                <span className="flex items-center gap-2 font-medium text-base text-slate-500">
+                  <div className="p-1.5 rounded-lg bg-default-100 text-default-500">
+                    <Receipt size={16} />
                   </div>
-                </div>
+                  {cost.nama} - {formatRupiah(Number(cost.nominal))}
+                </span>
               </ModalHeader>
               <ModalBody>
-                <Alert
-                  color="danger"
-                  title="Konfirmasi Penghapusan"
-                >
+                <Alert color="danger" title="Konfirmasi Penghapusan">
                   <p className="mb-2">
-                    Data customer ini akan dipindahkan ke <strong>Tempat Sampah</strong>.
+                    Data pengeluaran ini akan dipindahkan ke <strong>Tempat Sampah</strong>.
                     Anda masih dapat memulihkannya nanti jika diperlukan.
                   </p>
                   <ul className="list-disc list-inside text-sm">
-                    <li>Customer tidak akan muncul lagi di daftar aktif.</li>
-                    <li>Data terkait pada riwayat Order akan tetap tersimpan namun ditandai sebagai customer terhapus.</li>
+                    <li>Data Jurnal Umum terkait akan ikut dibatalkan (soft-delete).</li>
+                    <li>Laporan Keuangan akan diperbarui secara otomatis.</li>
                   </ul>
                 </Alert>
               </ModalBody>

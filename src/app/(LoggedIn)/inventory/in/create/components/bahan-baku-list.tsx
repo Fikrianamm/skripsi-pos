@@ -166,6 +166,12 @@ export function BahanBakuList({
                       Rp
                     </span>
                   }
+                  endContent={
+                    <span className="text-foreground-400 text-sm shrink-0">
+                      /{unitName}
+                    </span>
+
+                  }
                   value={displayHarga[index] ?? ""}
                   onChange={(e) => onHargaChange(index, e.target.value)}
                 />

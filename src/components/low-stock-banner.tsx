@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import useSWR, { useSWRConfig } from "swr";
+import { fetcher } from "@/lib/func";
+import { getPusherClient } from "@/lib/pusher-client";
 
 interface LowStockItem {
   id: string;
@@ -13,46 +16,50 @@ interface LowStockItem {
   type: "produk" | "bahan";
 }
 
-export function LowStockBanner() {
-  const [items, setItems] = useState<LowStockItem[]>([]);
-  const [isVisible, setIsVisible] = useState(false);
+export function LowStockBanner({ userId }: { userId?: string }) {
+  const { data: isDismissed } = useSWR("lowStockBannerDismissed", () => {
+    const today = new Date().toISOString().split("T")[0];
+    const dismissedDate = localStorage.getItem("lowStockBannerDismissed");
+    return dismissedDate === today;
+  }, { fallbackData: true, revalidateOnFocus: false });
+
+  const { data: items = [], mutate } = useSWR<LowStockItem[]>(
+    "/api/admin/inventory/low-stock",
+    fetcher
+  );
 
   useEffect(() => {
-    const checkVisibility = async () => {
-      // 1. Check localStorage for today's dismissal
-      const today = new Date().toISOString().split("T")[0];
-      const dismissedDate = localStorage.getItem("lowStockBannerDismissed");
-      
-      if (dismissedDate === today) {
-        setIsVisible(false);
-        return;
-      }
+    if (!userId) return;
 
-      // 2. Fetch low stock items
-      try {
-        const res = await fetch("/api/admin/inventory/low-stock");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0) {
-            setItems(data);
-            setIsVisible(true);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch low stock items:", error);
+    const pusher = getPusherClient();
+    const channelName = `private-user-${userId}`;
+    const channel = pusher.subscribe(channelName);
+
+    // Listen for notifications
+    channel.bind("new-notification", (notif: { jenis: string }) => {
+      // If the notification is about low stock or a transaction that might affect stock
+      if (notif.jenis === "STOK_MENIPIS" || notif.jenis === "ORDER_BARU" || notif.jenis === "PENERIMAAN_BARU") {
+        mutate(); // Re-fetch low stock data
       }
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe(channelName);
     };
+  }, [userId, mutate]);
 
-    checkVisibility();
-  }, []);
+  const { mutate: mutateDismiss } = useSWRConfig();
 
   const handleDismiss = () => {
     const today = new Date().toISOString().split("T")[0];
     localStorage.setItem("lowStockBannerDismissed", today);
-    setIsVisible(false);
+    mutateDismiss("lowStockBannerDismissed", true, false);
   };
 
-  if (!isVisible || items.length === 0) return null;
+  const isVisible = !isDismissed && items.length > 0;
+
+  if (!isVisible) return null;
 
   const produkCount = items.filter(i => i.type === "produk").length;
   const bahanCount = items.filter(i => i.type === "bahan").length;

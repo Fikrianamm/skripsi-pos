@@ -247,6 +247,7 @@ export function JurnalModal({
                     value={nominal}
                     onChange={(val) => setNominal(Number(val))}
                     isRequired
+                    placeholder="0"
                     startContent={
                       <span className="text-default-400 text-xs">Rp</span>
                     }

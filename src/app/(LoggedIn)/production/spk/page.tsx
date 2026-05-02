@@ -85,8 +85,6 @@ function statusSPKBadge(s: string) {
   > = {
     AKTIF: { color: "success", label: "Aktif" },
     SELESAI: { color: "primary", label: "Selesai" },
-    REVISI: { color: "warning", label: "Revisi" },
-    DRAFT: { color: "default", label: "Draft" },
     BATAL: { color: "danger", label: "Batal" },
   };
   return map[s] ?? { color: "default" as const, label: s };
@@ -333,8 +331,6 @@ const STATUS_OPTIONS = [
   { key: "all", label: "Semua Status" },
   { key: "AKTIF", label: "Aktif" },
   { key: "SELESAI", label: "Selesai" },
-  { key: "REVISI", label: "Revisi" },
-  { key: "DRAFT", label: "Draft" },
   { key: "BATAL", label: "Batal" },
 ];
 
