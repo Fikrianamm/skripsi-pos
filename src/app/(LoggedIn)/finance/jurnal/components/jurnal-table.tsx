@@ -35,7 +35,6 @@ export type JurnalItem = {
 interface JurnalTableProps {
   jurnals: JurnalItem[];
   isLoading: boolean;
-  totalNominal: number;
   onDeleted: (item: JurnalItem) => void;
 }
 
@@ -52,7 +51,6 @@ const columns = [
 export function JurnalTable({
   jurnals,
   isLoading,
-  totalNominal,
   onDeleted,
 }: JurnalTableProps) {
   return (
@@ -69,9 +67,6 @@ export function JurnalTable({
           <div className="flex items-center justify-between px-2 py-2 border-t border-default-200">
             <span className="text-xs text-default-500">
               {jurnals.length} entri jurnal
-            </span>
-            <span className="text-sm font-bold text-default-900 tabular-nums">
-              Total: {formatRupiah(totalNominal)}
             </span>
           </div>
         ) : null

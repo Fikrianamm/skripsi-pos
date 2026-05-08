@@ -43,10 +43,10 @@ export async function createNotification(input: CreateNotifInput) {
  * Helper to send notifications to all users with a specific role.
  */
 export async function createNotificationForRole(
-  roleTarget: string,
+  roleTarget: string[],
   input: Omit<CreateNotifInput, "userId">
 ) {
-  const users = await prisma.user.findMany({ where: { role: roleTarget } });
+  const users = await prisma.user.findMany({ where: { role: { in: roleTarget } } });
   
   return Promise.all(
     users.map((user) =>
@@ -85,12 +85,35 @@ export async function checkAndNotifyLowStock(bahanBakuId: string) {
     });
 
     if (!recentNotif) {
-      await createNotificationForRole("admin", {
+      await createNotificationForRole(["admin", "gudang"], {
         title: "Stok Menipis!",
         message: `Stok bahan "${bahan.nama}" saat ini ${currentStok}, segera lakukan pengisian (Min: ${minStok}).`,
         jenis: JenisNotif.STOK_MENIPIS,
         linkUrl: "/inventory/stock", // Path to stock list
       });
     }
+  }
+}
+
+/**
+ * Helper to notify relevant roles about an order status change.
+ */
+export async function notifyOrderStatusChange(
+  orderId: string,
+  nomorOrder: string,
+  newStatus: string
+) {
+  try {
+    await createNotificationForRole(
+      ["admin", "kasir", "designer", "produksi", "gudang"],
+      {
+        title: "Update Status Pesanan",
+        message: `Order #${nomorOrder} berubah status menjadi ${newStatus}.`,
+        jenis: JenisNotif.STATUS_ORDER_UBAH,
+        linkUrl: `/order/${orderId}`,
+      }
+    );
+  } catch (error) {
+    console.error("Failed to send order status notification:", error);
   }
 }

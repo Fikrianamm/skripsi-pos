@@ -151,7 +151,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // Notify Admins about new payment (Fitur #1)
     try {
-      await createNotificationForRole("admin", {
+      await createNotificationForRole(["admin", "kasir"], {
         title: "Pembayaran Diterima",
         message: `Pembayaran sebesar ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(nominal)} diterima untuk Order #${order.nomorOrder} (${order.customer.nama}).`,
         jenis: JenisNotif.PAYMENT_MASUK,

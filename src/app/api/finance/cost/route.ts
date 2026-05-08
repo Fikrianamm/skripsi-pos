@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     // Notify Admins about new cost (Fitur #1)
     try {
-      await createNotificationForRole("admin", {
+      await createNotificationForRole(["admin", "kasir"], {
         title: "Pengeluaran Dicatat",
         message: `${nama} sebesar ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(nominal)} telah dicatat.`,
         jenis: JenisNotif.BIAYA_DICATAT,

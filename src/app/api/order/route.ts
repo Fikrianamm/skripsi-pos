@@ -388,8 +388,7 @@ export async function POST(request: NextRequest) {
         linkUrl: `/order/${order.id}`,
       };
       await Promise.all([
-        createNotificationForRole("admin", notifInput),
-        createNotificationForRole("kasir", notifInput),
+        createNotificationForRole(["admin", "kasir", "produksi", "designer", "gudang"], notifInput),
       ]);
     } catch (e) {
       console.error("Failed to send notification:", e);

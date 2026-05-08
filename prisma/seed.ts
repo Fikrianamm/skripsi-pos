@@ -3,6 +3,7 @@ import { hash } from "@node-rs/argon2";
 import { seedFinance } from "./seed-finance";
 import { seedProduct } from "./seed-product";
 import { seedDummy } from "./seed-dummy";
+import { seedTransactions } from "./seed-transactions";
 
 async function main() {
   const defaultPassword = await hash("password");
@@ -45,15 +46,6 @@ async function main() {
       createdAt: new Date("2026-02-13T09:04:17.740Z"),
     },
     {
-      id: "c9HAcBPpHPDcT8Ld4LlIvVtfCfVLaH0B",
-      name: "Clara",
-      email: "clara@gmail.com",
-      image: "/assets/avatar/female/96.png",
-      role: "admin",
-      banned: false,
-      createdAt: new Date("2026-02-13T09:03:39.836Z"),
-    },
-    {
       id: "bfQCJ5mesozbsEfrnBZyxUMnZRU41uej",
       name: "Dani",
       email: "dani@gmail.com",
@@ -61,33 +53,6 @@ async function main() {
       role: "gudang",
       banned: false,
       createdAt: new Date("2026-02-13T09:03:22.122Z"),
-    },
-    {
-      id: "aLdfiWXIAs0nmff4NIm7Ev9KJGaFHRKf",
-      name: "Athaya Bisma",
-      email: "bisma@gmail.com",
-      image: "/assets/avatar/female/96.png",
-      role: "gudang",
-      banned: false,
-      createdAt: new Date("2026-02-13T09:02:24.818Z"),
-    },
-    {
-      id: "3tfVchg6asckjdZzRLEtSRY7L9EXwQjk",
-      name: "Jagad",
-      email: "jagad@gmail.com",
-      image: "/assets/avatar/female/96.png",
-      role: "gudang",
-      banned: false,
-      createdAt: new Date("2026-02-13T09:02:00.029Z"),
-    },
-    {
-      id: "sQr98oJTyHLsLvYy15PXW5sxjf9QTLTe",
-      name: "Aan Alma",
-      email: "aanalma@gmail.com",
-      image: "/assets/avatar/male/13.png",
-      role: "produksi",
-      banned: false,
-      createdAt: new Date("2026-02-13T09:01:27.007Z"),
     },
     {
       id: "DE606LeCej1tynBzkzcCqUkmt7UgZ6fk",
@@ -98,47 +63,44 @@ async function main() {
       banned: false,
       createdAt: new Date("2026-02-13T09:01:00.485Z"),
     },
-    {
-      id: "nrUmAClbtNeN11wWVD9zEEFVo3Xv0iPC",
-      name: "Aditia Rizky Utama",
-      email: "aditia@gmail.com",
-      image: "/assets/avatar/male/13.png",
-      role: "designer",
-      banned: false,
-      createdAt: new Date("2026-02-13T09:00:32.334Z"),
-    },
   ];
 
-  for (const userData of users) {
-    const user = await prisma.user.upsert({
-      where: { email: userData.email },
-      update: {},
-      create: {
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
-        emailVerified: false,
-        image: userData.image,
-        role: userData.role,
-        banned: userData.banned,
-        createdAt: userData.createdAt,
-        accounts: {
-          create: {
-            id: `acc_${userData.id}`,
-            accountId: userData.id,
-            providerId: "credential",
-            password: defaultPassword,
+  const userCount = await prisma.user.count();
+  if (userCount >= 11) {
+    console.log("⏭️ Users already seeded, skipping user seeding...");
+  } else {
+    for (const userData of users) {
+      const user = await prisma.user.upsert({
+        where: { email: userData.email },
+        update: {},
+        create: {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          emailVerified: false,
+          image: userData.image,
+          role: userData.role,
+          banned: userData.banned,
+          createdAt: userData.createdAt,
+          accounts: {
+            create: {
+              id: `acc_${userData.id}`,
+              accountId: userData.id,
+              providerId: "credential",
+              password: defaultPassword,
+            },
           },
         },
-      },
-    });
+      });
 
-    console.log(`✅ Seeded user: ${user.name} (${user.email})`);
+      console.log(`✅ Seeded user: ${user.name} (${user.email})`);
+    }
   }
 
   await seedFinance();
   await seedProduct();
   await seedDummy();
+  await seedTransactions();
 
   // 4. Seed AppSettings (Single row table)
   console.log("⏳ Seeding App Settings...");
@@ -148,7 +110,7 @@ async function main() {
     create: {
       id: 1,
       namaPerusahaan: "CV. Haqi Koleksi",
-      logoUrl: null, // Default icon
+      logoUrl: "/assets/hq.png", // Default icon
       alamat: "DAREN RT 04/RW 04 NALUMSARI JEPARA 59466",
       nomorKontak: "085712220484/088706695114",
       prefixOrder: "INV-HQ-",

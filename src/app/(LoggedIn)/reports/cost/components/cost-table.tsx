@@ -11,7 +11,6 @@ import {
 } from "@heroui/react";
 import { formatRupiah } from "@/lib/func";
 import { Landmark } from "lucide-react";
-import { DeleteCostModal } from "./delete-cost-modal";
 
 export interface CostData {
   id: string;
@@ -38,12 +37,11 @@ export interface CostData {
 interface CostTableProps {
   costs: CostData[];
   isLoading: boolean;
-  onSuccess?: () => void;
 }
 
 const SKELETON_ROWS = 5;
 
-export function CostTable({ costs, isLoading, onSuccess }: CostTableProps) {
+export function CostTable({ costs, isLoading }: CostTableProps) {
   return (
     <Table
       aria-label="Tabel Pengeluaran"
@@ -61,7 +59,6 @@ export function CostTable({ costs, isLoading, onSuccess }: CostTableProps) {
         <TableColumn>NOMINAL</TableColumn>
         <TableColumn>SUMBER DANA</TableColumn>
         <TableColumn>DICATAT OLEH</TableColumn>
-        <TableColumn align="end">AKSI</TableColumn>
       </TableHeader>
       <TableBody
         items={isLoading ? [] : costs}
@@ -204,12 +201,6 @@ export function CostTable({ costs, isLoading, onSuccess }: CostTableProps) {
                 />
               </TableCell>
 
-              {/* AKSI */}
-              <TableCell>
-                <div className="flex items-center justify-end">
-                  <DeleteCostModal cost={item} onSuccess={onSuccess} />
-                </div>
-              </TableCell>
             </TableRow>
           );
         }}

@@ -32,7 +32,6 @@ model User {
   designFiles       DesignFile[]
   penerimaanBarang  PenerimaanBarang[]
   pengeluaranBarang PengeluaranBarang[]
-  stokOpname        StokOpname[]
   payments          Payment[]
   costs             Cost[]
   jurnalUmum        JurnalUmum[]
@@ -191,7 +190,6 @@ model BahanBaku {
   unit        Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
   stokMasuk   StokMasuk[]
   stokKeluar  StokKeluar[]
-  opnameItems StokOpnameItem[]
 
   @@index([nama(length: 191)])
   @@index([unitId])
@@ -251,39 +249,6 @@ model StokKeluar {
   @@index([pengeluaranId])
   @@index([bahanBakuId])
   @@map("stok_keluar")
-}
-
-model StokOpname {
-  id         String           @id
-  tanggal    DateTime         @default(now())
-  keterangan String?          @db.Text
-  addedById  String?
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  deletedAt  DateTime?
-  addedBy    User?            @relation(fields: [addedById], references: [id], onDelete: SetNull)
-  items      StokOpnameItem[]
-
-  @@index([addedById])
-  @@index([tanggal])
-  @@map("stok_opname")
-}
-
-model StokOpnameItem {
-  id          String     @id
-  opnameId    String
-  bahanBakuId String
-  stokSistem  Decimal    @db.Decimal(10, 2)
-  stokFisik   Decimal    @db.Decimal(10, 2)
-  selisih     Decimal    @db.Decimal(10, 2)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  opname      StokOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
-  bahanBaku   BahanBaku  @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
-
-  @@index([opnameId])
-  @@index([bahanBakuId])
-  @@map("stok_opname_item")
 }
 
 // ============================================================

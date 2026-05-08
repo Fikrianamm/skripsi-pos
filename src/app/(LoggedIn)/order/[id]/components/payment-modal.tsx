@@ -80,6 +80,7 @@ export function PaymentModal({
 
       addToast({ title: "Berhasil", description: "Pembayaran telah dicatat", color: "success" });
       onSuccess();
+      onOpenChange(false);
     } catch {
       addToast({ title: "Error", description: "Terjadi kesalahan koneksi", color: "danger" });
     } finally {
@@ -111,7 +112,8 @@ export function PaymentModal({
                 }}
                 isRequired
                 isInvalid={nominal > sisaTagihan}
-                errorMessage={nominal > sisaTagihan ? `Maksimal Rp ${sisaTagihan.toLocaleString("id-ID")}` : ""}
+                errorMessage={nominal > sisaTagihan ? `Maksimal Rp ${sisaTagihan.toLocaleString("id-ID")}` : "Nominal harus lebih dari 0"}
+                min={1}
               />
 
               <div className="grid grid-cols-2 gap-3">

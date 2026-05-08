@@ -4,8 +4,8 @@ import { useState } from "react";
 import useSWR from "swr";
 import { fetcher, formatRupiah } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
-import { Skeleton } from "@heroui/react";
-import { FilterLanjutan, FilterSection, FilterSelect } from "@/components/filter-lanjutan";
+import { Skeleton, Tooltip as UITooltip } from "@heroui/react";
+
 import {
   TrendingUp,
   TrendingDown,
@@ -15,6 +15,9 @@ import {
   ArrowDownCircle,
   AlertCircle,
   Activity,
+  ChevronLeft,
+  ChevronRight,
+  Info,
 } from "lucide-react";
 import {
   LineChart,
@@ -34,40 +37,42 @@ import {
 const TARGET_MARGIN = 15;
 
 const MONTHS = [
-  { key: "1",  label: "Januari"   }, { key: "2",  label: "Februari"  },
-  { key: "3",  label: "Maret"     }, { key: "4",  label: "April"     },
-  { key: "5",  label: "Mei"       }, { key: "6",  label: "Juni"      },
-  { key: "7",  label: "Juli"      }, { key: "8",  label: "Agustus"   },
-  { key: "9",  label: "September" }, { key: "10", label: "Oktober"   },
-  { key: "11", label: "November"  }, { key: "12", label: "Desember"  },
+  { key: "1", label: "Januari" },
+  { key: "2", label: "Februari" },
+  { key: "3", label: "Maret" },
+  { key: "4", label: "April" },
+  { key: "5", label: "Mei" },
+  { key: "6", label: "Juni" },
+  { key: "7", label: "Juli" },
+  { key: "8", label: "Agustus" },
+  { key: "9", label: "September" },
+  { key: "10", label: "Oktober" },
+  { key: "11", label: "November" },
+  { key: "12", label: "Desember" },
 ];
-const YEARS = Array.from({ length: 5 }, (_, i) => {
-  const y = new Date().getFullYear() - i;
-  return { key: String(y), label: String(y) };
-});
 
 const BIAYA_COLORS = ["#6366f1", "#f59e0b", "#22c55e", "#3b82f6"];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type DashboardData = {
-  totalPendapatan:  number;
+  totalPendapatan: number;
   totalPengeluaran: number;
-  labaBersih:       number;
-  totalPiutang:     number;
-  persenPendapatan:  number;
+  labaBersih: number;
+  totalPiutang: number;
+  persenPendapatan: number;
   persenPengeluaran: number;
-  persenLabaBersih:  number;
+  persenLabaBersih: number;
   chartData: { label: string; pendapatan: number; pengeluaran: number }[];
 };
 
 type AkunRow = { kode: string; nama: string; total: number };
 type LabaRugiData = {
-  pendapatan:  AkunRow[];
-  bebanUsaha:  AkunRow[];
+  pendapatan: AkunRow[];
+  bebanUsaha: AkunRow[];
   totalPendapatan: number;
   totalBebanUsaha: number;
-  labaBersih:      number;
-  margin:          number;
+  labaBersih: number;
+  margin: number;
 };
 
 // ─── Small Components ────────────────────────────────────────────────────────
@@ -93,20 +98,33 @@ function TrendBadge({ persen }: { persen: number }) {
 
 interface KpiCardProps {
   title: string;
-  value:number;
+  value: number;
   persen?: number;
   icon: React.ReactNode;
-  accentColor: string;  // Tailwind bg- class for left border
+  accentColor: string; // Tailwind bg- class for left border
   iconBg: string;
   iconColor: string;
   isLoading?: boolean;
 }
-function KpiCard({ title, value, persen, icon, accentColor, iconBg, iconColor, isLoading }: KpiCardProps) {
+function KpiCard({
+  title,
+  value,
+  persen,
+  icon,
+  accentColor,
+  iconBg,
+  iconColor,
+  isLoading,
+}: KpiCardProps) {
   return (
     <div className="relative flex flex-col gap-3 p-5 rounded-xl border border-default-200 bg-content1 overflow-hidden shadow-sm">
-      <div className={`absolute left-0 top-0 h-full w-1 rounded-l-xl ${accentColor}`} />
+      <div
+        className={`absolute left-0 top-0 h-full w-1 rounded-l-xl ${accentColor}`}
+      />
       <div className="flex items-center justify-between">
-        <span className="text-xs text-default-500 font-semibold uppercase tracking-wide">{title}</span>
+        <span className="text-xs text-default-500 font-semibold uppercase tracking-wide">
+          {title}
+        </span>
         <div className={`p-2 rounded-lg ${iconBg}`}>
           <span className={iconColor}>{icon}</span>
         </div>
@@ -128,33 +146,56 @@ function KpiCard({ title, value, persen, icon, accentColor, iconBg, iconColor, i
   );
 }
 
-function MarginCard({ margin, isLoading }: { margin: number; isLoading?: boolean }) {
+function MarginCard({
+  margin,
+  isLoading,
+}: {
+  margin: number;
+  isLoading?: boolean;
+}) {
   const isMet = margin >= TARGET_MARGIN;
   return (
     <div
       className={`relative flex flex-col gap-3 p-5 rounded-xl border overflow-hidden shadow-sm ${
-        isMet ? "bg-success-50 border-success-200" : "bg-warning-50 border-warning-200"
+        isMet
+          ? "bg-success-50 border-success-200"
+          : "bg-warning-50 border-warning-200"
       }`}
     >
-      <div className={`absolute left-0 top-0 h-full w-1 rounded-l-xl ${isMet ? "bg-success-500" : "bg-warning-500"}`} />
+      <div
+        className={`absolute left-0 top-0 h-full w-1 rounded-l-xl ${isMet ? "bg-success-500" : "bg-warning-500"}`}
+      />
       <div className="flex items-center justify-between">
-        <span className={`text-xs font-semibold uppercase tracking-wide ${isMet ? "text-success-700" : "text-warning-700"}`}>
+        <span
+          className={`text-xs font-semibold uppercase tracking-wide ${isMet ? "text-success-700" : "text-warning-700"}`}
+        >
           Profit Margin
         </span>
-        <div className={`p-2 rounded-lg ${isMet ? "bg-success-100" : "bg-warning-100"}`}>
-          <Activity size={16} className={isMet ? "text-success-700" : "text-warning-700"} />
+        <div
+          className={`p-2 rounded-lg ${isMet ? "bg-success-100" : "bg-warning-100"}`}
+        >
+          <Activity
+            size={16}
+            className={isMet ? "text-success-700" : "text-warning-700"}
+          />
         </div>
       </div>
       {isLoading ? (
         <Skeleton className="h-10 w-24 rounded-lg" />
       ) : (
-        <span className={`text-3xl font-bold tabular-nums ${isMet ? "text-success-800" : "text-warning-800"}`}>
+        <span
+          className={`text-3xl font-bold tabular-nums ${isMet ? "text-success-800" : "text-warning-800"}`}
+        >
           {margin.toFixed(1)}%
         </span>
       )}
       {!isLoading && (
-        <span className={`text-[11px] font-semibold ${isMet ? "text-success-600" : "text-warning-600"}`}>
-          {isMet ? `✓ Target ${TARGET_MARGIN}% tercapai` : `✗ Di bawah target ${TARGET_MARGIN}%`}
+        <span
+          className={`text-[11px] font-semibold ${isMet ? "text-success-600" : "text-warning-600"}`}
+        >
+          {isMet
+            ? `✓ Target ${TARGET_MARGIN}% tercapai`
+            : `✗ Di bawah target ${TARGET_MARGIN}%`}
         </span>
       )}
     </div>
@@ -164,15 +205,45 @@ function MarginCard({ margin, isLoading }: { margin: number; isLoading?: boolean
 // ─── Tooltip formatter ───────────────────────────────────────────────────────
 const fmtTooltip = (v: unknown) => [formatRupiah(Number(v ?? 0)), ""];
 const fmtAxis = (v: number) =>
-  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}jt`
-  : v >= 1_000   ? `${(v / 1_000).toFixed(0)}rb`
-  : String(v);
+  v >= 1_000_000
+    ? `${(v / 1_000_000).toFixed(0)}jt`
+    : v >= 1_000
+      ? `${(v / 1_000).toFixed(0)}rb`
+      : String(v);
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function DashboardKeuanganPage() {
   const now = new Date();
   const [bulan, setBulan] = useState(String(now.getMonth() + 1));
   const [tahun, setTahun] = useState(String(now.getFullYear()));
+
+  const prevMonth = () => {
+    let b = parseInt(bulan);
+    let t = parseInt(tahun);
+    if (b === 1) {
+      b = 12;
+      t -= 1;
+    } else {
+      b -= 1;
+    }
+    setBulan(String(b));
+    setTahun(String(t));
+  };
+
+  const nextMonth = () => {
+    let b = parseInt(bulan);
+    let t = parseInt(tahun);
+    if (b === 12) {
+      b = 1;
+      t += 1;
+    } else {
+      b += 1;
+    }
+    setBulan(String(b));
+    setTahun(String(t));
+  };
+
+  const periodLabel = `${MONTHS.find((m) => m.key === bulan)?.label || ""} ${tahun}`;
 
   const { data: dash, isLoading: loadingDash } = useSWR<DashboardData>(
     `/api/finance/dashboard?month=${bulan}&year=${tahun}`,
@@ -186,11 +257,45 @@ export default function DashboardKeuanganPage() {
   const isLoading = loadingDash || loadingPL;
 
   // Operational cost chart data
-  const biayaData = (pl?.bebanUsaha ?? [])
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5) // Top 5
-    .map((b) => ({ name: b.nama, value: b.total }));
+  const groupedBiaya = () => {
+    const beban = pl?.bebanUsaha ?? [];
+    
+    const sumGroup = (keywords: string[]) => {
+      const lowerKeywords = keywords.map(k => k.toLowerCase());
+      return beban
+        .filter(r => lowerKeywords.some(kw => r.nama.toLowerCase().includes(kw)))
+        .reduce((sum, r) => sum + r.total, 0);
+    };
 
+    return [
+      { name: "Marketing", value: sumGroup(["iklan - marketplace", "iklan - ads"]) },
+      { name: "Gaji & Tunjangan", value: sumGroup(["gaji semua karyawan", "gaji ceo", "gaji magang", "thr"]) },
+      { name: "Fasilitas & Utilitas", value: sumGroup(["internet", "wifi", "pdam", "listrik", "service", "kebersihan", "sampah", "kuota"]) },
+      { name: "Admin & Umum", value: sumGroup(["perlengkapan", "atk", "konsumsi", "catering", "bbm", "obat", "kesehatan", "langganan tools", "admin bulanan", "kirim manual", "resi"]) },
+      { name: "Pengembangan", value: sumGroup(["gathering", "piknik", "kegiatan kantor", "pengembangan sdm"]) },
+      { name: "Lain-lain", value: sumGroup(["csr", "kado", "kenang-kenangan", "buah tangan"]) }
+    ].sort((a, b) => b.value - a.value);
+  };
+
+  const biayaData = groupedBiaya();
+
+  // Rincian Pendapatan — progress bar list
+  const incomeDetails = () => {
+    const list = [
+      { nama: "Pendapatan - KONVEKSI", total: 0, kode: "4-001" },
+      { nama: "Pendapatan - R PRINTING", total: 0, kode: "4-002" },
+      { nama: "Pendapatan - TEXTILE", total: 0, kode: "4-003" },
+    ];
+    
+    (pl?.pendapatan ?? []).forEach(row => {
+      const idx = list.findIndex(l => l.nama.toLowerCase() === row.nama.toLowerCase());
+      if (idx !== -1) list[idx].total = row.total;
+    });
+
+    return list.sort((a, b) => b.total - a.total);
+  };
+
+  const incomeData = incomeDetails();
   const totalPendapatanPL = pl?.totalPendapatan ?? 0;
 
   return (
@@ -200,24 +305,23 @@ export default function DashboardKeuanganPage() {
         description="Ringkasan kesehatan keuangan perusahaan berdasarkan data akuntansi"
       />
 
-      {/* ── Period Selector ── */}
-      <div className="flex gap-2 items-center">
-        <FilterLanjutan
-          activeCount={
-            bulan !== String(now.getMonth() + 1) || tahun !== String(now.getFullYear()) ? 1 : 0
-          }
-          onReset={() => {
-            setBulan(String(now.getMonth() + 1));
-            setTahun(String(now.getFullYear()));
-          }}
+      {/* Period Navigator */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={prevMonth}
+          className="p-1.5 rounded-lg border border-default-200 hover:bg-default-100 transition-colors"
         >
-          <FilterSection label="Bulan">
-            <FilterSelect options={MONTHS} value={bulan} onChange={setBulan} />
-          </FilterSection>
-          <FilterSection label="Tahun">
-            <FilterSelect options={YEARS} value={tahun} onChange={setTahun} />
-          </FilterSection>
-        </FilterLanjutan>
+          <ChevronLeft size={16} />
+        </button>
+        <span className="text-sm font-semibold text-foreground min-w-[140px] text-center">
+          {periodLabel}
+        </span>
+        <button
+          onClick={nextMonth}
+          className="p-1.5 rounded-lg border border-default-200 hover:bg-default-100 transition-colors"
+        >
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* ── Section 1: KPI Cards ── */}
@@ -247,9 +351,15 @@ export default function DashboardKeuanganPage() {
           value={pl?.labaBersih ?? 0}
           persen={dash?.persenLabaBersih}
           icon={<DollarSign size={16} />}
-          accentColor={(pl?.labaBersih ?? 0) >= 0 ? "bg-primary-500" : "bg-danger-500"}
-          iconBg={(pl?.labaBersih ?? 0) >= 0 ? "bg-primary-100" : "bg-danger-100"}
-          iconColor={(pl?.labaBersih ?? 0) >= 0 ? "text-primary-700" : "text-danger-700"}
+          accentColor={
+            (pl?.labaBersih ?? 0) >= 0 ? "bg-primary-500" : "bg-danger-500"
+          }
+          iconBg={
+            (pl?.labaBersih ?? 0) >= 0 ? "bg-primary-100" : "bg-danger-100"
+          }
+          iconColor={
+            (pl?.labaBersih ?? 0) >= 0 ? "text-primary-700" : "text-danger-700"
+          }
           isLoading={isLoading}
         />
         <MarginCard margin={pl?.margin ?? 0} isLoading={isLoading} />
@@ -318,10 +428,31 @@ export default function DashboardKeuanganPage() {
       {/* ── Section 3: 2-col — Biaya Operasional + Rincian Pendapatan ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Biaya Operasional — horizontal bar chart */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-default-700 mb-1">
-            Biaya Operasional
-          </h3>
+        <div className="flex flex-col bg-content1 border border-default-200 rounded-xl p-5 shadow-sm h-full">
+          <div className="flex items-center gap-1.5 mb-1">
+            <h3 className="text-sm font-semibold text-default-700">
+              Biaya Operasional
+            </h3>
+            <UITooltip
+              content={
+                <div className="px-1 py-2 max-w-xs text-xs">
+                  <p className="font-semibold mb-1">Pengelompokan Biaya:</p>
+                  <ul className="list-disc pl-3 flex flex-col gap-1 text-default-500">
+                    <li><b>Marketing:</b> Iklan marketplace & ads.</li>
+                    <li><b>Gaji & Tunjangan:</b> Gaji karyawan, magang, THR, bonus.</li>
+                    <li><b>Fasilitas & Utilitas:</b> Listrik, internet, PDAM, kebersihan, kuota.</li>
+                    <li><b>Admin & Umum:</b> Perlengkapan, ATK, konsumsi, BBM, langganan tools.</li>
+                    <li><b>Pengembangan:</b> Gathering, CSR, kegiatan kantor.</li>
+                    <li><b>Lain-lain:</b> Kado, kenang-kenangan.</li>
+                  </ul>
+                </div>
+              }
+              placement="right"
+              className="bg-content1 text-default-700 shadow-md border border-default-200"
+            >
+              <Info size={14} className="text-default-400 cursor-help" />
+            </UITooltip>
+          </div>
           <p className="text-xs text-default-400 mb-4">
             Total:{" "}
             <span className="font-semibold text-default-700">
@@ -329,13 +460,14 @@ export default function DashboardKeuanganPage() {
             </span>
           </p>
           {isLoading ? (
-            <div className="flex flex-col gap-3">
-              {[...Array(4)].map((_, i) => (
+            <div className="flex flex-col gap-3 flex-1">
+              {[...Array(6)].map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full rounded-lg" />
               ))}
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <div className="flex-1 min-h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"
                 data={biayaData}
@@ -373,37 +505,34 @@ export default function DashboardKeuanganPage() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
 
         {/* Rincian Pendapatan — progress bar list */}
-        <div className="bg-content1 border border-default-200 rounded-xl p-5 shadow-sm">
+        <div className="flex flex-col bg-content1 border border-default-200 rounded-xl p-5 shadow-sm h-full">
           <h3 className="text-sm font-semibold text-default-700 mb-1">
             Rincian Pendapatan
           </h3>
-          <p className="text-xs text-default-400 mb-4">
+          <p className="text-xs text-default-400 mb-4 sm:mb-0">
             Total:{" "}
             <span className="font-semibold text-default-700">
               {formatRupiah(totalPendapatanPL)}
             </span>
           </p>
           {isLoading ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 flex-1">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full rounded-lg" />
               ))}
             </div>
-          ) : (pl?.pendapatan ?? []).length === 0 ? (
-            <p className="text-xs text-default-400 text-center py-8">
-              Belum ada data pendapatan
-            </p>
           ) : (
-            <div className="flex flex-col gap-4">
-              {(pl?.pendapatan ?? [])
-                .sort((a, b) => b.total - a.total)
-                .map((row) => {
+            <div className="flex flex-col justify-evenly flex-1 gap-4 sm:gap-0">
+              {incomeData.map((row) => {
                   const pct =
-                    totalPendapatanPL > 0 ? (row.total / totalPendapatanPL) * 100 : 0;
+                    totalPendapatanPL > 0
+                      ? (row.total / totalPendapatanPL) * 100
+                      : 0;
                   return (
                     <div key={row.kode} className="flex flex-col gap-1">
                       <div className="flex items-center justify-between text-xs">
@@ -422,7 +551,7 @@ export default function DashboardKeuanganPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-default-100 overflow-hidden">
+                      <div className="w-full h-4 rounded-full bg-default-100 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-success-400 transition-all duration-500"
                           style={{ width: `${pct}%` }}
@@ -455,41 +584,53 @@ export default function DashboardKeuanganPage() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-success-700 mb-3 bg-success-50 px-3 py-1 rounded-md inline-block">
                 Pendapatan
               </h4>
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-default-100">
-                  {[
-                    "pendapatan - konveksi",
-                    "pendapatan - R printing",
-                    "pendapatan - textile",
-                  ].map((nama) => {
-                    const row = (pl?.pendapatan ?? []).find(
-                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
-                    );
-                    const total = row?.total ?? 0;
-                    const pct = totalPendapatanPL > 0 ? (total / totalPendapatanPL) * 100 : 0;
-                    return (
-                      <tr key={nama} className="hover:bg-default-50 transition-colors">
-                        <td className="py-2.5 text-default-700 capitalize">
-                          {nama}
+              <div className="flex flex-col gap-6">
+                <div className="border border-default-100 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-default-100">
+                      {[
+                        "pendapatan - konveksi",
+                        "pendapatan - R printing",
+                        "pendapatan - textile",
+                      ].map((nama) => {
+                        const row = (pl?.pendapatan ?? []).find(
+                          (r) => r.nama.toLowerCase() === nama.toLowerCase(),
+                        );
+                        const total = row?.total ?? 0;
+                        const pct =
+                          totalPendapatanPL > 0
+                            ? (total / totalPendapatanPL) * 100
+                            : 0;
+                        return (
+                          <tr
+                            key={nama}
+                            className="hover:bg-default-50 transition-colors"
+                          >
+                            <td className="py-2 px-3 text-default-700 capitalize">
+                              {nama}
+                            </td>
+                            <td className="py-2 px-3 text-right font-semibold tabular-nums text-default-900">
+                              {formatRupiah(total)}
+                            </td>
+                            <td className="py-2 px-3 text-right text-default-400 w-24">
+                              {pct.toFixed(1)}%
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="bg-success-50/50 font-bold">
+                        <td className="py-2.5 px-3 text-default-900">
+                          Total Pendapatan
                         </td>
-                        <td className="py-2.5 text-right font-semibold tabular-nums text-default-900">
-                          {formatRupiah(total)}
+                        <td className="py-2.5 px-3 text-right tabular-nums text-success-700">
+                          {formatRupiah(totalPendapatanPL)}
                         </td>
-                        <td className="py-2.5 text-right text-default-400 w-24">
-                          {pct.toFixed(1)}%
-                        </td>
+                        <td className="py-2.5 px-3 text-right">100%</td>
                       </tr>
-                    );
-                  })}
-                  <tr className="bg-success-50/50 font-bold">
-                    <td className="py-3 text-default-900">Total Pendapatan</td>
-                    <td className="py-3 text-right tabular-nums text-success-700">
-                      {formatRupiah(totalPendapatanPL)}
-                    </td>
-                    <td className="py-3 text-right">100%</td>
-                  </tr>
-                </tbody>
-              </table>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             {/* PENGELUARAN */}
@@ -503,7 +644,7 @@ export default function DashboardKeuanganPage() {
                   const items = ["B. HPP", "B. Gaji Borongan"];
                   const totalHPP = items.reduce((sum, nama) => {
                     const row = (pl?.bebanUsaha ?? []).find(
-                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase(),
                     );
                     return sum + (row?.total ?? 0);
                   }, 0);
@@ -513,10 +654,13 @@ export default function DashboardKeuanganPage() {
                         <tbody className="divide-y divide-default-100">
                           {items.map((nama) => {
                             const row = (pl?.bebanUsaha ?? []).find(
-                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                              (r) =>
+                                r.nama.toLowerCase() === nama.toLowerCase(),
                             );
                             const total = row?.total ?? 0;
-                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            const pct = pl?.totalBebanUsaha
+                              ? (total / pl.totalBebanUsaha) * 100
+                              : 0;
                             return (
                               <tr key={nama}>
                                 <td className="py-2 px-3 text-default-600">
@@ -539,7 +683,11 @@ export default function DashboardKeuanganPage() {
                               {formatRupiah(totalHPP)}
                             </td>
                             <td className="py-2.5 px-3 text-right">
-                              {(pl?.totalBebanUsaha ? (totalHPP / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                              {(pl?.totalBebanUsaha
+                                ? (totalHPP / pl.totalBebanUsaha) * 100
+                                : 0
+                              ).toFixed(1)}
+                              %
                             </td>
                           </tr>
                         </tbody>
@@ -550,10 +698,13 @@ export default function DashboardKeuanganPage() {
 
                 {/* MARKETING GROUP */}
                 {(() => {
-                  const items = ["Biaya Iklan - MARKETPLACE", "Biaya Iklan - ADS"];
+                  const items = [
+                    "Biaya Iklan - MARKETPLACE",
+                    "Biaya Iklan - ADS",
+                  ];
                   const totalMkt = items.reduce((sum, nama) => {
                     const row = (pl?.bebanUsaha ?? []).find(
-                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase(),
                     );
                     return sum + (row?.total ?? 0);
                   }, 0);
@@ -563,10 +714,13 @@ export default function DashboardKeuanganPage() {
                         <tbody className="divide-y divide-default-100">
                           {items.map((nama) => {
                             const row = (pl?.bebanUsaha ?? []).find(
-                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                              (r) =>
+                                r.nama.toLowerCase() === nama.toLowerCase(),
                             );
                             const total = row?.total ?? 0;
-                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            const pct = pl?.totalBebanUsaha
+                              ? (total / pl.totalBebanUsaha) * 100
+                              : 0;
                             return (
                               <tr key={nama}>
                                 <td className="py-2 px-3 text-default-600">
@@ -589,7 +743,11 @@ export default function DashboardKeuanganPage() {
                               {formatRupiah(totalMkt)}
                             </td>
                             <td className="py-2.5 px-3 text-right">
-                              {(pl?.totalBebanUsaha ? (totalMkt / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                              {(pl?.totalBebanUsaha
+                                ? (totalMkt / pl.totalBebanUsaha) * 100
+                                : 0
+                              ).toFixed(1)}
+                              %
                             </td>
                           </tr>
                         </tbody>
@@ -608,7 +766,7 @@ export default function DashboardKeuanganPage() {
                   ];
                   const totalGaji = items.reduce((sum, nama) => {
                     const row = (pl?.bebanUsaha ?? []).find(
-                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase(),
                     );
                     return sum + (row?.total ?? 0);
                   }, 0);
@@ -618,10 +776,13 @@ export default function DashboardKeuanganPage() {
                         <tbody className="divide-y divide-default-100">
                           {items.map((nama) => {
                             const row = (pl?.bebanUsaha ?? []).find(
-                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                              (r) =>
+                                r.nama.toLowerCase() === nama.toLowerCase(),
                             );
                             const total = row?.total ?? 0;
-                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            const pct = pl?.totalBebanUsaha
+                              ? (total / pl.totalBebanUsaha) * 100
+                              : 0;
                             return (
                               <tr key={nama}>
                                 <td className="py-2 px-3 text-default-600">
@@ -644,7 +805,11 @@ export default function DashboardKeuanganPage() {
                               {formatRupiah(totalGaji)}
                             </td>
                             <td className="py-2.5 px-3 text-right">
-                              {(pl?.totalBebanUsaha ? (totalGaji / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                              {(pl?.totalBebanUsaha
+                                ? (totalGaji / pl.totalBebanUsaha) * 100
+                                : 0
+                              ).toFixed(1)}
+                              %
                             </td>
                           </tr>
                         </tbody>
@@ -675,7 +840,7 @@ export default function DashboardKeuanganPage() {
                   ];
                   const totalAdm = items.reduce((sum, nama) => {
                     const row = (pl?.bebanUsaha ?? []).find(
-                      (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                      (r) => r.nama.toLowerCase() === nama.toLowerCase(),
                     );
                     return sum + (row?.total ?? 0);
                   }, 0);
@@ -685,10 +850,13 @@ export default function DashboardKeuanganPage() {
                         <tbody className="divide-y divide-default-100">
                           {items.map((nama) => {
                             const row = (pl?.bebanUsaha ?? []).find(
-                              (r) => r.nama.toLowerCase() === nama.toLowerCase()
+                              (r) =>
+                                r.nama.toLowerCase() === nama.toLowerCase(),
                             );
                             const total = row?.total ?? 0;
-                            const pct = pl?.totalBebanUsaha ? (total / pl.totalBebanUsaha) * 100 : 0;
+                            const pct = pl?.totalBebanUsaha
+                              ? (total / pl.totalBebanUsaha) * 100
+                              : 0;
                             return (
                               <tr key={nama}>
                                 <td className="py-2 px-3 text-default-600">
@@ -711,7 +879,11 @@ export default function DashboardKeuanganPage() {
                               {formatRupiah(totalAdm)}
                             </td>
                             <td className="py-2.5 px-3 text-right">
-                              {(pl?.totalBebanUsaha ? (totalAdm / pl.totalBebanUsaha) * 100 : 0).toFixed(1)}%
+                              {(pl?.totalBebanUsaha
+                                ? (totalAdm / pl.totalBebanUsaha) * 100
+                                : 0
+                              ).toFixed(1)}
+                              %
                             </td>
                           </tr>
                         </tbody>
@@ -720,12 +892,12 @@ export default function DashboardKeuanganPage() {
                   );
                 })()}
 
-                <div className="mt-4 pt-4 border-t-2 border-default-200">
-                  <div className="flex justify-between items-center bg-default-900 text-white p-4 rounded-xl shadow-lg">
+                <div className="pt-4 border-t-2 border-default-200">
+                  <div className="flex justify-between items-center bg-default-900 text-white p-3 rounded-xl shadow-lg">
                     <span className="text-sm font-bold uppercase tracking-widest">
                       Total Seluruh Pengeluaran
                     </span>
-                    <span className="text-xl font-black tabular-nums">
+                    <span className="text-base font-black tabular-nums">
                       {formatRupiah(pl?.totalBebanUsaha ?? 0)}
                     </span>
                   </div>

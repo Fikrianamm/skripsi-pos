@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import useSWR from "swr";
-import { fetcher, formatRupiah } from "@/lib/func";
+import { fetcher } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
 import { JurnalTable, JurnalItem } from "./components/jurnal-table";
 import { JurnalModal } from "./components/jurnal-modal";
@@ -13,8 +13,6 @@ import {
   FilterSection,
   FilterSelect,
 } from "@/components/filter-lanjutan";
-import { Skeleton } from "@heroui/react";
-import { BookOpen, Hash } from "lucide-react";
 import { DeleteConfirmModal } from "./components/delete-confirm-modal";
 import { addToast } from "@heroui/toast";
 
@@ -58,12 +56,6 @@ export default function JurnalPage() {
     fetcher,
   );
   const jurnals: JurnalItem[] = useMemo(() => data?.jurnals ?? [], [data]);
-  const totalNominal: number = data?.totalNominal ?? 0;
-
-  const periodLabel = useMemo(() => {
-    const bl = MONTHS.find((m) => m.key === bulan);
-    return bl && bl.key !== "0" ? `${bl.label} ${tahun}` : `Tahun ${tahun}`;
-  }, [bulan, tahun]);
 
   const handleDelete = (item: JurnalItem) => {
     setSelectedItem(item);
@@ -103,47 +95,6 @@ export default function JurnalPage() {
         title="Jurnal Umum"
         description="Pusat pencatatan seluruh aliran finansial — tersinkronisasi dari Pembayaran, Biaya, dan Tabungan. Input jurnal koreksi di sini."
       />
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Total Nominal */}
-        <div className="relative flex items-center gap-4 p-4 rounded-xl border border-default-200 bg-linear-to-br from-primary-50/60 to-default-50 overflow-hidden">
-          <div className="absolute left-0 top-0 h-full w-1 rounded-l-xl bg-primary-400" />
-          <div className="p-2.5 rounded-lg bg-white shadow-sm border border-default-100 ml-2">
-            <BookOpen size={18} className="text-primary-500" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs text-default-500 font-semibold uppercase tracking-wide">Total Nominal</span>
-            {isLoading ? (
-              <Skeleton className="h-7 w-36 rounded-lg mt-1" />
-            ) : (
-              <span className="text-2xl font-bold text-default-900 tabular-nums tracking-tight">
-                {formatRupiah(totalNominal)}
-              </span>
-            )}
-            <span className="text-[11px] text-primary-500 font-medium mt-0.5">{periodLabel}</span>
-          </div>
-        </div>
-
-        {/* Jumlah Entri */}
-        <div className="relative flex items-center gap-4 p-4 rounded-xl border border-default-200 bg-linear-to-br from-default-100/60 to-default-50 overflow-hidden">
-          <div className="absolute left-0 top-0 h-full w-1 rounded-l-xl bg-default-400" />
-          <div className="p-2.5 rounded-lg bg-white shadow-sm border border-default-100 ml-2">
-            <Hash size={18} className="text-default-500" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs text-default-500 font-semibold uppercase tracking-wide">Jumlah Entri</span>
-            {isLoading ? (
-              <Skeleton className="h-7 w-20 rounded-lg mt-1" />
-            ) : (
-              <span className="text-2xl font-bold text-default-900 tabular-nums tracking-tight">
-                {jurnals.length.toLocaleString("id-ID")}
-              </span>
-            )}
-            <span className="text-[11px] text-default-500 font-medium mt-0.5">transaksi tercatat</span>
-          </div>
-        </div>
-      </div>
 
       {/* Filter + Action bar */}
       <div className="flex flex-col md:flex-row gap-2">
@@ -188,7 +139,6 @@ export default function JurnalPage() {
       <JurnalTable
         jurnals={jurnals}
         isLoading={isLoading}
-        totalNominal={totalNominal}
         onDeleted={handleDelete}
       />
 

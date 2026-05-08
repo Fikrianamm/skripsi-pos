@@ -248,8 +248,7 @@ export async function POST(request: NextRequest) {
         linkUrl: "/inventory/in",
       };
       await Promise.all([
-        createNotificationForRole("admin", notifInput),
-        createNotificationForRole("gudang", notifInput),
+        createNotificationForRole(["admin", "gudang"], notifInput),
       ]);
     } catch (e) {
       console.error("Failed to send notification:", e);

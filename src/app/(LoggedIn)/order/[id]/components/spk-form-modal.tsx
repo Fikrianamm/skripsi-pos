@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Modal,
   ModalBody,
@@ -18,7 +18,6 @@ import { useForm, Controller } from "react-hook-form";
 import { fetcher } from "@/lib/func";
 import useSWR from "swr";
 import { z } from "zod";
-import { OrderItem } from "./types";
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
 
 const spkSchema = z.object({
@@ -38,7 +37,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   orderId: string;
   nomorOrder: string;
-  items: OrderItem[];
+  order: {
+    items: {
+      nama: string;
+      qty: number;
+      product?: { sku: string } | null;
+    }[];
+  };
   onSuccess: () => void;
 }
 
@@ -47,11 +52,17 @@ export function SpkFormModal({
   onOpenChange,
   orderId,
   nomorOrder,
-  items,
+  order,
   onSuccess,
 }: Props) {
+  const suggestedModel = useMemo(() => {
+    return (order?.items || [])
+      .map((item) => `${item.product?.sku || item.nama} x${item.qty}`)
+      .join(", ");
+  }, [order.items]);
+  
   const [globalError, setGlobalError] = useState("");
-  const totalQty = items.reduce((sum, i) => sum + Number(i.qty), 0);
+  const totalQty = order.items.reduce((sum, i) => sum + Number(i.qty), 0);
   const [displayJumlah, setDisplayJumlah] = useState<number>(totalQty || 1);
 
   const { data: karyawanData } = useSWR(
@@ -63,9 +74,9 @@ export function SpkFormModal({
 
   const form = useForm<SpkFormData>({
     resolver: zodResolver(spkSchema),
-    defaultValues: {
+    values: {
       karyawanId: "",
-      model: "",
+      model: suggestedModel || "",
       tali: "",
       ukuran: "",
       jumlah: String(totalQty || 1),
@@ -75,10 +86,16 @@ export function SpkFormModal({
   });
 
   useEffect(() => {
+  // Hanya set value ketika modal sedang dalam keadaan terbuka
+  if (isOpen) {
+    if (suggestedModel) {
+      form.setValue("model", suggestedModel);
+    }
     if (totalQty > 0) {
       form.setValue("jumlah", String(totalQty));
     }
-  }, [totalQty, form]);
+  }
+}, [isOpen, suggestedModel, totalQty, form]);
 
   async function onSubmit(data: SpkFormData) {
     setGlobalError("");
@@ -191,7 +208,7 @@ export function SpkFormModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Tali / Aksesori"
+                  label="Tali / Aksesoris"
                   placeholder="Detail tali, kancing, ..."
                   {...form.register("tali")}
                   isDisabled={form.formState.isSubmitting}

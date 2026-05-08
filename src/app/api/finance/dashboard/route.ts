@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
     );
 
     const [
-      paymentCurrent,
-      paymentPrev,
-      costCurrent,
-      costPrev,
-      todayPayment,
+      sumPayCurrent,
+      sumPayPrev,
+      sumCostCurrent,
+      sumCostPrev,
+      sumPayToday,
       totalCustomer,
       newOrdersToday,
       activeOrders,
@@ -57,38 +57,40 @@ export async function GET(request: NextRequest) {
       chartPayments,
       chartCosts,
     ] = await Promise.all([
-      // Monthly payments
+      // 0: Monthly payments current
       prisma.payment.aggregate({
         _sum: { nominal: true },
-        where: { tanggal: { gte: startCurrent, lte: endCurrent } },
+        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
       }),
+      // 1: Monthly payments prev
       prisma.payment.aggregate({
         _sum: { nominal: true },
-        where: { tanggal: { gte: startPrev, lte: endPrev } },
+        where: { tanggal: { gte: startPrev, lte: endPrev }, deletedAt: null },
       }),
-      // Monthly costs
+      // 2: Monthly costs current
       prisma.cost.aggregate({
         _sum: { nominal: true },
-        where: { tanggal: { gte: startCurrent, lte: endCurrent } },
+        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
       }),
+      // 3: Monthly costs prev
       prisma.cost.aggregate({
         _sum: { nominal: true },
-        where: { tanggal: { gte: startPrev, lte: endPrev } },
+        where: { tanggal: { gte: startPrev, lte: endPrev }, deletedAt: null },
       }),
-      // Today's payment total
+      // 4: Today's payment total
       prisma.payment.aggregate({
         _sum: { nominal: true },
-        where: { tanggal: { gte: startOfToday } },
+        where: { tanggal: { gte: startOfToday }, deletedAt: null },
       }),
-      // Total customers
+      // 5: Total customers
       prisma.customer.count({ where: { deletedAt: null } }),
-      // New orders today
+      // 6: New orders today
       prisma.order.count({ where: { createdAt: { gte: startOfToday }, deletedAt: null } }),
-      // Active orders (not SELESAI or BATAL)
+      // 7: Active orders (not SELESAI or BATAL)
       prisma.order.count({
         where: { statusProduksi: { notIn: ["SELESAI", "BATAL"] }, deletedAt: null },
       }),
-      // Piutang
+      // 8: Piutang
       prisma.order.findMany({
         where: { statusPembayaran: { in: ["BELUM_BAYAR", "DP"] }, deletedAt: null },
         select: {
@@ -96,17 +98,17 @@ export async function GET(request: NextRequest) {
           payments: { select: { nominal: true } },
         },
       }),
-      // Fetch all active materials with minStok to filter in JS
+      // 9: Fetch all active materials
       prisma.bahanBaku.findMany({
         where: { isActive: true, minStok: { not: null } },
         select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
       }),
-      // Fetch all products with minStok to filter in JS
+      // 10: Fetch all products
       prisma.product.findMany({
         where: { isService: false, minStok: { not: null }, deletedAt: null },
         select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
       }),
-      // Recent orders (last 5)
+      // 11: Recent orders (last 5)
       prisma.order.findMany({
         where: { deletedAt: null },
         select: {
@@ -121,12 +123,12 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
-      // Chart payments
+      // 12: Chart payments
       prisma.payment.findMany({
         where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
         select: { nominal: true, tanggal: true },
       }),
-      // Chart costs
+      // 13: Chart costs
       prisma.cost.findMany({
         where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
         select: { nominal: true, tanggal: true },
@@ -144,11 +146,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => Number(a.stok) - Number(b.stok))
       .slice(0, 10);
 
-    const totalPendapatan = Number(paymentCurrent._sum.nominal ?? 0);
-    const totalPengeluaran = Number(costCurrent._sum.nominal ?? 0);
-    const prevPendapatan = Number(paymentPrev._sum.nominal ?? 0);
-    const prevPengeluaran = Number(costPrev._sum.nominal ?? 0);
-    const todaySales = Number(todayPayment._sum.nominal ?? 0);
+    const todaySales = Number(sumPayToday._sum.nominal ?? 0);
 
     const totalPiutang = piutangOrders.reduce((sum, o) => {
       const dibayar = o.payments.reduce((s, p) => s + Number(p.nominal), 0);
@@ -161,19 +159,6 @@ export async function GET(request: NextRequest) {
       pendapatan: 0,
       pengeluaran: 0,
     }));
-
-    for (const p of chartPayments) {
-      const day = new Date(p.tanggal).getDate();
-      const w = Math.min(Math.floor((day - 1) / 7), 4); // 0 to 4
-      weeks[w].pendapatan += Number(p.nominal);
-    }
-    for (const c of chartCosts) {
-      const day = new Date(c.tanggal).getDate();
-      const w = Math.min(Math.floor((day - 1) / 7), 4);
-      weeks[w].pengeluaran += Number(c.nominal);
-    }
-
-    // Chart data: grouped by month in the selected year
     const months: { label: string; pendapatan: number; pengeluaran: number }[] =
       Array.from({ length: 12 }, (_, i) => ({
         label: new Date(year, i, 1).toLocaleDateString("id-ID", {
@@ -183,28 +168,69 @@ export async function GET(request: NextRequest) {
         pengeluaran: 0,
       }));
 
-    // Re-fetch journals for the whole year for chart data
+    // Re-fetch journals for the whole year AND prev month for chart data & KPIs
+    const startPrevJurnal = new Date(year, month - 2, 1);
     const startOfYear = new Date(year, 0, 1);
+    const queryStart = startPrevJurnal < startOfYear ? startPrevJurnal : startOfYear;
     const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
-    const [yearPayments, yearCosts] = await Promise.all([
-      prisma.payment.findMany({
-        where: { tanggal: { gte: startOfYear, lte: endOfYear }, deletedAt: null },
-        select: { nominal: true, tanggal: true },
-      }),
-      prisma.cost.findMany({
-        where: { tanggal: { gte: startOfYear, lte: endOfYear }, deletedAt: null },
-        select: { nominal: true, tanggal: true },
-      }),
-    ]);
+    const jurnals = await prisma.jurnalUmum.findMany({
+      where: { tanggal: { gte: queryStart, lte: endOfYear }, deletedAt: null },
+      include: {
+        akunDebet: { select: { kelompok: true } },
+        akunKredit: { select: { kelompok: true } },
+      },
+    });
 
-    for (const p of yearPayments) {
-      const m = new Date(p.tanggal).getMonth();
-      months[m].pendapatan += Number(p.nominal);
-    }
-    for (const c of yearCosts) {
-      const m = new Date(c.tanggal).getMonth();
-      months[m].pengeluaran += Number(c.nominal);
+    let totalPendapatan = 0;
+    let totalPengeluaran = 0;
+    let prevPendapatan = 0;
+    let prevPengeluaran = 0;
+
+    for (const j of jurnals) {
+      const jDate = new Date(j.tanggal);
+      const m = jDate.getMonth();
+      const jYear = jDate.getFullYear();
+      const jMonth = m + 1;
+      const nom = Number(j.nominal);
+
+      let isPend = 0;
+      let isPeng = 0;
+
+      if (j.akunKredit?.kelompok === "PENDAPATAN") isPend += nom;
+      if (j.akunDebet?.kelompok === "PENDAPATAN") isPend -= nom;
+
+      if (j.akunDebet?.kelompok === "BEBAN_USAHA") isPeng += nom;
+      if (j.akunKredit?.kelompok === "BEBAN_USAHA") isPeng -= nom;
+
+      // Only add to months array if it's in the requested year
+      if (jYear === year) {
+        months[m].pendapatan += isPend;
+        months[m].pengeluaran += isPeng;
+      }
+
+      // Current month totals
+      if (jYear === year && jMonth === month) {
+        totalPendapatan += isPend;
+        totalPengeluaran += isPeng;
+
+        const day = jDate.getDate();
+        const w = Math.min(Math.floor((day - 1) / 7), 4);
+        weeks[w].pendapatan += isPend;
+        weeks[w].pengeluaran += isPeng;
+      }
+
+      // Prev month totals
+      let pMonth = month - 1;
+      let pYear = year;
+      if (pMonth === 0) {
+        pMonth = 12;
+        pYear = year - 1;
+      }
+      if (jYear === pYear && jMonth === pMonth) {
+        prevPendapatan += isPend;
+        prevPengeluaran += isPeng;
+      }
     }
 
     const pctChange = (curr: number, prev: number) => {

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { notifyOrderStatusChange } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { id: true, statusProduksi: true },
+      select: { id: true, statusProduksi: true, nomorOrder: true },
     });
 
     if (!order)
@@ -133,6 +134,11 @@ export async function POST(req: NextRequest, { params }: Params) {
         data: { statusProduksi: "PRODUKSI" },
       }),
     ]);
+
+    // Notify status change to PRODUKSI
+    if (order?.nomorOrder) {
+      await notifyOrderStatusChange(orderId, order.nomorOrder, "PRODUKSI");
+    }
 
     return NextResponse.json(
       { message: "SPK berhasil dibuat dan status diperbarui ke PRODUKSI.", spk },
@@ -244,10 +250,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
 
     if (statusSPK === "SELESAI") {
-      await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: orderId },
-        data: { statusProduksi: "PACKING" }
+        data: { statusProduksi: "PACKING" },
+        select: { nomorOrder: true }
       });
+      
+      if (updatedOrder) {
+        await notifyOrderStatusChange(orderId, updatedOrder.nomorOrder, "PACKING");
+      }
     }
 
     return NextResponse.json({

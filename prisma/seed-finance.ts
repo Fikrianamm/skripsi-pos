@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 export async function seedFinance() {
   console.log("🌱 Starting Finance Seeding...");
 
+  const count = await prisma.akun.count();
+  if (count > 0) {
+    console.log("  ⏭️ Accounts already seeded, skipping finance seeding...");
+    return;
+  }
+
   // 1. Seed Chart of Accounts
   console.log("⏳ Seeding Accounts (Chart of Accounts)...");
   const accounts = [

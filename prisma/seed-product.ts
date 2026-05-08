@@ -162,6 +162,14 @@ const RAW_PRODUCTS: [string, string, number][] = [
 ];
 
 export async function seedProduct() {
+  console.log("🌱 Starting Product Seeding...");
+
+  const count = await prisma.product.count();
+  if (count > 50) {
+    console.log("  ⏭️ Products already seeded (>50), skipping product seeding...");
+    return;
+  }
+
   console.log("🌱 Seeding categories & units...");
 
   // Upsert kategori

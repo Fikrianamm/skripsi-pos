@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
             select: { id: true, nama: true, nomorHp: true },
           },
           items: {
-            select: { nama: true, qty: true },
+            select: { nama: true, qty: true, product: { select: { sku: true } } },
             take: 5,
           },
           spk: {

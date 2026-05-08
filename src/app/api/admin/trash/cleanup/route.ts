@@ -28,7 +28,6 @@ export async function GET() {
       // 5. Inventory Transactions
       prisma.penerimaanBarang.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
       prisma.pengeluaranBarang.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
-      prisma.stokOpname.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
       prisma.sPK.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
     ]);
 

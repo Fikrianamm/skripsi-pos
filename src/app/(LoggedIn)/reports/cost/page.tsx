@@ -7,7 +7,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { CostTable, CostData } from "./components/cost-table";
 import { CostPieChart } from "./components/cost-pie-chart";
-import { AddCostModal } from "./components/add-cost-modal";
 import { SearchInput } from "@/components/search-input";
 import {
   FilterLanjutan,
@@ -44,8 +43,6 @@ export default function CostPage() {
   const [bulan, setBulan] = useState(String(now.getMonth() + 1));
   const [tahun, setTahun] = useState(String(now.getFullYear()));
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
   // Kirim semua filter bersamaan — search + bulan/tahun bisa aktif sekaligus
   const params = new URLSearchParams({
     search: debouncedSearch,
@@ -55,7 +52,7 @@ export default function CostPage() {
     limit: "50",
   });
 
-  const { data, isLoading, mutate } = useSWR(
+  const { data, isLoading } = useSWR(
     `/api/finance/cost?${params.toString()}`,
     fetcher,
   );
@@ -205,16 +202,11 @@ export default function CostPage() {
               />
             </FilterSection>
           </FilterLanjutan>
-          <AddCostModal
-            isOpen={isAddModalOpen}
-            onOpenChange={setIsAddModalOpen}
-            onSuccess={() => mutate()}
-          />
         </div>
       </div>
 
       {/* Table */}
-      <CostTable costs={costs} isLoading={isLoading} onSuccess={() => mutate()} />
+      <CostTable costs={costs} isLoading={isLoading} />
     </div>
   );
 }

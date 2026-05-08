@@ -83,7 +83,7 @@ export const NAV_ITEMS: NavGroup[] = [
         ],
       },
       {
-        title: "Inventori",
+        title: "Inventori Bahan Baku",
         url: "#",
         icon: Warehouse,
         roles: ["admin", "gudang"],
@@ -99,11 +99,7 @@ export const NAV_ITEMS: NavGroup[] = [
           {
             title: "Barang Keluar",
             url: "/inventory/out",
-          },
-          {
-            title: "Stok Opname",
-            url: "/inventory/opname",
-          },
+          }
         ],
       },
     ],

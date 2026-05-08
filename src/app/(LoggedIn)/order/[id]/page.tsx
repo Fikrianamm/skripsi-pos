@@ -33,10 +33,9 @@ export default function Page() {
   const { data: settingsData } = useSWR("/api/admin/settings", fetcher);
   const settings = settingsData || null;
 
-  
   const { data, isLoading, mutate } = useSWR(`/api/order/${orderId}`, fetcher);
   const order: OrderDetail | null = data?.order ?? null;
-  
+
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `Invoice-${order?.nomorOrder}`,
@@ -238,7 +237,7 @@ export default function Page() {
           onOpenChange={(open) => setShowSpkForm(open)}
           orderId={order.id}
           nomorOrder={order.nomorOrder}
-          items={order.items}
+          order={order}
           onSuccess={() => {
             setShowSpkForm(false);
             mutate();
