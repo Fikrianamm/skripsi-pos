@@ -119,6 +119,7 @@ export default function EditProductModal({
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
+        formData.append("folder", "products");
         const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
         if (!uploadRes.ok) {
           const err = await uploadRes.json();

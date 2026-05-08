@@ -86,6 +86,7 @@ export default function ProfileSection() {
       if (avatarFile) {
         const formData = new FormData();
         formData.append("file", avatarFile);
+        formData.append("folder", "profiles");
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",

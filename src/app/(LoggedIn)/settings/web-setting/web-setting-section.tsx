@@ -79,6 +79,7 @@ export default function WebSettingSection() {
       if (logoFile) {
         const formData = new FormData();
         formData.append("file", logoFile);
+        formData.append("folder", "settings");
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
