@@ -25,29 +25,35 @@ export async function GET(request: NextRequest) {
     const start = new Date(tahun, bulan - 1, 1);
     const end   = new Date(tahun, bulan, 0, 23, 59, 59, 999);
 
-    const costs = await prisma.cost.findMany({
-      where: { tanggal: { gte: start, lte: end } },
+    // Ambil dari JurnalUmum — filter akun debet bertipe BEBAN_USAHA
+    const jurnals = await prisma.jurnalUmum.findMany({
+      where: {
+        deletedAt: null,
+        tanggal: { gte: start, lte: end },
+        akunDebet: { kelompok: "BEBAN_USAHA" },
+      },
       include: {
-        akun: { select: { namaAkun: true, kelompok: true } },
+        akunDebet: { select: { namaAkun: true, kelompok: true } },
+        akunKredit: { select: { namaAkun: true } },
       },
       orderBy: { tanggal: "asc" },
     });
 
-    // Group by kelompok akun
+    // Group by nama akun beban (akunDebet)
     const grouped: Record<
       string,
-      { kategori: string; items: typeof costs; total: number }
+      { kategori: string; items: typeof jurnals; total: number }
     > = {};
 
-    for (const c of costs) {
-      const kelompok = c.akun.kelompok;
-      if (!grouped[kelompok])
-        grouped[kelompok] = { kategori: kelompok, items: [], total: 0 };
-      grouped[kelompok].items.push(c);
-      grouped[kelompok].total += Number(c.nominal);
+    for (const j of jurnals) {
+      const namaAkun = j.akunDebet.namaAkun;
+      if (!grouped[namaAkun])
+        grouped[namaAkun] = { kategori: namaAkun, items: [], total: 0 };
+      grouped[namaAkun].items.push(j);
+      grouped[namaAkun].total += Number(j.nominal);
     }
 
-    const grandTotal = costs.reduce((s, c) => s + Number(c.nominal), 0);
+    const grandTotal = jurnals.reduce((s, j) => s + Number(j.nominal), 0);
 
     return NextResponse.json({
       bulan,

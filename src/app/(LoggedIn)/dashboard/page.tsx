@@ -126,9 +126,7 @@ function StatCard({
       <p className="text-2xl font-bold tracking-tight">{value}</p>
       <div className="flex items-center gap-2">
         {trend !== undefined && <TrendBadge pct={trend} />}
-        {sub && (
-          <span className="text-xs text-default-400">{sub}</span>
-        )}
+        {sub && <span className="text-xs text-default-400">{sub}</span>}
       </div>
     </div>
   );
@@ -377,7 +375,11 @@ export default function Page() {
                     : 0;
                 return (
                   <Link
-                    href={item.type === "bahan_baku" ? "/master/bahan-baku" : "/master/product"}
+                    href={
+                      item.type === "bahan_baku"
+                        ? "/master/bahan-baku"
+                        : "/master/product"
+                    }
                     key={item.id}
                     className="flex items-center justify-between p-2.5 rounded-lg bg-rose-50 border border-rose-100 hover:bg-rose-100 transition-colors cursor-pointer"
                   >
@@ -386,8 +388,8 @@ export default function Page() {
                         {item.nama}
                       </span>
                       <span className="text-xs text-default-500">
-                        {item.type === "bahan_baku" ? "Bahan Baku" : "Produk"}{" "}
-                        · Min {item.minStok} {item.unit.nama}
+                        {item.type === "bahan_baku" ? "Bahan Baku" : "Produk"} ·
+                        Min {item.minStok} {item.unit.nama}
                       </span>
                     </div>
                     <Chip

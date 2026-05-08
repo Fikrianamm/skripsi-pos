@@ -6,6 +6,8 @@ export type JurnalEntryInput = {
   ref: string;
   tanggal: Date;
   keterangan: string;
+  namaBiaya?: string | null;
+  buktiNota?: string | null;
   akunDebetId: string;
   akunKreditId: string;
   nominal: number;
@@ -32,6 +34,8 @@ export async function createJurnalDoubleEntry(
     ref: input.ref,
     tanggal: input.tanggal,
     keterangan: input.keterangan,
+    namaBiaya: input.namaBiaya,
+    buktiNota: input.buktiNota,
     akunDebetId: input.akunDebetId,
     akunKreditId: input.akunKreditId,
     nominal: new Prisma.Decimal(input.nominal),

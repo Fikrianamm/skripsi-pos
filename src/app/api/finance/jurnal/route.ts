@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
         ref: true,
         tanggal: true,
         keterangan: true,
+        namaBiaya: true,
+        buktiNota: true,
         nominal: true,
         akunDebetId: true,
         akunKreditId: true,
@@ -64,7 +66,6 @@ export async function GET(request: NextRequest) {
         akunKredit: { select: { kodeAkun: true, namaAkun: true } },
         paymentId: true,
         payment: { select: { orderId: true } },
-        costId: true,
         penerimaanId: true,
         createdBy:  { select: { name: true } },
       },
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (error || !session) return NextResponse.json({ error }, { status });
 
     const body = await request.json();
-    const { tanggal, keterangan, akunDebetId, akunKreditId, nominal, isReversal, reversalOfRef } = body;
+    const { tanggal, keterangan, namaBiaya, buktiNota, akunDebetId, akunKreditId, nominal, isReversal, reversalOfRef } = body;
 
     if (!tanggal || !keterangan || !akunDebetId || !akunKreditId || typeof nominal !== "number" || nominal <= 0) {
       return NextResponse.json({ error: "Kolom wajib belum lengkap atau nominal tidak valid." }, { status: 400 });
@@ -104,6 +105,8 @@ export async function POST(request: NextRequest) {
       ref,
       tanggal: new Date(tanggal),
       keterangan,
+      namaBiaya,
+      buktiNota,
       akunDebetId,
       akunKreditId,
       nominal,
@@ -145,12 +148,6 @@ export async function DELETE(request: NextRequest) {
       if (jurnal.paymentId) {
         await tx.payment.update({
           where: { id: jurnal.paymentId },
-          data: { deletedAt: now },
-        });
-      }
-      if (jurnal.costId) {
-        await tx.cost.update({
-          where: { id: jurnal.costId },
           data: { deletedAt: now },
         });
       }

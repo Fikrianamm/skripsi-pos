@@ -20,7 +20,6 @@ export async function seedTransactions() {
   const bahanBaku = await prisma.bahanBaku.findMany({ where: { id: { startsWith: "bb_dummy_" } } });
   const kasBank = await prisma.kasBank.findFirst({ where: { id: "kb_1" } });
   const appSettings = await prisma.appSetting.findUnique({ where: { id: 1 } });
-  const piutangAkun = accounts.find(a => a.kodeAkun === "1-003");
   const pendapatanAkunId = appSettings?.defaultPendapatanAkunId || accounts.find(a => a.kodeAkun === "4-001")?.id;
 
   if (!accounts.length || !customers.length || !products.length || !karyawan.length || !kasBank) {
@@ -79,36 +78,27 @@ export async function seedTransactions() {
       ));
     }
 
-    // B. Beban Operasional (Semua jenis biaya)
+    // B. Beban Operasional — langsung ke JurnalUmum (tanpa Cost)
     const costAccounts = accounts.filter(a => a.kodeAkun.startsWith("5-"));
     for (const costAkun of costAccounts) {
-      const nominal = getRandomInt(100000, 2000000); // Nominal bervariasi
+      const nominal = getRandomInt(100000, 2000000);
       const tanggalCost = new Date(year, month - 1, getRandomInt(2, 28), 10, 0, 0);
-      const costId = `cost_dummy_${year}_${month}_${costAkun.kodeAkun.replace("-", "")}`;
+      const jurnalId = `jurnal_cost_${year}_${month}_${costAkun.kodeAkun.replace("-", "")}`;
 
-      const existingCost = await prisma.cost.findUnique({ where: { id: costId } });
-      if (!existingCost) {
-        await prisma.cost.create({
+      const existingJurnal = await prisma.jurnalUmum.findUnique({ where: { id: jurnalId } });
+      if (!existingJurnal) {
+        await prisma.jurnalUmum.create({
           data: {
-            id: costId,
-            akunId: costAkun.id,
-            userId: adminUser?.id,
-            nama: `Biaya ${costAkun.namaAkun}`,
-            nominal: nominal,
+            id: jurnalId,
+            ref: `COST-${year}${String(month).padStart(2, "0")}-${costAkun.kodeAkun}`,
             tanggal: tanggalCost,
-            jurnalUmum: {
-              create: {
-                id: `jurnal_cost_${costId}`,
-                ref: `COST-${month}-${costAkun.kodeAkun}`,
-                tanggal: tanggalCost,
-                keterangan: `Pengeluaran ${costAkun.namaAkun}`,
-                akunDebetId: costAkun.id,
-                akunKreditId: kasBank.akunId!,
-                nominal: nominal,
-                createdById: adminUser?.id,
-              }
-            }
-          }
+            keterangan: `Pengeluaran ${costAkun.namaAkun} ${new Intl.DateTimeFormat("id-ID", { month: "long" }).format(tanggalCost)}`,
+            namaBiaya: `Biaya ${costAkun.namaAkun}`,
+            akunDebetId: costAkun.id,
+            akunKreditId: kasBank.akunId!,
+            nominal: nominal,
+            createdById: adminUser?.id,
+          },
         });
       }
     }

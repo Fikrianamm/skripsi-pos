@@ -19,7 +19,7 @@ import {
   Chip,
   Tooltip as HeroTooltip,
 } from "@heroui/react";
-import { RotateCcw, AlertTriangle, ShoppingCart, Package, Users, Receipt, BookOpen, Trash2 } from "lucide-react";
+import { RotateCcw, AlertTriangle, ShoppingCart, Package, Users, BookOpen, Trash2 } from "lucide-react";
 import { fetcher, formatRupiah } from "@/lib/func";
 import { addToast } from "@heroui/toast";
 
@@ -106,15 +106,6 @@ export default function TrashPage() {
             } 
           />
           <Tab 
-            key="cost" 
-            title={
-              <div className="flex items-center gap-2">
-                <Receipt size={16} />
-                <span>Biaya</span>
-              </div>
-            } 
-          />
-          <Tab 
             key="jurnal" 
             title={
               <div className="flex items-center gap-2">
@@ -157,14 +148,6 @@ export default function TrashPage() {
                   <>
                     <TableColumn>NAMA PELANGGAN</TableColumn>
                     <TableColumn>KONTAK</TableColumn>
-                    <TableColumn>TANGGAL HAPUS</TableColumn>
-                    <TableColumn align="end">AKSI</TableColumn>
-                  </>
-                ) : activeTab === "cost" ? (
-                  <>
-                    <TableColumn>URAIAN BIAYA</TableColumn>
-                    <TableColumn>NOMINAL</TableColumn>
-                    <TableColumn>AKUN SUMBER</TableColumn>
                     <TableColumn>TANGGAL HAPUS</TableColumn>
                     <TableColumn align="end">AKSI</TableColumn>
                   </>
@@ -299,30 +282,6 @@ export default function TrashPage() {
                         </TableCell>
                         <TableCell>
                            <span className="text-default-500 font-mono text-xs">{item.nomorHp || "-"}</span>
-                        </TableCell>
-                        {deletedAtCell}
-                        {actionCell}
-                      </TableRow>
-                    );
-                  }
-
-                  if (activeTab === "cost") {
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="font-bold text-default-900">{item.nama}</span>
-                            <span className="text-xs text-default-400 max-w-[200px] truncate italic">{item.keterangan || "-"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                           <span className="font-black text-danger-600">{formatRupiah(Number(item.nominal))}</span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-bold text-default-700">{item.akun?.namaAkun}</span>
-                            <span className="text-[10px] font-mono text-default-400">{item.akun?.kodeAkun}</span>
-                          </div>
                         </TableCell>
                         {deletedAtCell}
                         {actionCell}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -27,13 +28,14 @@ export async function GET(request: NextRequest) {
       ? [statusParam as "BELUM_BAYAR" | "DP"]
       : (["BELUM_BAYAR", "DP"] as Array<"BELUM_BAYAR" | "DP">);
 
-    const where = {
+    const where: any = {
       statusPembayaran: { in: statusFilter },
+      statusProduksi: { notIn: ["SELESAI", "BATAL"] },
       ...(search
         ? {
             OR: [
-              { nomorOrder: { contains: search } },
-              { customer: { nama: { contains: search } } },
+              { nomorOrder: { contains: search, mode: "insensitive" } },
+              { customer: { nama: { contains: search, mode: "insensitive" } } },
             ],
           }
         : {}),

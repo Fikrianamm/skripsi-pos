@@ -25,11 +25,6 @@ export async function GET(request: NextRequest) {
       searchParams.get("year") || String(now.getFullYear()),
     );
 
-    const startCurrent = new Date(year, month - 1, 1);
-    const endCurrent = new Date(year, month, 0, 23, 59, 59, 999);
-    const startPrev = new Date(year, month - 2, 1);
-    const endPrev = new Date(year, month - 1, 0, 23, 59, 59, 999);
-
     // Start of today (local-ish: use UTC start of day relative to now)
     const startOfToday = new Date(
       now.getFullYear(),
@@ -42,10 +37,6 @@ export async function GET(request: NextRequest) {
     );
 
     const [
-      sumPayCurrent,
-      sumPayPrev,
-      sumCostCurrent,
-      sumCostPrev,
       sumPayToday,
       totalCustomer,
       newOrdersToday,
@@ -54,43 +45,21 @@ export async function GET(request: NextRequest) {
       allBahanBaku,
       allProducts,
       recentOrders,
-      chartPayments,
-      chartCosts,
     ] = await Promise.all([
-      // 0: Monthly payments current
-      prisma.payment.aggregate({
-        _sum: { nominal: true },
-        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
-      }),
-      // 1: Monthly payments prev
-      prisma.payment.aggregate({
-        _sum: { nominal: true },
-        where: { tanggal: { gte: startPrev, lte: endPrev }, deletedAt: null },
-      }),
-      // 2: Monthly costs current
-      prisma.cost.aggregate({
-        _sum: { nominal: true },
-        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
-      }),
-      // 3: Monthly costs prev
-      prisma.cost.aggregate({
-        _sum: { nominal: true },
-        where: { tanggal: { gte: startPrev, lte: endPrev }, deletedAt: null },
-      }),
-      // 4: Today's payment total
+      // 0: Today's payment total
       prisma.payment.aggregate({
         _sum: { nominal: true },
         where: { tanggal: { gte: startOfToday }, deletedAt: null },
       }),
-      // 5: Total customers
+      // 1: Total customers
       prisma.customer.count({ where: { deletedAt: null } }),
-      // 6: New orders today
+      // 2: New orders today
       prisma.order.count({ where: { createdAt: { gte: startOfToday }, deletedAt: null } }),
-      // 7: Active orders (not SELESAI or BATAL)
+      // 3: Active orders (not SELESAI or BATAL)
       prisma.order.count({
         where: { statusProduksi: { notIn: ["SELESAI", "BATAL"] }, deletedAt: null },
       }),
-      // 8: Piutang
+      // 4: Piutang
       prisma.order.findMany({
         where: { statusPembayaran: { in: ["BELUM_BAYAR", "DP"] }, deletedAt: null },
         select: {
@@ -98,17 +67,17 @@ export async function GET(request: NextRequest) {
           payments: { select: { nominal: true } },
         },
       }),
-      // 9: Fetch all active materials
+      // 5: Fetch all active materials
       prisma.bahanBaku.findMany({
         where: { isActive: true, minStok: { not: null } },
         select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
       }),
-      // 10: Fetch all products
+      // 6: Fetch all products
       prisma.product.findMany({
         where: { isService: false, minStok: { not: null }, deletedAt: null },
         select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
       }),
-      // 11: Recent orders (last 5)
+      // 7: Recent orders (last 5)
       prisma.order.findMany({
         where: { deletedAt: null },
         select: {
@@ -122,16 +91,6 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: "desc" },
         take: 5,
-      }),
-      // 12: Chart payments
-      prisma.payment.findMany({
-        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
-        select: { nominal: true, tanggal: true },
-      }),
-      // 13: Chart costs
-      prisma.cost.findMany({
-        where: { tanggal: { gte: startCurrent, lte: endCurrent }, deletedAt: null },
-        select: { nominal: true, tanggal: true },
       }),
     ]);
 

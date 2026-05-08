@@ -33,7 +33,6 @@ model User {
   penerimaanBarang  PenerimaanBarang[]
   pengeluaranBarang PengeluaranBarang[]
   payments          Payment[]
-  costs             Cost[]
   jurnalUmum        JurnalUmum[]
 
   @@map("user")
@@ -413,32 +412,6 @@ model Payment {
 }
 
 // ============================================================
-// FINANCE — BEBAN / BIAYA (PENGELUARAN)
-// ============================================================
-
-model Cost {
-  id             String       @id
-  akunId         String
-  userId         String?
-  nama           String       @db.Text
-  nominal        Decimal      @db.Decimal(12, 2)
-  keterangan     String?      @db.Text
-  buktiNota      String?      @db.Text
-  tanggal        DateTime     @default(now())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
-  akun           Akun         @relation(fields: [akunId], references: [id], onDelete: Cascade)
-  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  jurnalUmum     JurnalUmum[]
-
-  @@index([akunId])
-  @@index([userId])
-  @@index([tanggal])
-  @@map("cost")
-}
-
-// ============================================================
 // FINANCE — CHART OF ACCOUNT (AKUN)
 // ============================================================
 
@@ -457,7 +430,6 @@ model Akun {
   jurnalDebet    JurnalUmum[]    @relation("JurnalDebet")
   jurnalKredit   JurnalUmum[]    @relation("JurnalKredit")
   kasBanks       KasBank[]
-  costs          Cost[]
 
   appSettings    AppSetting[]    @relation("AkunPendapatanDefault")
 
@@ -475,11 +447,12 @@ model JurnalUmum {
   ref          String    @db.VarChar(30)
   tanggal      DateTime
   keterangan   String    @db.Text
+  namaBiaya    String?   @db.Text
+  buktiNota    String?   @db.Text
   akunDebetId  String
   akunKreditId String
   nominal      Decimal   @db.Decimal(12, 2)
   paymentId    String?
-  costId       String?
   penerimaanId String?
   createdById  String?
   createdAt    DateTime  @default(now())
@@ -489,13 +462,11 @@ model JurnalUmum {
   akunDebet  Akun             @relation("JurnalDebet",  fields: [akunDebetId],  references: [id], onDelete: Restrict)
   akunKredit Akun             @relation("JurnalKredit", fields: [akunKreditId], references: [id], onDelete: Restrict)
   payment    Payment?         @relation(fields: [paymentId],    references: [id], onDelete: SetNull)
-  cost       Cost?            @relation(fields: [costId],       references: [id], onDelete: SetNull)
   penerimaan PenerimaanBarang? @relation(fields: [penerimaanId], references: [id], onDelete: SetNull)
   createdBy  User?            @relation(fields: [createdById],  references: [id], onDelete: SetNull)
 
   @@index([tanggal])
   @@index([paymentId])
-  @@index([costId])
   @@index([akunDebetId])
   @@index([akunKreditId])
   @@map("jurnal_umum")

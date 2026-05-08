@@ -40,9 +40,6 @@ export function CartItemRow({
           >
             <Minus size={12} />
           </Button>
-          {/* <span className="text-sm font-semibold w-6 text-center">
-            {item.qty}
-          </span> */}
           <Input
             size="sm"
             placeholder="Jumlah"

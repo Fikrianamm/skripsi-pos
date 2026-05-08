@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if ("error" in authResult) return NextResponse.json({ error: authResult.error }, { status: authResult.status });
 
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type") || "order"; // order, product, customer, cost, jurnal
+  const type = searchParams.get("type") || "order"; // order, product, customer, jurnal
 
   try {
     let results: any[] = [];
@@ -41,12 +41,6 @@ export async function GET(request: NextRequest) {
       results = await prisma.customer.findMany({
         where: { deletedAt: { not: null } },
         orderBy: { deletedAt: "desc" },
-      });
-    } else if (type === "cost") {
-      results = await prisma.cost.findMany({
-        where: { deletedAt: { not: null } },
-        orderBy: { deletedAt: "desc" },
-        include: { akun: { select: { namaAkun: true, kodeAkun: true } } },
       });
     } else if (type === "jurnal") {
       results = await prisma.jurnalUmum.findMany({
@@ -86,8 +80,6 @@ export async function POST(request: NextRequest) {
         await prisma.product.update({ where: { id }, data: { deletedAt: null } });
       } else if (type === "customer") {
         await prisma.customer.update({ where: { id }, data: { deletedAt: null } });
-      } else if (type === "cost") {
-        await prisma.cost.update({ where: { id }, data: { deletedAt: null } });
       } else if (type === "jurnal") {
         await prisma.jurnalUmum.update({ where: { id }, data: { deletedAt: null } });
       }

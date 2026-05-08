@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -34,7 +35,7 @@ interface UpdateStatusModalProps {
   currentStatusBayar: string;
   hasSPK: boolean;
   items: { nama: string; qty: number }[];
-  onUpdated: () => void;
+  onUpdated: () => void | Promise<any>;
 }
 
 export function UpdateStatusModal({
@@ -94,7 +95,7 @@ export function UpdateStatusModal({
         description: nomorOrder,
         color: "success",
       });
-      onUpdated();
+      await onUpdated();
       onClose();
     } catch {
       addToast({

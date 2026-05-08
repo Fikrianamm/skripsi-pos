@@ -20,8 +20,7 @@ export async function GET() {
       // 3. Customers
       prisma.customer.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
       
-      // 4. Finance (Cost, Payment, Jurnal)
-      prisma.cost.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
+      // 4. Finance (Payment, Jurnal)
       prisma.payment.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
       prisma.jurnalUmum.deleteMany({ where: { deletedAt: { lt: sixtyDaysAgo } } }),
       

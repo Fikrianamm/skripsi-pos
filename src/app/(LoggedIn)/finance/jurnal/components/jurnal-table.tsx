@@ -10,9 +10,10 @@ import {
   Button,
   Tooltip,
   Spinner,
+  Image,
 } from "@heroui/react";
 import { formatRupiah } from "@/lib/func";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 
 export type JurnalItem = {
@@ -20,6 +21,8 @@ export type JurnalItem = {
   ref: string;
   tanggal: string;
   keterangan: string;
+  namaBiaya?: string | null;
+  buktiNota?: string | null;
   nominal: string | number;
   akunDebet: { kodeAkun: string; namaAkun: string; kelompok: string };
   akunKredit: { kodeAkun: string; namaAkun: string };
@@ -27,7 +30,6 @@ export type JurnalItem = {
   akunKreditId: string;
   paymentId?: string | null;
   payment?: { orderId: string } | null;
-  costId?: string | null;
   penerimaanId?: string | null;
   createdBy?: { name: string } | null;
 };
@@ -111,30 +113,48 @@ export function JurnalTable({
 
             {/* Keterangan */}
             <TableCell>
-              <div className="flex flex-col max-w-xs">
+              <div className="flex flex-col max-w-xs gap-1">
+                {item.namaBiaya && (
+                  <span className="text-xs font-bold text-primary-700 uppercase tracking-wide">
+                    {item.namaBiaya}
+                  </span>
+                )}
                 <span className="text-sm text-default-700 line-clamp-2">
                   {item.keterangan}
                 </span>
                 {item.createdBy?.name && (
-                  <span className="text-xs text-default-400">
+                  <span className="text-[10px] text-default-400">
                     by {item.createdBy.name}
                   </span>
                 )}
-                <div className="mt-1 flex gap-2">
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {item.buktiNota && (
+                    <Tooltip 
+                      content={
+                        <Image 
+                          src={item.buktiNota} 
+                          alt="Bukti Nota" 
+                          width={200}
+                          className="rounded-lg shadow-xl"
+                        />
+                      }
+                      placement="right"
+                    >
+                      <Link 
+                        href={item.buktiNota}
+                        target="_blank"
+                        className="text-[10px] bg-danger-50 text-danger-600 px-1.5 py-0.5 rounded border border-danger-100 hover:bg-danger-100 flex items-center gap-1 w-fit"
+                      >
+                        <ImageIcon size={10} /> Lihat Bukti
+                      </Link>
+                    </Tooltip>
+                  )}
                   {item.payment?.orderId && (
                     <Link 
                       href={`/order/${item.payment.orderId}`}
                       className="text-[10px] bg-primary-50 text-primary-600 px-1.5 py-0.5 rounded border border-primary-100 hover:bg-primary-100 flex items-center gap-1 w-fit"
                     >
                       <ExternalLink size={10} /> Lihat Pesanan
-                    </Link>
-                  )}
-                  {item.costId && (
-                    <Link 
-                      href={`/finance/biaya?id=${item.costId}`}
-                      className="text-[10px] bg-warning-50 text-warning-600 px-1.5 py-0.5 rounded border border-warning-100 hover:bg-warning-100 flex items-center gap-1 w-fit"
-                    >
-                      <ExternalLink size={10} /> Lihat Biaya
                     </Link>
                   )}
                   {item.penerimaanId && (
