@@ -20,8 +20,8 @@ export type JurnalItem = {
   id: string;
   ref: string;
   tanggal: string;
-  keterangan: string;
-  namaBiaya?: string | null;
+  namaBiaya: string;          
+  keterangan?: string | null; 
   buktiNota?: string | null;
   nominal: string | number;
   akunDebet: { kodeAkun: string; namaAkun: string; kelompok: string };

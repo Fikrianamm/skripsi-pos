@@ -446,8 +446,8 @@ model JurnalUmum {
   id           String    @id
   ref          String    @db.VarChar(30)
   tanggal      DateTime
-  keterangan   String    @db.Text
-  namaBiaya    String?   @db.Text
+  keterangan   String?   @db.Text
+  namaBiaya    String    @db.Text
   buktiNota    String?   @db.Text
   akunDebetId  String
   akunKreditId String

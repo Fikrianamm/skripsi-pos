@@ -143,8 +143,8 @@ export function JurnalModal({
   };
 
   async function handleSubmit() {
-    const isPengeluaran = mode === "pengeluaran";
-    if (!keterangan || !kasAkunId || !kategoriAkunId || nominal <= 0 || (isPengeluaran && !namaBiaya)) {
+    // namaBiaya wajib untuk kedua mode
+    if (!namaBiaya || !kasAkunId || !kategoriAkunId || nominal <= 0) {
       addToast({
         title: "Form Belum Lengkap",
         description: "Harap isi semua field yang wajib",
@@ -162,6 +162,7 @@ export function JurnalModal({
     }
     setIsLoading(true);
     try {
+      const isPengeluaran = mode === "pengeluaran";
       const { akunDebetId, akunKreditId } = getDebetKredit();
       const res = await fetch("/api/finance/jurnal", {
         method: "POST",
@@ -169,7 +170,7 @@ export function JurnalModal({
         body: JSON.stringify({
           tanggal: tanggal ? tanggal.toString() : new Date().toISOString(),
           keterangan,
-          namaBiaya: isPengeluaran ? namaBiaya : null,
+          namaBiaya,                           // selalu dikirim, tidak pernah null
           buktiNota: isPengeluaran ? buktiNota : null,
           akunDebetId,
           akunKreditId,
@@ -282,16 +283,19 @@ export function JurnalModal({
                   </button>
                 </div>
 
-                {isPengeluaran && (
-                  <Input
-                    label="Nama Biaya / Keperluan"
-                    placeholder="Mis: Bayar Listrik, Gaji Karyawan, Iklan Facebook..."
-                    value={namaBiaya}
-                    onValueChange={setNamaBiaya}
-                    isRequired
-                    variant="bordered"
-                  />
-                )}
+                {/* Nama Biaya/Pemasukan — wajib untuk kedua mode */}
+                <Input
+                  label={isPengeluaran ? "Nama Biaya / Keperluan" : "Nama Pemasukan / Sumber"}
+                  placeholder={
+                    isPengeluaran
+                      ? "Mis: Bayar Listrik, Gaji Karyawan, Iklan Facebook..."
+                      : "Mis: Pendapatan Textile, Setoran Modal, Penjualan Lain-lain..."
+                  }
+                  value={namaBiaya}
+                  onValueChange={setNamaBiaya}
+                  isRequired
+                  variant="bordered"
+                />
 
                 {/* Date + Nominal */}
                 <div className="grid grid-cols-2 gap-4">
@@ -382,7 +386,6 @@ export function JurnalModal({
                   }
                   value={keterangan}
                   onValueChange={setKeterangan}
-                  isRequired
                   minRows={2}
                   variant="bordered"
                 />

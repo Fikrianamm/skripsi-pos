@@ -139,6 +139,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         ref: `PYM-${id.slice(0, 5)}`,
         tanggal: realTanggal,
         keterangan: `Pembayaran Order #${id.slice(0, 8)} - ${keterangan || "Tanpa Keterangan"}`,
+        namaBiaya: `Pembayaran Order #${order.nomorOrder}`,
         akunDebetId: kasBank.akunId!,
         akunKreditId: piutangAkun.id,
         nominal: Number(nominal),
@@ -222,7 +223,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         await createJurnalDoubleEntry({
           ref: `REV-${oldJurnal.ref}`,
           tanggal: now,
-          keterangan: `Reversal untuk: ${oldJurnal.keterangan}`,
+          keterangan: `Reversal untuk: ${oldJurnal.keterangan ?? oldJurnal.namaBiaya}`,
+          namaBiaya: `Reversal: ${oldJurnal.namaBiaya}`,
           akunDebetId: oldJurnal.akunKreditId,
           akunKreditId: oldJurnal.akunDebetId,
           nominal: Number(oldJurnal.nominal),
@@ -248,7 +250,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         ref: `PYM-${orderId.slice(0, 5)}`,
         tanggal: realTanggal,
         keterangan: `Pembayaran Order #${orderId.slice(0, 8)} (Koreksi) - ${updatedPayment.keterangan || ""}`,
-        akunDebetId: kasBank?.akunId || (oldJurnal ? oldJurnal.akunDebetId : ""), // Fallback empty string will fail validation if both null, but usually kasBank is provided or oldJurnal exists
+        namaBiaya: `Pembayaran Order (Koreksi)`,
+        akunDebetId: kasBank?.akunId || (oldJurnal ? oldJurnal.akunDebetId : ""),
         akunKreditId: piutangAkun?.id || (oldJurnal ? oldJurnal.akunKreditId : ""),
         nominal: Number(updatedPayment.nominal),
         paymentId: paymentId,
@@ -320,7 +323,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         await createJurnalDoubleEntry({
           ref: `REV-${oldJurnal.ref}`,
           tanggal: now,
-          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan}`,
+          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan ?? oldJurnal.namaBiaya}`,
+          namaBiaya: `Reversal (Delete): ${oldJurnal.namaBiaya}`,
           akunDebetId: oldJurnal.akunKreditId,
           akunKreditId: oldJurnal.akunDebetId,
           nominal: Number(oldJurnal.nominal),

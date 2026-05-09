@@ -5,8 +5,8 @@ import { Prisma } from "../../generated/prisma/client";
 export type JurnalEntryInput = {
   ref: string;
   tanggal: Date;
-  keterangan: string;
-  namaBiaya?: string | null;
+  keterangan?: string | null;  // opsional (bisa null)
+  namaBiaya: string;            // WAJIB — nama biaya/keperluan transaksi
   buktiNota?: string | null;
   akunDebetId: string;
   akunKreditId: string;
@@ -33,9 +33,9 @@ export async function createJurnalDoubleEntry(
     id: uniqueId,
     ref: input.ref,
     tanggal: input.tanggal,
-    keterangan: input.keterangan,
+    keterangan: input.keterangan ?? null, // undefined → null (Prisma String? tidak terima undefined)
     namaBiaya: input.namaBiaya,
-    buktiNota: input.buktiNota,
+    buktiNota: input.buktiNota ?? null,
     akunDebetId: input.akunDebetId,
     akunKreditId: input.akunKreditId,
     nominal: new Prisma.Decimal(input.nominal),

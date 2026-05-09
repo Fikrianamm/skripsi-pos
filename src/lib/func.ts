@@ -27,7 +27,7 @@ export const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export const getStockStatus = (product: Product): StockStatus => {
   // Jasa tidak memiliki stok fisik
-  if (product.isService) return { label: "Jasa", color: "secondary" };
+  if (product.isService) return { label: "Aman", color: "success" };
 
   const stok = Number(product.stok ?? 0);
   const minStok = product.minStok != null ? Number(product.minStok) : null;

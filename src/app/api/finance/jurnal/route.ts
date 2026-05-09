@@ -42,8 +42,9 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { keterangan: { contains: search } },
+        { namaBiaya:  { contains: search } },
         { ref: { contains: search } },
-        { akunDebet: { namaAkun: { contains: search } } },
+        { akunDebet:  { namaAkun: { contains: search } } },
         { akunKredit: { namaAkun: { contains: search } } },
       ];
     }
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { tanggal, keterangan, namaBiaya, buktiNota, akunDebetId, akunKreditId, nominal, isReversal, reversalOfRef } = body;
 
-    if (!tanggal || !keterangan || !akunDebetId || !akunKreditId || typeof nominal !== "number" || nominal <= 0) {
+    if (!tanggal || !namaBiaya || !akunDebetId || !akunKreditId || typeof nominal !== "number" || nominal <= 0) {
       return NextResponse.json({ error: "Kolom wajib belum lengkap atau nominal tidak valid." }, { status: 400 });
     }
     if (akunDebetId === akunKreditId) {

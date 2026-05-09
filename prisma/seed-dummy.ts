@@ -37,13 +37,13 @@ export async function seedDummy() {
   }
 
   const customerCount = await prisma.customer.count();
-  if (customerCount >= 100) {
+  if (customerCount >= 20) {
     console.log("  ⏭️ Customers already seeded, skipping...");
   } else {
-    // 2. Seed Customer (100 records)
+    // 2. Seed Customer (20 records)
     console.log("⏳ Seeding 100 Customers...");
     const customerData = [];
-    for (let i = 1; i <= 100; i++) {
+    for (let i = 1; i <= 20; i++) {
       customerData.push({
         id: `cust_dummy_${i}`,
         nama: `${getRandomItem(firstNames)} ${getRandomItem(lastNames)} (Cust ${i})`,
@@ -54,13 +54,13 @@ export async function seedDummy() {
   }
 
   const supplierCount = await prisma.supplier.count();
-  if (supplierCount >= 50) {
+  if (supplierCount >= 20) {
     console.log("  ⏭️ Suppliers already seeded, skipping...");
   } else {
-    // 3. Seed Supplier (50 records)
+    // 3. Seed Supplier (20 records)
     console.log("⏳ Seeding 50 Suppliers...");
     const supplierData = [];
-    for (let i = 1; i <= 50; i++) {
+    for (let i = 1; i <= 20; i++) {
       supplierData.push({
         id: `sup_dummy_${i}`,
         nama: `${getRandomItem(suppliersPrefix)} ${getRandomItem(lastNames)} ${getRandomItem(cities)}`,
@@ -73,13 +73,13 @@ export async function seedDummy() {
   }
 
   const bbCount = await prisma.bahanBaku.count();
-  if (bbCount >= 100) {
+  if (bbCount >= 20) {
     console.log("  ⏭️ Bahan Baku already seeded, skipping...");
   } else {
-    // 4. Seed Bahan Baku (100 records)
-    console.log("⏳ Seeding 100 Bahan Baku... (Dan mengatur stok berjalan)");
+    // 4. Seed Bahan Baku (20 records)
+    console.log("⏳ Seeding 20 Bahan Baku... (Dan mengatur stok berjalan)");
     const bahanBakuData = [];
-    for (let i = 1; i <= 100; i++) {
+    for (let i = 1; i <= 20; i++) {
       const mat = getRandomItem(materials);
       bahanBakuData.push({
         id: `bb_dummy_${i}`,

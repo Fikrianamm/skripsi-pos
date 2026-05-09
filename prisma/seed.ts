@@ -56,8 +56,8 @@ async function main() {
     },
     {
       id: "DE606LeCej1tynBzkzcCqUkmt7UgZ6fk",
-      name: "Fikri Taufiqul Anam",
-      email: "fikritaufiqulanam1@gmail.com",
+      name: "Fikri",
+      email: "fikri@gmail.com",
       image: "/assets/avatar/male/36.png",
       role: "admin",
       banned: false,

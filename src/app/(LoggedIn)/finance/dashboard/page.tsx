@@ -589,9 +589,10 @@ export default function DashboardKeuanganPage() {
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-default-100">
                       {[
-                        "pendapatan - konveksi",
-                        "pendapatan - R printing",
-                        "pendapatan - textile",
+                        // Nama harus PERSIS sama dengan namaAkun di tabel akun (seed-finance.ts)
+                        "Pendapatan - KONVEKSI",
+                        "Pendapatan - R PRINTING",
+                        "Pendapatan - TEXTILE",
                       ].map((nama) => {
                         const row = (pl?.pendapatan ?? []).find(
                           (r) => r.nama.toLowerCase() === nama.toLowerCase(),
@@ -698,9 +699,10 @@ export default function DashboardKeuanganPage() {
 
                 {/* MARKETING GROUP */}
                 {(() => {
+                  // Nama HARUS sama persis dengan namaAkun di DB (seed-finance.ts)
                   const items = [
-                    "Biaya Iklan - MARKETPLACE",
-                    "Biaya Iklan - ADS",
+                    "B. Iklan - Marketplace",  // kode 5-003
+                    "B. Iklan - ADS",           // kode 5-004
                   ];
                   const totalMkt = items.reduce((sum, nama) => {
                     const row = (pl?.bebanUsaha ?? []).find(
@@ -820,23 +822,24 @@ export default function DashboardKeuanganPage() {
 
                 {/* ADM UMUM GROUP */}
                 {(() => {
+                  // Nama PERSIS = namaAkun di DB
                   const items = [
-                    "B.CSR",
-                    "B. Kuota Data",
-                    "B. Perlengkapan / ATK",
-                    "B. Internet / Wifi",
-                    "B. PDAM + Listrik",
-                    "B. Kebersihan / Sampah",
-                    "B. BBM Operasional",
-                    "B. Obat-obatan / Kesehatan",
-                    "B. Service",
-                    "B. Gathering / Piknik / Kegiatan Kantor",
-                    "B. Langganan Tools",
-                    "B. Kirim Manual/Pengiriman Resi Manual",
-                    "B. Admin Bulanan bank",
-                    "B. Pengembangan SDM",
-                    "B. Kado/ Kenang-kenangan / Buah tangan",
-                    "B. Pembangunan",
+                    "B. CSR",                                // 5-009
+                    "B. Kuota Data",                        // 5-010
+                    "B. Perlengkapan/ATK",                  // 5-011
+                    "B. Internet/Wifi",                     // 5-012
+                    "B. PDAM + Listrik",                    // 5-013
+                    "B. Kebersihan/Sampah",                 // 5-015
+                    "B. BBM Operasional",                   // 5-016
+                    "B. Obat-obatan/Kesehatan",             // 5-017
+                    "B. Service",                           // 5-018
+                    "B. Gathering/Piknik/Kegiatan Kantor",  // 5-019
+                    "B. Langganan Tools",                   // 5-020
+                    "B. Kirim Manual/Pengiriman Resi Manual", // 5-021
+                    "B. Admin Bulanan Bank",                // 5-022
+                    "B. Pengembangan SDM",                  // 5-023
+                    "B. Kado",                              // 5-024
+                    "B. Pembangunan",                       // 5-025
                   ];
                   const totalAdm = items.reduce((sum, nama) => {
                     const row = (pl?.bebanUsaha ?? []).find(

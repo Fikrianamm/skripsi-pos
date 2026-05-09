@@ -86,7 +86,7 @@ export default function Page() {
 
   // Customer data
   const { data: customerData, mutate: mutateCustomers } = useSWR(
-    "/api/admin/customer?limit=100",
+    "/api/admin/customer?&limit=1000",
     fetcher,
   );
   const customers: Customer[] = customerData?.results ?? [];

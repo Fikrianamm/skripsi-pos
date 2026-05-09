@@ -92,7 +92,10 @@ export async function GET(request: NextRequest) {
 
     const results = rawResults.map((p) => {
       const { orderItems, ...rest } = p;
-      const terjual = orderItems.reduce((acc, item) => acc + Number(item.qty), 0);
+      const terjual = orderItems.reduce(
+        (acc, item) => acc + Number(item.qty),
+        0,
+      );
       return { ...rest, terjual };
     });
 

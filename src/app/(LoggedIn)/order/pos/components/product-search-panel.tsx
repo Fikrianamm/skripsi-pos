@@ -17,7 +17,7 @@ export function ProductSearchPanel({ onAdd }: ProductSearchPanelProps) {
   const debouncedSearch = useDebounce(search, 300);
 
   const { data, isLoading } = useSWR(
-    `/api/admin/product?search=${debouncedSearch}&limit=20`,
+    `/api/admin/product?search=${debouncedSearch}&limit=150`,
     fetcher,
     { keepPreviousData: true },
   );
