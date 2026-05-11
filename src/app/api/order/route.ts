@@ -326,6 +326,7 @@ export async function POST(request: NextRequest) {
           ref:          `${nomorOrder.slice(0, 10)}`, // Using order number as ref part
           tanggal:      new Date(),
           keterangan:   `Piutang Order #${nomorOrder} - ${customer.nama}`,
+          namaBiaya:    `Piutang Order #${nomorOrder}`,
           akunDebetId:  piutangAkun.id,
           akunKreditId: pendapatanAkun.id,
           nominal:      Number(grandTotal),
@@ -367,6 +368,7 @@ export async function POST(request: NextRequest) {
             ref:          `PYM-${orderId.slice(0, 5)}`,
             tanggal:      new Date(),
             keterangan:   `Pembayaran Awal Order #${nomorOrder}`,
+            namaBiaya:    `Pembayaran Awal Order #${nomorOrder}`,
             akunDebetId:  kasBank.akunId!,
             akunKreditId: piutangAkun.id,
             nominal:      nominal,

@@ -224,6 +224,7 @@ export async function POST(request: NextRequest) {
               ref:          `INV-${penerimaanId.slice(0, 5)}`,
               tanggal:      realTanggal,
               keterangan:   `Penerimaan Barang${nomorFaktur ? ` #${nomorFaktur}` : ""} - Total ${totalTagihan.toLocaleString("id-ID")}`,
+              namaBiaya:    `Penerimaan Barang${nomorFaktur ? ` #${nomorFaktur}` : ""}`,
               akunDebetId:  hppAkun.id,
               akunKreditId: hutangAkun.id,
               nominal:      totalTagihan,
