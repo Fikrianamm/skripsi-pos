@@ -18,8 +18,11 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { Divider, Tabs, Tab, type Selection } from "@heroui/react";
 import { Wallet, BookOpen } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export default function AkunPage() {
+  const { data: sessionData } = authClient.useSession();
+  const isAdmin = sessionData?.user?.role === "admin";
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [kelompok, setKelompok] = useState<string>("");
@@ -146,31 +149,35 @@ export default function AkunPage() {
               />
             </FilterSection>
           </FilterLanjutan>
-          <AkunModal
-            isOpen={isAkunModalOpen}
-            onOpenChange={(val) => {
-              setIsAkunModalOpen(val);
-              if (!val) setSelectedAkun(null);
-            }}
-            onSuccess={() => {
-              mutate();
-              kelompokMutate();
-              mutateKasBank();
-            }}
-            editData={selectedAkun}
-          />
-          <KasBankModal
-            isOpen={isKasBankModalOpen}
-            onOpenChange={(val) => {
-              setIsKasBankModalOpen(val);
-              if (!val) setSelectedKasBank(null);
-            }}
-            onSuccess={() => {
-              mutateKasBank();
-              mutate();
-            }}
-            editData={selectedKasBank}
-          />
+          {isAdmin && (
+            <AkunModal
+              isOpen={isAkunModalOpen}
+              onOpenChange={(val) => {
+                setIsAkunModalOpen(val);
+                if (!val) setSelectedAkun(null);
+              }}
+              onSuccess={() => {
+                mutate();
+                kelompokMutate();
+                mutateKasBank();
+              }}
+              editData={selectedAkun}
+            />
+          )}
+          {isAdmin && (
+            <KasBankModal
+              isOpen={isKasBankModalOpen}
+              onOpenChange={(val) => {
+                setIsKasBankModalOpen(val);
+                if (!val) setSelectedKasBank(null);
+              }}
+              onSuccess={() => {
+                mutateKasBank();
+                mutate();
+              }}
+              editData={selectedKasBank}
+            />
+          )}
         </div>
       </div>
 
@@ -203,7 +210,7 @@ export default function AkunPage() {
             <AkunTable
               akuns={akuns}
               isLoading={isLoading}
-              onEdit={handleEditAkun}
+              onEdit={isAdmin ? handleEditAkun : undefined}
             />
           </div>
         </Tab>
@@ -230,7 +237,7 @@ export default function AkunPage() {
             <KasBankTable
               kasBanks={kasBanks}
               isLoading={isLoadingKasBank}
-              onEdit={handleEditKasBank}
+              onEdit={isAdmin ? handleEditKasBank : undefined}
             />
           </div>
         </Tab>

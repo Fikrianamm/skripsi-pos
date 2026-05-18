@@ -49,7 +49,7 @@ cp .env.example .env
 # Isi DATABASE_URL dan konfigurasi S3/Pusher
 
 # 4. Generate Auth Secret
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+openssl rand -hex 32
 # Masukkan output ke BETTER_AUTH_SECRET di .env
 
 # 5. Sinkronisasi Database

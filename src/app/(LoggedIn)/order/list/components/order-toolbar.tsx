@@ -29,7 +29,8 @@ interface OrderToolbarProps {
   sortBy: string;
   onSortByChange: (v: string) => void;
   onRefresh: () => void;
-  onCreateOrder: () => void;
+  onCreateOrder?: () => void;
+  showCreateOrder?: boolean;
 }
 
 export function OrderToolbar({
@@ -43,6 +44,7 @@ export function OrderToolbar({
   onSortByChange,
   onRefresh,
   onCreateOrder,
+  showCreateOrder = true,
 }: OrderToolbarProps) {
   const activeCount =
     (filterStatusProduksi ? 1 : 0) +
@@ -116,14 +118,16 @@ export function OrderToolbar({
             <RefreshCw size={15} className={isSpinning ? "animate-spin" : ""} />
           </Button>
         </Tooltip>
-        <Button
-          color="primary"
-          size="sm"
-          startContent={<ShoppingBag size={15} />}
-          onPress={onCreateOrder}
-        >
-          Buat Pesanan
-        </Button>
+        {showCreateOrder && (
+          <Button
+            color="primary"
+            size="sm"
+            startContent={<ShoppingBag size={15} />}
+            onPress={onCreateOrder}
+          >
+            Buat Pesanan
+          </Button>
+        )}
       </div>
     </div>
   );

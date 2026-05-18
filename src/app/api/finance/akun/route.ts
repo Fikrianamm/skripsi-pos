@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 // Removed generated import
 
-async function requireAccess() {
+async function requireRead() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session)
     return { error: "Unauthorized", status: 401, session: null };
@@ -15,10 +15,19 @@ async function requireAccess() {
   return { error: null, status: 200, session };
 }
 
+async function requireWrite() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session)
+    return { error: "Unauthorized", status: 401, session: null };
+  if (session.user.role !== "admin")
+    return { error: "Forbidden. Hanya administrator yang dapat mengubah data akun.", status: 403, session: null };
+  return { error: null, status: 200, session };
+}
+
 // GET /api/finance/akun
 export async function GET(request: NextRequest) {
   try {
-    const { error, status } = await requireAccess();
+    const { error, status } = await requireRead();
     if (error) return NextResponse.json({ error }, { status });
 
     const search = request.nextUrl.searchParams.get("search") || "";
@@ -53,7 +62,7 @@ export async function GET(request: NextRequest) {
 // POST /api/finance/akun
 export async function POST(request: NextRequest) {
   try {
-    const { error, status } = await requireAccess();
+    const { error, status } = await requireWrite();
     if (error) return NextResponse.json({ error }, { status });
 
     const body = await request.json();
@@ -128,7 +137,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/finance/akun
 export async function PATCH(request: NextRequest) {
   try {
-    const { error, status } = await requireAccess();
+    const { error, status } = await requireWrite();
     if (error) return NextResponse.json({ error }, { status });
 
     const body = await request.json();

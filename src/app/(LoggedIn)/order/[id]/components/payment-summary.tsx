@@ -11,11 +11,16 @@ import { OrderDetail, formatMetodePembayaran } from "./types";
 import { PaymentModal } from "./payment-modal";
 import { Button } from "@heroui/react";
 
+import { authClient } from "@/lib/auth-client";
+
 interface PaymentSummaryProps {
   order: OrderDetail;
 }
 
 export function PaymentSummary({ order }: PaymentSummaryProps) {
+  const { data: sessionData } = authClient.useSession();
+  const role = sessionData?.user?.role ?? "";
+  const canAddPayment = role === "admin" || role === "kasir";
   const bayarBadge = getStatusBayarBadge(order.statusPembayaran);
   const subtotal = parseFloat(order.subtotal);
   const diskon = parseFloat(order.diskon);
@@ -128,7 +133,7 @@ export function PaymentSummary({ order }: PaymentSummaryProps) {
           </div>
         )}
 
-        {!isLunas && (
+        {!isLunas && canAddPayment && (
           <Button
             color="primary"
             variant="flat"

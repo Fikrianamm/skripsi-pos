@@ -1,0 +1,60 @@
+@startuml SD_UpdateProduksi
+skinparam sequence {
+  ActorBackgroundColor #FFF3CD
+  ParticipantBackgroundColor #E8F4FD
+  ArrowColor #B8860B
+}
+
+actor "Staff" as Staff
+participant "Browser\n(Next.js)" as UI
+participant "API /api/production\n/spk" as SpkAPI
+participant "API /api/order\n/[id]" as OrderAPI
+participant "Auth" as Auth
+database "Database\n(MySQL)" as DB
+
+Staff -> UI : Buka detail order\nKlik "Update Status Produksi"
+UI --> Staff : Tampilkan modal pilih status
+
+alt Target status = PRODUKSI (perlu SPK)
+
+  Staff -> UI : Isi form SPK:\nkaryawan, model, ukuran, jumlah, tali
+  UI -> SpkAPI : POST /api/production/spk\n{orderId, karyawanId, model, ukuran, jumlah}
+  activate SpkAPI
+
+  SpkAPI -> Auth : Verifikasi sesi
+  Auth --> SpkAPI : Valid
+
+  SpkAPI -> DB : INSERT spk\n{orderId, karyawanId, nomorSpk, statusSPK: AKTIF}
+  DB --> SpkAPI : spk.id tersimpan
+
+  SpkAPI -> DB : UPDATE order\nSET statusProduksi = PRODUKSI
+  DB --> SpkAPI : updated
+
+  SpkAPI --> UI : 201 Created + data SPK
+  deactivate SpkAPI
+
+else Target status = PACKING atau SELESAI
+
+  Staff -> UI : Konfirmasi perubahan status
+  UI -> OrderAPI : PATCH /api/order/[id]\n{statusProduksi: target}
+  activate OrderAPI
+
+  OrderAPI -> Auth : Verifikasi sesi
+  Auth --> OrderAPI : Valid
+
+  OrderAPI -> DB : UPDATE order\nSET statusProduksi = target
+  DB --> OrderAPI : updated
+
+  alt Status = SELESAI dan ada SPK aktif
+    OrderAPI -> DB : UPDATE spk\nSET statusSPK = SELESAI
+    DB --> OrderAPI : updated
+  end
+
+  OrderAPI --> UI : 200 OK
+  deactivate OrderAPI
+
+end
+
+UI --> Staff : Toast sukses\nRefresh data order
+
+@enduml

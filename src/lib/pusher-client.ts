@@ -10,7 +10,7 @@ export function getPusherClient(): PusherClient {
       wsPort: Number(process.env.NEXT_PUBLIC_PUSHER_PORT || 6001),
       wssPort: Number(process.env.NEXT_PUBLIC_PUSHER_PORT || 6001),
       cluster: "mt1",
-      forceTLS: process.env.NEXT_PUBLIC_PUSHER_SCHEME === "wss",
+      forceTLS: false,
       enabledTransports: ["ws", "wss"],
       disableStats: true, // Soketi doesn't support statistics
       authEndpoint: "/api/pusher/auth", // Endpoint for private channels

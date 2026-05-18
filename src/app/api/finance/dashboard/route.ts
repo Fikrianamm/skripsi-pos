@@ -6,8 +6,6 @@ import { prisma } from "@/lib/prisma";
 async function requireDashboardAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized", status: 401 };
-  const allowed = ["admin", "kasir"];
-  if (!session.user.role || !allowed.includes(session.user.role)) return { error: "Forbidden", status: 403 };
   return { error: null, status: 200 };
 }
 

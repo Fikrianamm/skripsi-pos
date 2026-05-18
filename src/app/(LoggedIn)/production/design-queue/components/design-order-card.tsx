@@ -8,6 +8,7 @@ import {
   Divider,
   Skeleton,
   useDisclosure,
+  Avatar,
 } from "@heroui/react";
 import {
   AlertCircle,
@@ -18,12 +19,17 @@ import {
   Trash2,
   Upload,
   ArrowRight,
+  User,
+  RotateCcw,
+  Check,
+  MessageSquare,
 } from "lucide-react";
 import { addToast } from "@heroui/toast";
 import { DesignOrder, DesignFile } from "./types";
 import { UploadModal } from "./upload-modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { SpkFormModal } from "@/app/(LoggedIn)/order/[id]/components/spk-form-modal";
+import { DesignDetailDrawer } from "./design-detail-drawer";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function isOverdue(deadline: string | null) {
@@ -61,12 +67,14 @@ interface DesignOrderCardProps {
   order: DesignOrder;
   canEdit: boolean;
   onMutate: () => void;
+  currentUser: { id: string; role: string } | null;
 }
 
 export function DesignOrderCard({
   order,
   canEdit,
   onMutate,
+  currentUser,
 }: DesignOrderCardProps) {
   const overdue = isOverdue(order.deadline);
   const days = daysUntil(order.deadline);
@@ -75,11 +83,76 @@ export function DesignOrderCard({
   const advanceDisclosure = useDisclosure();
   const spkDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const detailDrawerDisclosure = useDisclosure();
 
   const [deletingFileId, setDeletingFileId] = React.useState<string | null>(null);
   const [isDeletingFile, setIsDeletingFile] = React.useState(false);
   const [isAdvancing, setIsAdvancing] = React.useState(false);
   const [fileToDelete, setFileToDelete] = React.useState<DesignFile | null>(null);
+
+  const [isClaiming, setIsClaiming] = React.useState(false);
+  const [isFinalizing, setIsFinalizing] = React.useState(false);
+
+  async function handleClaim() {
+    if (!currentUser) return;
+    setIsClaiming(true);
+    try {
+      const res = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designerId: currentUser.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({ title: "Gagal klaim", description: json.error, color: "danger" });
+        return;
+      }
+      addToast({ title: "Antrian berhasil diambil!", color: "success" });
+      onMutate();
+    } finally {
+      setIsClaiming(false);
+    }
+  }
+
+  async function handleResetClaim() {
+    setIsClaiming(true);
+    try {
+      const res = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designerId: null }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({ title: "Gagal reset", description: json.error, color: "danger" });
+        return;
+      }
+      addToast({ title: "Penugasan desainer direset.", color: "success" });
+      onMutate();
+    } finally {
+      setIsClaiming(false);
+    }
+  }
+
+  async function handleFinalize() {
+    setIsFinalizing(true);
+    try {
+      const res = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDesignFinal: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({ title: "Gagal finalisasi", description: json.error, color: "danger" });
+        return;
+      }
+      addToast({ title: "Desain berhasil difinalisasi / ACC!", color: "success" });
+      onMutate();
+    } finally {
+      setIsFinalizing(false);
+    }
+  }
 
   async function handleDeleteFile() {
     if (!fileToDelete) return;
@@ -136,7 +209,10 @@ export function DesignOrderCard({
 
   return (
     <>
-      <div className="rounded-xl border bg-content1 shadow-sm overflow-hidden flex flex-col h-full">
+      <div
+        onClick={detailDrawerDisclosure.onOpen}
+        className="rounded-xl border bg-content1 shadow-sm overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-md transition-shadow"
+      >
         {/* ── Deadline warning bar ── */}
         {overdue && (
           <div className="bg-danger-50 border-b border-danger-200 px-4 py-1.5 flex items-center gap-1.5 text-danger text-xs font-medium">
@@ -152,17 +228,25 @@ export function DesignOrderCard({
           </div>
         )}
 
-        <div className="p-4 flex flex-col gap-3">
+        <div className="p-4 flex flex-col gap-3 flex-1">
           {/* ── Header ── */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5">
-              <Link
-                href={`/order/${order.id}`}
-                className="font-mono font-semibold text-sm text-primary hover:underline flex items-center gap-1"
-              >
-                {order.nomorOrder}
-                <ExternalLink size={11} />
-              </Link>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href={`/order/${order.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="font-mono font-semibold text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  {order.nomorOrder}
+                  <ExternalLink size={11} />
+                </Link>
+                {order.isDesignFinal && (
+                  <Chip size="sm" color="success" variant="flat" className="h-5 text-[10px]">
+                    ACC
+                  </Chip>
+                )}
+              </div>
               <span className="text-xs text-default-500">
                 {order.customer.nama}
                 {order.customer.nomorHp && <> · {order.customer.nomorHp}</>}
@@ -213,6 +297,60 @@ export function DesignOrderCard({
 
           <Divider className="my-0" />
 
+          {/* ── Assignment Section ── */}
+          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+            {order.designerId ? (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-default-50 border border-default-100">
+                <Avatar
+                  size="sm"
+                  src={order.designer?.image || undefined}
+                  name={order.designer?.name?.substring(0, 2).toUpperCase()}
+                  className="h-6 w-6 text-[10px] shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-default-400">Designer:</p>
+                  <p className="text-xs font-semibold truncate text-default-700">
+                    {order.designer?.name}
+                  </p>
+                </div>
+                {currentUser?.role === "admin" && (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    color="danger"
+                    isLoading={isClaiming}
+                    onPress={handleResetClaim}
+                    className="h-6 w-6 min-w-6"
+                  >
+                    <RotateCcw size={12} />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-default-400 italic">
+                  <User size={13} />
+                  <span>Belum ada desainer yang mengambil antrian</span>
+                </div>
+                {currentUser?.role === "designer" && (
+                  <Button
+                    size="sm"
+                    color="primary"
+                    variant="flat"
+                    isLoading={isClaiming}
+                    onPress={handleClaim}
+                    className="w-full h-8"
+                  >
+                    Ambil Antrian
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Divider className="my-0" />
+
           {/* ── Design Files ── */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -226,7 +364,10 @@ export function DesignOrderCard({
                   variant="flat"
                   color="primary"
                   startContent={<Upload size={13} />}
-                  onPress={uploadDisclosure.onOpen}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    uploadDisclosure.onOpen();
+                  }}
                   className="h-7 text-xs px-2"
                 >
                   Upload
@@ -240,7 +381,7 @@ export function DesignOrderCard({
                 Belum ada file desain diupload
               </div>
             ) : (
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
                 {order.designFiles.map((df) => (
                   <div
                     key={df.id}
@@ -295,30 +436,76 @@ export function DesignOrderCard({
             )}
           </div>
 
-          {/* ── Advance button ── */}
-          {canEdit && (
-            <div className="mt-auto">
-              <Divider className="my-3" />
-              <Button
-                size="sm"
-                color="success"
-                variant="flat"
-                endContent={<ArrowRight size={14} />}
-                onPress={() => {
-                  if (order.spk) {
-                    advanceDisclosure.onOpen();
-                  } else {
-                    spkDisclosure.onOpen();
-                  }
-                }}
-                className="w-full"
-              >
-                {order.spk ? "Lanjut ke Produksi" : "Buat SPK & Produksi"}
-              </Button>
-            </div>
-          )}
+          {/* ── Discussion visual trigger ── */}
+          <div className="flex items-center justify-between text-xs text-default-400 mt-1 hover:text-default-600 transition-colors">
+            <span className="flex items-center gap-1.5">
+              <MessageSquare size={13} />
+              <span>Diskusi & Komentar</span>
+            </span>
+            <span className="text-[10px] bg-default-100 px-1.5 py-0.5 rounded-full">
+              Lihat Detail ➜
+            </span>
+          </div>
+
+          {/* ── Workflow Action Buttons ── */}
+          <div className="mt-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Designer / Admin Finalize Option */}
+            {(currentUser?.role === "designer" || currentUser?.role === "admin") && !order.isDesignFinal && (
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  color="success"
+                  variant="flat"
+                  isLoading={isFinalizing}
+                  startContent={<Check size={14} />}
+                  onPress={handleFinalize}
+                  className="w-full"
+                  isDisabled={order.designerId !== currentUser?.id && currentUser?.role !== "admin"}
+                >
+                  Finalisasi & ACC Desain
+                </Button>
+              </div>
+            )}
+
+            {/* Produksi / Admin Handoff Option */}
+            {(currentUser?.role === "produksi" || currentUser?.role === "admin") && (
+              <div className="pt-2">
+                <Divider className="my-2" />
+                <Button
+                  size="sm"
+                  color={order.isDesignFinal ? "success" : "default"}
+                  variant="flat"
+                  endContent={<ArrowRight size={14} />}
+                  isDisabled={!order.isDesignFinal}
+                  onPress={() => {
+                    if (order.spk) {
+                      advanceDisclosure.onOpen();
+                    } else {
+                      spkDisclosure.onOpen();
+                    }
+                  }}
+                  className="w-full"
+                >
+                  {!order.isDesignFinal
+                    ? "Menunggu ACC Desain"
+                    : order.spk
+                      ? "Lanjut ke Produksi"
+                      : "Buat SPK & Produksi"}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Detail Drawer */}
+      <DesignDetailDrawer
+        isOpen={detailDrawerDisclosure.isOpen}
+        onOpenChange={detailDrawerDisclosure.onOpenChange}
+        order={order}
+        onMutate={onMutate}
+        currentUser={currentUser}
+      />
 
       {/* Upload Modal */}
       <UploadModal

@@ -12,10 +12,12 @@ import { OrderRow } from "../components/types";
 import { OrderToolbar } from "./components/order-toolbar";
 import { OrderCard } from "./components/order-card";
 import { TablePagination } from "@/components/data-table/table-pagination";
-
+import { authClient } from "@/lib/auth-client";
 
 export default function Page() {
   const router = useRouter();
+  const { data: sessionData } = authClient.useSession();
+  const userRole = sessionData?.user?.role ?? "";
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -80,6 +82,7 @@ export default function Page() {
         }}
         onRefresh={() => mutate()}
         onCreateOrder={() => router.push("/order/pos")}
+        showCreateOrder={userRole === "kasir" || userRole === "admin" || userRole === "administrator"}
       />
 
       {isLoading ? (
@@ -113,6 +116,7 @@ export default function Page() {
                 order={order}
                 onNavigate={() => router.push(`/order/${order.id}`)}
                 onStatusUpdated={() => mutate()}
+                userRole={userRole}
               />
             ))}
           </div>

@@ -4,24 +4,24 @@ services:
   # 1. Service Database (MySQL)
   db:
     image: mysql:8.0
-    container_name: nextjs_mysql
+    container_name: skripsi_nextjs_mysql
     restart: always
     command: --max-connections=1000
     environment:
       MYSQL_ROOT_PASSWORD: root # Password database (bebas diganti)
       MYSQL_DATABASE: my_app_db # Nama database awal
     ports:
-      - "3306:3306" # Membuka port ke laptop agar bisa diakses
+      - "3307:3306" # Membuka port ke laptop agar bisa diakses
     volumes:
       - db_data:/var/lib/mysql # Agar data tidak hilang saat docker dimatikan
 
   # 2. Service phpMyAdmin
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: nextjs_pma
+    container_name: skripsi_nextjs_pma
     restart: always
     ports:
-      - "8080:80" # Akses via browser di localhost:8080
+      - "8081:80" # Akses via browser di localhost:8081
     environment:
       PMA_HOST: db # Konek ke service 'db' di atas
     depends_on:
@@ -30,15 +30,15 @@ services:
   # 3. Service Soketi (Self-hosted Pusher compatibility)
   soketi:
     image: quay.io/soketi/soketi:latest-16-alpine
-    container_name: nextjs_soketi
+    container_name: skripsi_nextjs_soketi
     restart: always
     ports:
-      - "6001:6001"   # WebSocket
-      - "9601:9601"   # Metrics
+      - "6002:6002"   # WebSocket
+      - "9602:9602"   # Metrics
     environment:
-      SOKETI_DEFAULT_APP_ID: "pos-app"
-      SOKETI_DEFAULT_APP_KEY: "pos-key"
-      SOKETI_DEFAULT_APP_SECRET: "pos-secret"
+      SOKETI_DEFAULT_APP_ID: ${PUSHER_APP_ID}
+      SOKETI_DEFAULT_APP_KEY: ${NEXT_PUBLIC_PUSHER_KEY}
+      SOKETI_DEFAULT_APP_SECRET: ${PUSHER_SECRET}
       SOKETI_DEFAULT_APP_MAX_CONNS: "100"
       SOKETI_DEBUG: "1"
 

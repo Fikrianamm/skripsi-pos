@@ -20,6 +20,7 @@ import { DeleteOrderModal } from "./components/delete-order-modal";
 import { useReactToPrint } from "react-to-print";
 import { useRef } from "react";
 import { InvoiceTemplate } from "./components/invoice-template";
+import { authClient } from "@/lib/auth-client";
 
 export default function Page() {
   const params = useParams();
@@ -32,6 +33,10 @@ export default function Page() {
   const printRef = useRef<HTMLDivElement>(null);
   const { data: settingsData } = useSWR("/api/admin/settings", fetcher);
   const settings = settingsData || null;
+  const { data: sessionData } = authClient.useSession();
+  const userRole = sessionData?.user?.role ?? "";
+  const isAdmin = userRole === "admin";
+  const canManageSPK = isAdmin || userRole === "produksi";
 
   const { data, isLoading, mutate } = useSWR(`/api/order/${orderId}`, fetcher);
   const order: OrderDetail | null = data?.order ?? null;
@@ -142,27 +147,32 @@ export default function Page() {
               />
             </Button>
           </Tooltip>
-          <UpdateStatusModal
-            orderId={order.id}
-            nomorOrder={order.nomorOrder}
-            currentStatus={order.statusProduksi}
-            currentStatusBayar={order.statusPembayaran}
-            hasSPK={!!order.spk}
-            items={order.items}
-            onUpdated={() => mutate()}
-          />
-          <Tooltip content="Hapus pesanan (admin only)">
-            <Button
-              isIconOnly
-              size="sm"
-              variant="flat"
-              color="danger"
-              onPress={() => setShowDeleteModal(true)}
-              isLoading={isDeleting}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Tooltip>
+          {["kasir", "admin", "produksi"].includes(userRole || "") && (
+            <UpdateStatusModal
+              orderId={order.id}
+              nomorOrder={order.nomorOrder}
+              currentStatus={order.statusProduksi}
+              currentStatusBayar={order.statusPembayaran}
+              hasSPK={!!order.spk}
+              items={order.items}
+              onUpdated={() => mutate()}
+              userRole={userRole}
+            />
+          )}
+          {isAdmin && (
+            <Tooltip content="Hapus pesanan (admin only)">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="flat"
+                color="danger"
+                onPress={() => setShowDeleteModal(true)}
+                isLoading={isDeleting}
+              >
+                <Trash2 size={14} />
+              </Button>
+            </Tooltip>
+          )}
           <Button
             size="sm"
             color="primary"
@@ -203,8 +213,8 @@ export default function Page() {
                   spk={order.spk}
                   onUpdated={() => mutate()}
                 />
-              ) : (
-                /* SPK belum dibuat — tampilkan card placeholder */
+              ) : canManageSPK ? (
+                /* SPK belum dibuat — hanya tampilkan untuk admin/produksi */
                 <Card className="border border-warning-200 bg-warning-50/40 shadow-none">
                   <CardBody className="flex flex-col items-center gap-3 py-5 text-center">
                     <div className="text-warning-600 text-sm font-medium">
@@ -224,7 +234,7 @@ export default function Page() {
                     </Button>
                   </CardBody>
                 </Card>
-              )}
+              ) : null}
             </>
           )}
         </div>

@@ -14,7 +14,7 @@ import { Edit2 } from "lucide-react";
 interface AkunTableProps {
   akuns: any[];
   isLoading: boolean;
-  onEdit: (data: any) => void;
+  onEdit?: (data: any) => void;
 }
 
 export function AkunTable({ akuns, isLoading, onEdit }: AkunTableProps) {
@@ -33,12 +33,18 @@ export function AkunTable({ akuns, isLoading, onEdit }: AkunTableProps) {
         <TableColumn>KELOMPOK</TableColumn>
         <TableColumn>POSISI NORMAL</TableColumn>
         <TableColumn align="center">STATUS</TableColumn>
-        <TableColumn align="center">AKSI</TableColumn>
+        {onEdit ? (
+          <TableColumn align="center">AKSI</TableColumn>
+        ) : (
+          <TableColumn hidden> </TableColumn>
+        )}
       </TableHeader>
       <TableBody
         items={akuns}
         isLoading={isLoading}
-        emptyContent={isLoading ? "Memuat data akun..." : "Belum ada master akun."}
+        emptyContent={
+          isLoading ? "Memuat data akun..." : "Belum ada master akun."
+        }
       >
         {(item: any) => (
           <TableRow key={item.id}>
@@ -54,29 +60,41 @@ export function AkunTable({ akuns, isLoading, onEdit }: AkunTableProps) {
               </Chip>
             </TableCell>
             <TableCell>
-              <Chip 
-                size="sm" 
-                variant="dot" 
+              <Chip
+                size="sm"
+                variant="dot"
                 color={item.posisiNormal === "DEBET" ? "success" : "danger"}
               >
                 {item.posisiNormal}
               </Chip>
             </TableCell>
             <TableCell>
-              <Chip size="sm" variant="dot" color={item.isActive ? "success" : "danger"}>
+              <Chip
+                size="sm"
+                variant="dot"
+                color={item.isActive ? "success" : "danger"}
+              >
                 {item.isActive ? "Aktif" : "Tidak Aktif"}
               </Chip>
             </TableCell>
-            <TableCell>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                onPress={() => onEdit(item)}
-              >
-                <Edit2 size={15} className="text-default-500" />
-              </Button>
-            </TableCell>
+            {onEdit ? (
+              <TableCell>
+                {onEdit ? (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    onPress={() => onEdit(item)}
+                  >
+                    <Edit2 size={15} className="text-default-500" />
+                  </Button>
+                ) : (
+                  <span className="text-xs text-default-300 italic">—</span>
+                )}
+              </TableCell>
+            ) : (
+              <TableCell hidden>-</TableCell>
+            )}
           </TableRow>
         )}
       </TableBody>

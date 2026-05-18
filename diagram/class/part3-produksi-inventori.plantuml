@@ -1,0 +1,114 @@
+@startuml Class_Part3_Produksi
+title Class Diagram — Bagian 3: Produksi & Inventori
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FEF9C3
+  BorderColor #A16207
+  ArrowColor #713F12
+}
+
+class Order {
+  +id: String
+  +nomorOrder: String
+  +statusProduksi: StatusProduksi
+}
+
+class User {
+  +id: String
+  +name: String
+  +role: String
+}
+
+class Supplier {
+  +id: String
+  +nama: String
+}
+
+class Unit {
+  +id: String
+  +nama: String
+}
+
+class Karyawan {
+  +id: String
+  +nama: String
+  +posisi: String
+  +isActive: Boolean
+}
+
+class SPK {
+  +id: String
+  +nomorSpk: String
+  +tahapProduksi: StatusProduksi
+  +statusSPK: StatusSPK
+  +model: String
+  +ukuran: String
+  +jumlah: Decimal
+  +tali: String
+  +accCetak: Boolean
+  +catatan: String
+  +deletedAt: DateTime
+  --
+  +updateStatus(): void
+  +approveForPrint(): void
+}
+
+class PengeluaranBarang {
+  +id: String
+  +tanggal: DateTime
+  +keterangan: String
+  +deletedAt: DateTime
+}
+
+class StokKeluar {
+  +id: String
+  +jumlah: Decimal
+}
+
+class BahanBaku {
+  +id: String
+  +nama: String
+  +stok: Decimal
+  +minStok: Decimal
+  +isActive: Boolean
+  --
+  +checkStokMinimum(): Boolean
+  +updateStok(): void
+}
+
+class PenerimaanBarang {
+  +id: String
+  +nomorFaktur: String
+  +tanggal: DateTime
+  +totalTagihan: Decimal
+  +buktiNota: String
+  +deletedAt: DateTime
+  --
+  +receive(): void
+}
+
+class StokMasuk {
+  +id: String
+  +jumlah: Decimal
+  +hargaBeli: Decimal
+  +totalHargaItem: Decimal
+}
+
+' Relasi Produksi
+Order   "1"     -->  "0..1" SPK               : memiliki
+SPK     "0..*"  -->  "1"    Karyawan          : dikerjakan oleh
+User    "1"     -->  "0..*" SPK               : membuat
+SPK     "1"     -->  "0..*" PengeluaranBarang : menghasilkan
+User    "1"     -->  "0..*" PengeluaranBarang : mencatat
+
+PengeluaranBarang "1"    *-- "1..*" StokKeluar : berisi
+StokKeluar        "0..*" --> "1"    BahanBaku  : mengurangi stok
+
+' Relasi Inventori
+Supplier        "1"    --> "0..*"  PenerimaanBarang : sumber
+User            "1"    --> "0..*"  PenerimaanBarang : mencatat
+PenerimaanBarang "1"   *-- "1..*" StokMasuk        : berisi
+StokMasuk       "0..*" --> "1"    BahanBaku         : menambah stok
+BahanBaku       "0..*" --> "1"    Unit              : satuan
+
+@enduml

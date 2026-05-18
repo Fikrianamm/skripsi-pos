@@ -14,12 +14,14 @@ interface OrderCardProps {
   order: OrderRow;
   onNavigate: () => void;
   onStatusUpdated: () => void;
+  userRole?: string;
 }
 
 export function OrderCard({
   order,
   onNavigate,
   onStatusUpdated,
+  userRole,
 }: OrderCardProps) {
   const produksiBadge = getStatusProduksiBadge(order.statusProduksi);
   const bayarBadge = getStatusBayarBadge(order.statusPembayaran);
@@ -118,15 +120,18 @@ export function OrderCard({
             className="flex items-center gap-1 shrink-0 ml-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <UpdateStatusModal
-              orderId={order.id}
-              nomorOrder={order.nomorOrder}
-              currentStatus={order.statusProduksi}
-              currentStatusBayar={order.statusPembayaran}
-              hasSPK={!!order.spk}
-              items={order.items}
-              onUpdated={onStatusUpdated}
-            />
+            {["kasir", "admin", "produksi"].includes(userRole || "") && (
+              <UpdateStatusModal
+                orderId={order.id}
+                nomorOrder={order.nomorOrder}
+                currentStatus={order.statusProduksi}
+                currentStatusBayar={order.statusPembayaran}
+                hasSPK={!!order.spk}
+                items={order.items}
+                onUpdated={onStatusUpdated}
+                userRole={userRole}
+              />
+            )}
             <Tooltip content="Lihat detail">
               <Button isIconOnly size="sm" variant="light" onPress={onNavigate}>
                 <Eye size={14} />

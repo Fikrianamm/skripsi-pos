@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { notifyOrderStatusChange } from "@/lib/notifications";
+import { notifyOrderStatusChange, createNotificationForRole } from "@/lib/notifications";
+import { JenisNotif } from "../../../../../generated/prisma/enums";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,6 +24,9 @@ const ORDER_DETAIL_SELECT = {
   createdAt: true,
   updatedAt: true,
   deletedAt: true,
+  designerId: true,
+  isDesignFinal: true,
+  designer: { select: { id: true, name: true, image: true } },
   customer: { select: { id: true, nama: true, nomorHp: true, image: true } },
   items: {
     select: {
@@ -141,7 +145,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 // Kasir: hanya status, pembayaran, catatan, deadline
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const { error, status, isAdmin } = await requireOrderAccess();
+    const { error, status, isAdmin, session } = await requireOrderAccess();
     if (error) return NextResponse.json({ error }, { status });
 
     const { id } = await params;
@@ -149,7 +153,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       where: { id },
       select: {
         id: true,
+        nomorOrder: true,
         statusProduksi: true,
+        designerId: true,
+        isDesignFinal: true,
         items: {
           select: {
             productId: true,
@@ -176,6 +183,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       deadline,
       diskon,
       ongkir,
+      designerId,
+      isDesignFinal,
       // Admin only
       customerId,
       channel,
@@ -252,6 +261,58 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (recalcData.subtotal !== undefined) data.subtotal = recalcData.subtotal;
     if (recalcData.grandTotal !== undefined)
       data.grandTotal = recalcData.grandTotal;
+
+    // Handle designerId assignment
+    if (designerId !== undefined) {
+      const userRole = session?.user?.role;
+      if (userRole !== "admin" && userRole !== "designer") {
+        return NextResponse.json(
+          { error: "Hanya desainer atau admin yang dapat mengklaim antrian." },
+          { status: 403 }
+        );
+      }
+      if (userRole === "designer") {
+        if (designerId !== session?.user?.id) {
+          return NextResponse.json(
+            { error: "Desainer hanya dapat mengklaim antrian untuk diri sendiri." },
+            { status: 400 }
+          );
+        }
+        if (existing.designerId && existing.designerId !== session?.user?.id) {
+          return NextResponse.json(
+            { error: "Antrian sudah diambil oleh desainer lain." },
+            { status: 400 }
+          );
+        }
+      }
+      data.designerId = designerId;
+    }
+
+    // Handle isDesignFinal
+    if (isDesignFinal !== undefined) {
+      const userRole = session?.user?.role;
+      if (userRole !== "admin" && userRole !== "designer") {
+        return NextResponse.json(
+          { error: "Hanya desainer atau admin yang dapat memfinalisasi desain." },
+          { status: 403 }
+        );
+      }
+      data.isDesignFinal = isDesignFinal;
+
+      // Trigger notification if newly marked final
+      if (isDesignFinal === true && !existing.isDesignFinal) {
+        try {
+          await createNotificationForRole(["admin", "produksi"], {
+            title: "Desain Selesai & ACC",
+            message: `Desain untuk Order #${existing.nomorOrder} telah selesai. Silakan buat SPK.`,
+            jenis: JenisNotif.SISTEM,
+            linkUrl: `/order/${id}`,
+          });
+        } catch (e) {
+          console.error("Failed to notify final design:", e);
+        }
+      }
+    }
 
     // Admin-only fields
     if (isAdmin) {

@@ -8,6 +8,8 @@ import {
   Button,
   Divider,
   Pagination,
+  Tabs,
+  Tab,
 } from "@heroui/react";
 import {
   PackageSearch,
@@ -35,16 +37,19 @@ export default function Page() {
   const { data: sessionData } = authClient.useSession();
   const role = sessionData?.user?.role ?? "";
   const canEdit = role === "admin" || role === "designer";
+  const currentUser = sessionData?.user ? { id: sessionData.user.id, role: role } : null;
 
   const [search, setSearch] = React.useState("");
   const [hasFileFilter, setHasFileFilter] = React.useState("all");
   const [sortBy, setSortBy] = React.useState("createdAt");
+  const [queueTab, setQueueTab] = React.useState("all"); // "all" | "mine"
   const [page, setPage] = React.useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
   const limit = 12;
 
-  const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}&sortBy=${sortBy}`;
+  const designerIdFilter = queueTab === "mine" && sessionData?.user?.id ? sessionData.user.id : "";
+  const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}&sortBy=${sortBy}&designerId=${designerIdFilter}`;
 
   const { data, isLoading, mutate } = useSWR(apiUrl, fetcher, {
     keepPreviousData: true,
@@ -56,9 +61,9 @@ export default function Page() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, hasFileFilter, sortBy]);
+  }, [debouncedSearch, hasFileFilter, sortBy, queueTab]);
 
-  const activeFilters = hasFileFilter !== "all" || search !== "";
+  const activeFilters = hasFileFilter !== "all" || search !== "" || queueTab !== "all";
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-6">
@@ -66,6 +71,21 @@ export default function Page() {
         title="Antrian Desain"
         description="Kelola file desain untuk pesanan yang sedang di tahap Desain."
       />
+
+      {/* Tabs Filter for Designer & Admin */}
+      {(role === "designer" || role === "admin") && (
+        <Tabs
+          selectedKey={queueTab}
+          onSelectionChange={(key) => setQueueTab(key as string)}
+          variant="solid"
+          color="primary"
+          size="sm"
+          className="self-start shrink-0"
+        >
+          <Tab key="all" title="Semua Antrian" />
+          <Tab key="mine" title="Antrian Saya" />
+        </Tabs>
+      )}
 
       {/* ── Filter Bar ── */}
       <div className="flex flex-col md:flex-row gap-2">
@@ -80,12 +100,14 @@ export default function Page() {
           <FilterLanjutan
             activeCount={
               (hasFileFilter !== "all" ? 1 : 0) +
-              (sortBy !== "createdAt" ? 1 : 0)
+              (sortBy !== "createdAt" ? 1 : 0) +
+              (queueTab !== "all" ? 1 : 0)
             }
             onReset={() => {
               setSearch("");
               setHasFileFilter("all");
               setSortBy("createdAt");
+              setQueueTab("all");
             }}
           >
             <FilterSection label="Urutkan">
@@ -162,6 +184,7 @@ export default function Page() {
               onPress={() => {
                 setSearch("");
                 setHasFileFilter("all");
+                setQueueTab("all");
               }}
             >
               Reset Filter
@@ -176,6 +199,7 @@ export default function Page() {
               order={order}
               canEdit={canEdit}
               onMutate={mutate}
+              currentUser={currentUser}
             />
           ))}
         </div>

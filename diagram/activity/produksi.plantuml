@@ -1,0 +1,54 @@
+@startuml AD_Produksi
+skinparam activity {
+  BackgroundColor #FFF3CD
+  BorderColor #B8860B
+  DiamondBackgroundColor #E8F4FD
+}
+
+start
+:Staff membuka detail Order;
+:Ubah status order menjadi DESAIN;
+
+:Tim desain mengerjakan desain;
+:Upload file desain ke sistem;
+
+if (Desain disetujui oleh pelanggan?) then (tidak)
+  :Revisi desain sesuai permintaan;
+  stop
+endif
+
+:Buat SPK (Surat Perintah Kerja);
+:Isi data SPK:\nmodel, ukuran, jumlah, tali, catatan;
+:Pilih Karyawan yang mengerjakan;
+:Simpan SPK — status: AKTIF;
+:Ubah status order menjadi PRODUKSI;
+
+:Karyawan mulai proses produksi;
+
+:Staff mencatat pengeluaran bahan baku;
+repeat
+  :Pilih Bahan Baku yang digunakan;
+  :Input jumlah pemakaian;
+  :Simpan item StokKeluar;
+  :Stok BahanBaku berkurang secara otomatis;
+
+  if (Stok akhir < Stok Minimum?) then (ya)
+    :Tandai bahan baku sebagai stok menipis;
+  endif
+repeat while (Masih ada bahan baku lagi?) is (ya)
+
+:Simpan record PengeluaranBarang;
+:Produksi selesai — ubah status order menjadi PACKING;
+
+:Proses packing & quality check selesai;
+:Ubah status SPK menjadi SELESAI;
+
+if (Perlu persetujuan cetak SPK?) then (ya)
+  :Tandai accCetak = true;
+  :Catat nama & waktu persetujuan;
+endif
+
+:Ubah status order menjadi SELESAI;
+
+stop
+@enduml

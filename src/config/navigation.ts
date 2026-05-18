@@ -63,12 +63,12 @@ export const NAV_ITEMS: NavGroup[] = [
         title: "Manajemen Produksi",
         url: "#",
         icon: Factory,
-        roles: ["admin", "designer", "produksi"],
+        roles: ["admin", "designer", "produksi", "kasir"],
         items: [
           {
             title: "Antrian Desain",
             url: "/production/design-queue",
-            roles: ["admin", "designer"],
+            roles: ["admin", "designer", "kasir"],
           },
           {
             title: "Antrian Produksi (SPK)",
@@ -116,6 +116,7 @@ export const NAV_ITEMS: NavGroup[] = [
           {
             title: "Dashboard Keuangan",
             url: "/finance/dashboard",
+            roles: ["admin"],
           },
           {
             title: "Jurnal Umum",
@@ -131,7 +132,7 @@ export const NAV_ITEMS: NavGroup[] = [
         title: "Laporan",
         url: "#",
         icon: FileText,
-        roles: ["admin", "kasir"],
+        roles: ["admin"],
         items: [
           {
             title: "Laporan Laba Rugi",

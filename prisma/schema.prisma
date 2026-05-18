@@ -34,6 +34,8 @@ model User {
   pengeluaranBarang PengeluaranBarang[]
   payments          Payment[]
   jurnalUmum        JurnalUmum[]
+  designerOrders    Order[]             @relation("DesignerOrders")
+  comments          OrderComment[]
 
   @@map("user")
 }
@@ -278,6 +280,10 @@ model Order {
   designFiles      DesignFile[]
   spk              SPK?
   payments         Payment[]
+  designerId       String?
+  designer         User?            @relation("DesignerOrders", fields: [designerId], references: [id])
+  isDesignFinal    Boolean          @default(false)
+  comments         OrderComment[]
 
   @@index([customerId])
   @@index([userId])
@@ -613,4 +619,31 @@ enum JenisNotif {
   PAYMENT_MASUK
   BIAYA_DICATAT
   SISTEM
+}
+
+model OrderComment {
+  id        String             @id @default(cuid())
+  orderId   String
+  userId    String
+  text      String             @db.Text
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  order     Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  files     OrderCommentFile[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@map("order_comment")
+}
+
+model OrderCommentFile {
+  id        String       @id @default(cuid())
+  commentId String
+  filePath  String       @db.Text
+  createdAt DateTime     @default(now())
+  comment   OrderComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@map("order_comment_file")
 }

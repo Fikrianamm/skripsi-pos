@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")?.trim() ?? "";
     const hasFile = searchParams.get("hasFile") ?? "all"; // "all" | "true" | "false"
     const sortBy = searchParams.get("sortBy") ?? "createdAt";
+    const designerId = searchParams.get("designerId") ?? "";
 
     const where: any = {
       statusProduksi: "DESAIN",
@@ -44,6 +45,10 @@ export async function GET(req: NextRequest) {
       where.designFiles = { some: {} };
     } else if (hasFile === "false") {
       where.designFiles = { none: {} };
+    }
+
+    if (designerId) {
+      where.designerId = designerId;
     }
 
     // Sort order
@@ -65,6 +70,11 @@ export async function GET(req: NextRequest) {
           statusProduksi: true,
           catatan: true,
           createdAt: true,
+          designerId: true,
+          isDesignFinal: true,
+          designer: {
+            select: { id: true, name: true, image: true },
+          },
           customer: {
             select: { id: true, nama: true, nomorHp: true },
           },

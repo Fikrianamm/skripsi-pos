@@ -15,7 +15,7 @@ import { formatRupiah } from "@/lib/func";
 interface KasBankTableProps {
   kasBanks: any[];
   isLoading: boolean;
-  onEdit: (data: any) => void;
+  onEdit?: (data: any) => void;
 }
 
 export function KasBankTable({
@@ -38,7 +38,11 @@ export function KasBankTable({
         <TableColumn>NOMOR REKENING</TableColumn>
         <TableColumn>AKUN TERHUBUNG</TableColumn>
         <TableColumn align="end">SALDO SAAT INI</TableColumn>
-        <TableColumn align="center">AKSI</TableColumn>
+        {onEdit ? (
+          <TableColumn align="center">AKSI</TableColumn>
+        ) : (
+          <TableColumn> </TableColumn>
+        )}
       </TableHeader>
       <TableBody
         items={kasBanks}
@@ -92,16 +96,24 @@ export function KasBankTable({
                 {formatRupiah(item.saldoSaatIni)}
               </span>
             </TableCell>
-            <TableCell>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                onPress={() => onEdit(item)}
-              >
-                <Edit2 size={15} className="text-default-500" />
-              </Button>
-            </TableCell>
+            {onEdit ? (
+              <TableCell>
+                {onEdit ? (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    onPress={() => onEdit(item)}
+                  >
+                    <Edit2 size={15} className="text-default-500" />
+                  </Button>
+                ) : (
+                  <span className="text-xs text-default-300 italic">—</span>
+                )}
+              </TableCell>
+            ) : (
+              <TableCell hidden>-</TableCell>
+            )}
           </TableRow>
         )}
       </TableBody>

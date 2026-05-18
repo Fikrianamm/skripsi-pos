@@ -1,0 +1,46 @@
+@startuml AD_Pembayaran
+skinparam activity {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  DiamondBackgroundColor #FFF9C4
+}
+
+start
+:Staff membuka halaman detail Order;
+:Klik tombol "Catat Pembayaran";
+:Sistem menampilkan form pembayaran;
+
+:Isi nominal pembayaran;
+:Pilih metode pembayaran (Tunai / Transfer / QRIS);
+:Isi tanggal dan keterangan (opsional);
+
+if (Nominal > 0 dan valid?) then (tidak)
+  :Tampilkan pesan error validasi;
+  stop
+endif
+
+:Simpan record Payment ke database;
+
+:Tentukan akun Debet berdasarkan metode pembayaran;
+note right
+  Tunai → Kas
+  Transfer/QRIS → Rekening Bank
+end note
+
+:Buat entri Jurnal Umum — sisi Debet;
+:Buat entri Jurnal Umum — sisi Kredit (Akun Pendapatan);
+
+:Hitung total pembayaran yang sudah diterima;
+
+if (Total bayar >= Grand Total order?) then (ya)
+  :Update statusPembayaran = LUNAS;
+else if (Total bayar sebagian?) then (ya)
+  :Update statusPembayaran = DP;
+else (tidak ada bayar)
+  :statusPembayaran tetap BELUM_BAYAR;
+endif
+
+:Tampilkan konfirmasi pembayaran berhasil;
+
+stop
+@enduml

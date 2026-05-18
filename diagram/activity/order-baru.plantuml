@@ -1,0 +1,48 @@
+@startuml AD_OrderBaru
+skinparam activity {
+  BackgroundColor LightGreen
+  BorderColor DarkGreen
+  DiamondBackgroundColor LightYellow
+}
+
+start
+:Staff membuka halaman Order Baru;
+
+:Cari Customer berdasarkan nama/nomor HP;
+if (Customer ditemukan?) then (tidak)
+  :Tambah Customer baru;
+endif
+
+:Pilih produk dari daftar katalog;
+
+repeat
+  :Pilih Produk;
+  :Input Qty & harga satuan;
+  :Sistem hitung subtotal item;
+repeat while (Tambah produk lagi?) is (ya)
+
+:Isi diskon & ongkir (opsional);
+:Pilih Channel Order;
+:Pilih Metode Pembayaran;
+:Isi catatan & deadline (opsional);
+
+:Review ringkasan order dan grand total;
+
+if (Data sudah benar?) then (tidak)
+  :Kembali perbaiki isian;
+  stop
+endif
+
+:Submit form;
+:Sistem generate Nomor Order secara otomatis;
+:Simpan Order & OrderItem ke database;
+
+if (Ada file desain diunggah?) then (ya)
+  :Upload file desain ke server;
+  :Simpan record DesignFile;
+endif
+
+:Tampilkan halaman detail order yang baru dibuat;
+
+stop
+@enduml

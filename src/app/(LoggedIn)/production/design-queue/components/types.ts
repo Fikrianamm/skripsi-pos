@@ -17,4 +17,7 @@ export interface DesignOrder {
   items: { nama: string; qty: number; product: { sku: string } | null }[];
   designFiles: DesignFile[];
   spk: { id: string } | null;
+  designerId: string | null;
+  isDesignFinal: boolean;
+  designer: { id: string; name: string; image: string | null } | null;
 }
