@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         orderBy,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         select: {
           id: true,
           nomorOrder: true,
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
           createdAt: true,
           designerId: true,
           isDesignFinal: true,
+          designReviewStatus: true,
           designer: {
             select: { id: true, name: true, image: true },
           },
@@ -95,7 +97,7 @@ export async function GET(req: NextRequest) {
             },
             orderBy: { createdAt: "asc" },
           },
-        },
+        } as any,
       }),
       prisma.order.count({ where }),
     ]);

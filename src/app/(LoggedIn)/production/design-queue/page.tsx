@@ -68,7 +68,7 @@ export default function Page() {
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-6">
       <PageHeader
-        title="Antrian Desain"
+        title="Antrean Desain"
         description="Kelola file desain untuk pesanan yang sedang di tahap Desain."
       />
 
@@ -82,8 +82,8 @@ export default function Page() {
           size="sm"
           className="self-start shrink-0"
         >
-          <Tab key="all" title="Semua Antrian" />
-          <Tab key="mine" title="Antrian Saya" />
+          <Tab key="all" title="Semua Antrean" />
+          <Tab key="mine" title="Antrean Saya" />
         </Tabs>
       )}
 
@@ -169,7 +169,7 @@ export default function Page() {
           <PackageSearch size={56} strokeWidth={1.1} />
           <div className="text-center">
             <p className="text-base font-medium">
-              Tidak ada order di antrian desain
+              Tidak ada order di antrean desain
             </p>
             <p className="text-sm mt-1">
               {activeFilters

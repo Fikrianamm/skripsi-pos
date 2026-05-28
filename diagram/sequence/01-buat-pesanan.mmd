@@ -1,0 +1,39 @@
+sequenceDiagram
+    actor Kasir
+    participant Aplikasi as Aplikasi Web
+    participant Server as Server
+    participant Database as Database
+
+    Kasir->>Aplikasi: Isi form pesanan dan klik "Buat Pesanan"
+    Aplikasi->>Server: Kirim data pesanan (customer, item, total)
+
+    Server->>Database: Periksa sesi login pengguna
+    alt Belum login
+        Server-->>Aplikasi: Tolak — Silakan login terlebih dahulu
+    end
+
+    Server->>Database: Cari data customer
+    alt Customer tidak ditemukan
+        Server-->>Aplikasi: Tolak — Customer tidak ditemukan
+    end
+
+    Server->>Database: Validasi semua produk dalam pesanan
+    loop Setiap item produk
+        Server->>Database: Cek stok produk
+        alt Stok tidak cukup
+            Server-->>Aplikasi: Tolak — Stok produk tidak mencukupi
+        end
+    end
+
+    Server->>Database: Generate nomor pesanan otomatis (ORD-...)
+
+    Server->>Database: Simpan pesanan, item, dan jurnal keuangan sekaligus
+    Note over Server,Database: Jika ada yang gagal, semua dibatalkan otomatis
+
+    alt Pembayaran DP atau Lunas saat pesan
+        Server->>Database: Catat pembayaran awal dan jurnal kas
+    end
+
+    Server->>Database: Kirim notifikasi ke Admin, Kasir, Produksi, Desainer, Gudang
+    Database-->>Aplikasi: Pesanan berhasil dibuat
+    Aplikasi-->>Kasir: Tampilkan daftar pesanan

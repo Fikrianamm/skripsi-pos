@@ -283,6 +283,7 @@ model Order {
   designerId       String?
   designer         User?            @relation("DesignerOrders", fields: [designerId], references: [id])
   isDesignFinal    Boolean          @default(false)
+  designReviewStatus DesignReviewStatus?
   comments         OrderComment[]
 
   @@index([customerId])
@@ -301,7 +302,6 @@ model OrderItem {
   harga     Decimal  @db.Decimal(12, 2)
   qty       Decimal  @db.Decimal(10, 2)
   subtotal  Decimal  @db.Decimal(12, 2)
-  catatan   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
@@ -544,6 +544,12 @@ enum MetodePembayaran {
   QRIS
   KREDIT
   LAINNYA
+}
+
+enum DesignReviewStatus {
+  PENDING_REVIEW
+  REVISI
+  ACC
 }
 
 // ============================================================

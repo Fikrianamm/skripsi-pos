@@ -151,7 +151,7 @@ export default function Page() {
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-6">
       <PageHeader
-        title="Antrian Produksi (SPK)"
+        title="Antrean Produksi (SPK)"
         description="Pantau dan kelola Surat Perintah Kerja."
       />
 

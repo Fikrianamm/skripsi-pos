@@ -23,6 +23,8 @@ import {
   RotateCcw,
   Check,
   MessageSquare,
+  Send,
+  X,
 } from "lucide-react";
 import { addToast } from "@heroui/toast";
 import { DesignOrder, DesignFile } from "./types";
@@ -85,13 +87,29 @@ export function DesignOrderCard({
   const deleteDisclosure = useDisclosure();
   const detailDrawerDisclosure = useDisclosure();
 
-  const [deletingFileId, setDeletingFileId] = React.useState<string | null>(null);
+  const [deletingFileId, setDeletingFileId] = React.useState<string | null>(
+    null,
+  );
   const [isDeletingFile, setIsDeletingFile] = React.useState(false);
   const [isAdvancing, setIsAdvancing] = React.useState(false);
-  const [fileToDelete, setFileToDelete] = React.useState<DesignFile | null>(null);
+  const [fileToDelete, setFileToDelete] = React.useState<DesignFile | null>(
+    null,
+  );
 
   const [isClaiming, setIsClaiming] = React.useState(false);
   const [isFinalizing, setIsFinalizing] = React.useState(false);
+  const [isRequestingReview, setIsRequestingReview] = React.useState(false);
+  const [isReviewing, setIsReviewing] = React.useState(false);
+
+  // ── Permission logic ───────────────────────────────────────────────────────
+  const isAdminOrKasir =
+    currentUser?.role === "admin" || currentUser?.role === "kasir";
+  const isDesignerWhoClaimedThis =
+    currentUser?.role === "designer" && order.designerId === currentUser?.id;
+
+  // Only the designer who claimed or admin can upload files
+  const canUploadFile =
+    currentUser?.role === "admin" || isDesignerWhoClaimedThis;
 
   async function handleClaim() {
     if (!currentUser) return;
@@ -104,10 +122,14 @@ export function DesignOrderCard({
       });
       const json = await res.json();
       if (!res.ok) {
-        addToast({ title: "Gagal klaim", description: json.error, color: "danger" });
+        addToast({
+          title: "Gagal klaim",
+          description: json.error,
+          color: "danger",
+        });
         return;
       }
-      addToast({ title: "Antrian berhasil diambil!", color: "success" });
+      addToast({ title: "Antrean berhasil diambil!", color: "success" });
       onMutate();
     } finally {
       setIsClaiming(false);
@@ -124,7 +146,11 @@ export function DesignOrderCard({
       });
       const json = await res.json();
       if (!res.ok) {
-        addToast({ title: "Gagal reset", description: json.error, color: "danger" });
+        addToast({
+          title: "Gagal reset",
+          description: json.error,
+          color: "danger",
+        });
         return;
       }
       addToast({ title: "Penugasan desainer direset.", color: "success" });
@@ -144,13 +170,104 @@ export function DesignOrderCard({
       });
       const json = await res.json();
       if (!res.ok) {
-        addToast({ title: "Gagal finalisasi", description: json.error, color: "danger" });
+        addToast({
+          title: "Gagal finalisasi",
+          description: json.error,
+          color: "danger",
+        });
         return;
       }
-      addToast({ title: "Desain berhasil difinalisasi / ACC!", color: "success" });
+      addToast({
+        title: "Desain berhasil di-ACC / Finalisasi!",
+        color: "success",
+      });
       onMutate();
     } finally {
       setIsFinalizing(false);
+    }
+  }
+
+  async function handleResetFinalize() {
+    setIsFinalizing(true);
+    try {
+      const res = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDesignFinal: false }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({
+          title: "Gagal reset finalisasi",
+          description: json.error,
+          color: "danger",
+        });
+        return;
+      }
+      addToast({
+        title: "Finalisasi desain berhasil direset.",
+        color: "warning",
+      });
+      onMutate();
+    } finally {
+      setIsFinalizing(false);
+    }
+  }
+
+  async function handleRequestReview() {
+    setIsRequestingReview(true);
+    try {
+      const res = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designReviewStatus: "PENDING_REVIEW" }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({
+          title: "Gagal kirim review",
+          description: json.error,
+          color: "danger",
+        });
+        return;
+      }
+      addToast({
+        title: "Permintaan review berhasil dikirim ke admin/kasir!",
+        color: "success",
+      });
+      onMutate();
+    } finally {
+      setIsRequestingReview(false);
+    }
+  }
+
+  async function handleReviewDecision(decision: "ACC" | "REVISI") {
+    setIsReviewing(true);
+    try {
+      const res = await fetch(`/api/order/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designReviewStatus: decision }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        addToast({
+          title: "Gagal memproses review",
+          description: json.error,
+          color: "danger",
+        });
+        return;
+      }
+      addToast({
+        title:
+          decision === "ACC"
+            ? "Desain berhasil di-ACC!"
+            : "Revisi dikirim ke desainer.",
+        color: decision === "ACC" ? "success" : "warning",
+      });
+      onMutate();
+    } finally {
+      setIsReviewing(false);
     }
   }
 
@@ -228,11 +345,19 @@ export function DesignOrderCard({
           </div>
         )}
 
+        {/* ── Revisi badge bar ── */}
+        {order.designReviewStatus === "REVISI" && !order.isDesignFinal && (
+          <div className="bg-danger-100 border-b border-danger-200 px-4 py-1.5 flex items-center gap-1.5 text-danger-700 text-xs font-semibold">
+            <X size={13} />
+            Desain perlu direvisi — lihat komentar
+          </div>
+        )}
+
         <div className="p-4 flex flex-col gap-3 flex-1">
           {/* ── Header ── */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <Link
                   href={`/order/${order.id}`}
                   onClick={(e) => e.stopPropagation()}
@@ -242,10 +367,37 @@ export function DesignOrderCard({
                   <ExternalLink size={11} />
                 </Link>
                 {order.isDesignFinal && (
-                  <Chip size="sm" color="success" variant="flat" className="h-5 text-[10px]">
+                  <Chip
+                    size="sm"
+                    color="success"
+                    variant="flat"
+                    className="h-5 text-[10px]"
+                  >
                     ACC
                   </Chip>
                 )}
+                {order.designReviewStatus === "PENDING_REVIEW" &&
+                  !order.isDesignFinal && (
+                    <Chip
+                      size="sm"
+                      color="warning"
+                      variant="flat"
+                      className="h-5 text-[10px]"
+                    >
+                      Menunggu Review
+                    </Chip>
+                  )}
+                {order.designReviewStatus === "REVISI" &&
+                  !order.isDesignFinal && (
+                    <Chip
+                      size="sm"
+                      color="danger"
+                      variant="flat"
+                      className="h-5 text-[10px]"
+                    >
+                      REVISI
+                    </Chip>
+                  )}
               </div>
               <span className="text-xs text-default-500">
                 {order.customer.nama}
@@ -298,7 +450,10 @@ export function DesignOrderCard({
           <Divider className="my-0" />
 
           {/* ── Assignment Section ── */}
-          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="flex flex-col gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
             {order.designerId ? (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-default-50 border border-default-100">
                 <Avatar
@@ -331,7 +486,7 @@ export function DesignOrderCard({
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5 text-xs text-default-400 italic">
                   <User size={13} />
-                  <span>Belum ada desainer yang mengambil antrian</span>
+                  <span>Belum ada desainer yang mengambil antrean</span>
                 </div>
                 {currentUser?.role === "designer" && (
                   <Button
@@ -342,7 +497,7 @@ export function DesignOrderCard({
                     onPress={handleClaim}
                     className="w-full h-8"
                   >
-                    Ambil Antrian
+                    Ambil Antrean
                   </Button>
                 )}
               </div>
@@ -358,7 +513,7 @@ export function DesignOrderCard({
                 <FileText size={13} />
                 File Desain ({order.designFiles.length})
               </span>
-              {canEdit && (
+              {canUploadFile && (
                 <Button
                   size="sm"
                   variant="flat"
@@ -381,7 +536,10 @@ export function DesignOrderCard({
                 Belum ada file desain diupload
               </div>
             ) : (
-              <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex flex-col gap-1.5"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {order.designFiles.map((df) => (
                   <div
                     key={df.id}
@@ -410,7 +568,7 @@ export function DesignOrderCard({
                       >
                         <Eye size={12} />
                       </Button>
-                      {canEdit && (
+                      {canUploadFile && (
                         <Button
                           size="sm"
                           color="danger"
@@ -440,7 +598,7 @@ export function DesignOrderCard({
           <div className="flex items-center justify-between text-xs text-default-400 mt-1 hover:text-default-600 transition-colors">
             <span className="flex items-center gap-1.5">
               <MessageSquare size={13} />
-              <span>Diskusi & Komentar</span>
+              <span>Diskusi &amp; Komentar</span>
             </span>
             <span className="text-[10px] bg-default-100 px-1.5 py-0.5 rounded-full">
               Lihat Detail ➜
@@ -448,50 +606,119 @@ export function DesignOrderCard({
           </div>
 
           {/* ── Workflow Action Buttons ── */}
-          <div className="mt-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Designer / Admin Finalize Option */}
-            {(currentUser?.role === "designer" || currentUser?.role === "admin") && !order.isDesignFinal && (
-              <div className="pt-2">
+          <div
+            className="mt-auto flex flex-col gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Desainer yang claim: Kirim Permintaan Review */}
+            {isDesignerWhoClaimedThis &&
+              !order.isDesignFinal &&
+              order.designReviewStatus !== "PENDING_REVIEW" && (
                 <Button
                   size="sm"
-                  color="success"
+                  color="primary"
                   variant="flat"
-                  isLoading={isFinalizing}
-                  startContent={<Check size={14} />}
-                  onPress={handleFinalize}
+                  startContent={<Send size={13} />}
+                  isLoading={isRequestingReview}
+                  onPress={handleRequestReview}
                   className="w-full"
-                  isDisabled={order.designerId !== currentUser?.id && currentUser?.role !== "admin"}
                 >
-                  Finalisasi & ACC Desain
+                  Kirim Permintaan Review
                 </Button>
-              </div>
-            )}
+              )}
 
-            {/* Produksi / Admin Handoff Option */}
-            {(currentUser?.role === "produksi" || currentUser?.role === "admin") && (
-              <div className="pt-2">
-                <Divider className="my-2" />
-                <Button
-                  size="sm"
-                  color={order.isDesignFinal ? "success" : "default"}
-                  variant="flat"
-                  endContent={<ArrowRight size={14} />}
-                  isDisabled={!order.isDesignFinal}
-                  onPress={() => {
-                    if (order.spk) {
-                      advanceDisclosure.onOpen();
-                    } else {
-                      spkDisclosure.onOpen();
-                    }
-                  }}
-                  className="w-full"
-                >
-                  {!order.isDesignFinal
-                    ? "Menunggu ACC Desain"
-                    : order.spk
-                      ? "Lanjut ke Produksi"
-                      : "Buat SPK & Produksi"}
-                </Button>
+            {/* Tampilkan status jika menunggu review (desainer) */}
+            {isDesignerWhoClaimedThis &&
+              order.designReviewStatus === "PENDING_REVIEW" &&
+              !order.isDesignFinal && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-warning-50 border border-warning-200 rounded-lg">
+                  <AlertCircle
+                    size={13}
+                    className="text-warning-600 shrink-0"
+                  />
+                  <span className="text-xs text-warning-700">
+                    Menunggu review dari admin/kasir...
+                  </span>
+                </div>
+              )}
+
+            {/* Admin/Kasir: ACC atau Revisi saat ada permintaan review */}
+            {isAdminOrKasir &&
+              order.designReviewStatus === "PENDING_REVIEW" &&
+              !order.isDesignFinal && (
+                <div className="flex flex-col gap-1.5 pt-1 border-t border-default-100">
+                  <p className="text-[10px] text-default-500 font-medium">
+                    Review diminta oleh desainer:
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      color="success"
+                      variant="flat"
+                      startContent={<Check size={13} />}
+                      isLoading={isReviewing}
+                      onPress={() => handleReviewDecision("ACC")}
+                      className="flex-1"
+                    >
+                      ACC
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="flat"
+                      startContent={<RotateCcw size={13} />}
+                      isLoading={isReviewing}
+                      onPress={() => handleReviewDecision("REVISI")}
+                      className="flex-1"
+                    >
+                      Revisi
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+            {/* Produksi / Admin: Buat SPK atau Lanjut ke Produksi */}
+            {(currentUser?.role === "produksi" ||
+              currentUser?.role === "admin") && (
+              <div className="pt-1">
+                <Divider className="my-1" />
+                <div className="flex gap-1 items-center">
+                  {/* Admin/Kasir: Reset Finalisasi jika sudah final */}
+                  {isAdminOrKasir && order.isDesignFinal && (
+                    <Button
+                      size="sm"
+                      color="warning"
+                      variant="flat"
+                      isLoading={isFinalizing}
+                      startContent={<RotateCcw size={14} />}
+                      onPress={handleResetFinalize}
+                      className="w-full"
+                    >
+                      Reset Finalisasi
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    color={order.isDesignFinal ? "success" : "default"}
+                    variant="flat"
+                    endContent={<ArrowRight size={14} />}
+                    isDisabled={!order.isDesignFinal}
+                    onPress={() => {
+                      if (order.spk) {
+                        advanceDisclosure.onOpen();
+                      } else {
+                        spkDisclosure.onOpen();
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    {!order.isDesignFinal
+                      ? "Menunggu ACC Desain"
+                      : order.spk
+                        ? "Lanjut ke Produksi"
+                        : "Buat SPK & Produksi"}
+                  </Button>
+                </div>
               </div>
             )}
           </div>

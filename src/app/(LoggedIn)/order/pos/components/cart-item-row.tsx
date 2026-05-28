@@ -1,21 +1,19 @@
 "use client";
 
 import { Button, Input, Tooltip } from "@heroui/react";
-import { Plus, Minus, Trash2, FileText } from "lucide-react";
+import { Plus, Minus, Trash2 } from "lucide-react";
 import { formatRupiah } from "@/lib/func";
 import type { CartItem } from "./types";
 
 interface CartItemRowProps {
   item: CartItem;
   onQtyChange: (qty: number) => void;
-  onNoteChange: (catatan: string) => void;
   onRemove: () => void;
 }
 
 export function CartItemRow({
   item,
   onQtyChange,
-  onNoteChange,
   onRemove,
 }: CartItemRowProps) {
   return (
@@ -75,16 +73,7 @@ export function CartItemRow({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <Input
-          size="sm"
-          placeholder="Catatan item (opsional)..."
-          value={item.catatan}
-          onValueChange={onNoteChange}
-          variant="underlined"
-          classNames={{ input: "text-xs", inputWrapper: "h-7 min-h-7" }}
-          startContent={<FileText size={11} className="text-default-400" />}
-        />
+      <div className="flex items-center justify-end gap-2">
         <span className="text-sm font-semibold text-primary shrink-0">
           {formatRupiah(item.harga * item.qty)}
         </span>

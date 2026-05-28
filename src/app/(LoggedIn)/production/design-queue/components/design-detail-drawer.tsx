@@ -19,6 +19,7 @@ import {
   Paperclip,
   X,
   MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import { addToast } from "@heroui/toast";
 import { DesignOrder } from "./types";
@@ -78,6 +79,11 @@ export function DesignDetailDrawer({
   );
 
   const comments = React.useMemo(() => data?.comments ?? [], [data?.comments]);
+
+  // Hanya desainer yang claim atau admin yang bisa upload file di chat
+  const canUploadInChat =
+    currentUser?.role === "admin" ||
+    (currentUser?.role === "designer" && order.designerId === currentUser?.id);
 
   const [text, setText] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -166,11 +172,25 @@ export function DesignDetailDrawer({
                   {order.nomorOrder}
                 </span>
                 <Badge
-                  color={order.isDesignFinal ? "success" : "warning"}
+                  color={
+                    order.isDesignFinal
+                      ? "success"
+                      : order.designReviewStatus === "REVISI"
+                        ? "danger"
+                        : order.designReviewStatus === "PENDING_REVIEW"
+                          ? "warning"
+                          : "default"
+                  }
                   variant="flat"
                   size="sm"
                 >
-                  {order.isDesignFinal ? "ACC / Final" : "Revisi / Proses"}
+                  {order.isDesignFinal
+                    ? "ACC / Final"
+                    : order.designReviewStatus === "REVISI"
+                      ? "Perlu Revisi"
+                      : order.designReviewStatus === "PENDING_REVIEW"
+                        ? "Menunggu Review"
+                        : "Proses"}
                 </Badge>
               </div>
               <p className="text-xs text-default-500">
@@ -199,6 +219,19 @@ export function DesignDetailDrawer({
                 )}
               </div>
 
+              {/* Banner Revisi */}
+              {order.designReviewStatus === "REVISI" && !order.isDesignFinal && (
+                <div className="mx-4 mt-3 p-3 bg-danger-50 border border-danger-200 rounded-xl flex items-start gap-2">
+                  <AlertCircle size={14} className="text-danger-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-danger-700">Desain Memerlukan Revisi</p>
+                    <p className="text-xs text-danger-600 mt-0.5">
+                      Periksa komentar di bawah untuk detail revisian dari admin/kasir.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Thread Chat Area */}
               <div
                 ref={scrollRef}
@@ -212,7 +245,7 @@ export function DesignDetailDrawer({
                 ) : comments.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-default-400">
                     <MessageSquare size={36} strokeWidth={1.2} />
-                    <p className="text-xs">Belum ada diskusi untuk antrian ini.</p>
+                    <p className="text-xs">Belum ada diskusi untuk antrean ini.</p>
                   </div>
                 ) : (
                   comments.map((comment) => {
@@ -330,15 +363,17 @@ export function DesignDetailDrawer({
                 )}
 
                 <div className="flex gap-2 items-end">
-                  <Button
-                    isIconOnly
-                    color="default"
-                    variant="flat"
-                    onPress={() => fileInputRef.current?.click()}
-                    className="h-10 w-10 min-w-10 rounded-xl"
-                  >
-                    <Paperclip size={18} />
-                  </Button>
+                  {canUploadInChat && (
+                    <Button
+                      isIconOnly
+                      color="default"
+                      variant="flat"
+                      onPress={() => fileInputRef.current?.click()}
+                      className="h-10 w-10 min-w-10 rounded-xl"
+                    >
+                      <Paperclip size={18} />
+                    </Button>
+                  )}
                   <input
                     type="file"
                     ref={fileInputRef}

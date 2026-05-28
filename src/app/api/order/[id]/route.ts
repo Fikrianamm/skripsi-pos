@@ -26,6 +26,7 @@ const ORDER_DETAIL_SELECT = {
   deletedAt: true,
   designerId: true,
   isDesignFinal: true,
+  designReviewStatus: true,
   designer: { select: { id: true, name: true, image: true } },
   customer: { select: { id: true, nama: true, nomorHp: true, image: true } },
   items: {
@@ -36,7 +37,6 @@ const ORDER_DETAIL_SELECT = {
       harga: true,
       qty: true,
       subtotal: true,
-      catatan: true,
       product: { select: { id: true, sku: true, nama: true } },
     },
     where: { deletedAt: null },
@@ -83,7 +83,8 @@ const ORDER_DETAIL_SELECT = {
     where: { deletedAt: null },
     orderBy: { tanggal: "asc" as const },
   },
-} as const;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+} as any;
 
 async function requireOrderAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -185,6 +186,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       ongkir,
       designerId,
       isDesignFinal,
+      designReviewStatus,
       // Admin only
       customerId,
       channel,
@@ -221,7 +223,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
-    const VALID_STATUS_BAYAR = ["BELUM_BAYAR", "DP", "LUNAS", "REFUND"];
+    const VALID_STATUS_BAYAR = ["BELUM_BAYAR", "DP", "LUNAS"];
     if (statusPembayaran && !VALID_STATUS_BAYAR.includes(statusPembayaran)) {
       return NextResponse.json(
         { error: "Status pembayaran tidak valid." },
@@ -267,20 +269,20 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       const userRole = session?.user?.role;
       if (userRole !== "admin" && userRole !== "designer") {
         return NextResponse.json(
-          { error: "Hanya desainer atau admin yang dapat mengklaim antrian." },
+          { error: "Hanya desainer atau admin yang dapat mengklaim antrean." },
           { status: 403 }
         );
       }
       if (userRole === "designer") {
         if (designerId !== session?.user?.id) {
           return NextResponse.json(
-            { error: "Desainer hanya dapat mengklaim antrian untuk diri sendiri." },
+            { error: "Desainer hanya dapat mengklaim antrean untuk diri sendiri." },
             { status: 400 }
           );
         }
         if (existing.designerId && existing.designerId !== session?.user?.id) {
           return NextResponse.json(
-            { error: "Antrian sudah diambil oleh desainer lain." },
+            { error: "Antrean sudah diambil oleh desainer lain." },
             { status: 400 }
           );
         }
@@ -288,28 +290,113 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       data.designerId = designerId;
     }
 
-    // Handle isDesignFinal
+    // Handle isDesignFinal (hanya admin/kasir)
     if (isDesignFinal !== undefined) {
       const userRole = session?.user?.role;
-      if (userRole !== "admin" && userRole !== "designer") {
+      if (userRole !== "admin" && userRole !== "kasir") {
         return NextResponse.json(
-          { error: "Hanya desainer atau admin yang dapat memfinalisasi desain." },
+          { error: "Hanya admin atau kasir yang dapat memfinalisasi desain." },
           { status: 403 }
         );
       }
       data.isDesignFinal = isDesignFinal;
 
-      // Trigger notification if newly marked final
+      // Jika di-reset (false), reset juga designReviewStatus
+      if (isDesignFinal === false) {
+        data.designReviewStatus = null;
+      }
+
+      // Notifikasi saat desain di-ACC
       if (isDesignFinal === true && !existing.isDesignFinal) {
         try {
-          await createNotificationForRole(["admin", "produksi"], {
-            title: "Desain Selesai & ACC",
-            message: `Desain untuk Order #${existing.nomorOrder} telah selesai. Silakan buat SPK.`,
+          await createNotificationForRole(["produksi"], {
+            title: "Desain ACC — Siap Produksi",
+            message: `Desain untuk Order #${existing.nomorOrder} telah di-ACC. Silakan buat SPK.`,
             jenis: JenisNotif.SISTEM,
-            linkUrl: `/order/${id}`,
+            linkUrl: `/production/design-queue`,
           });
         } catch (e) {
           console.error("Failed to notify final design:", e);
+        }
+      }
+    }
+
+    // Handle designReviewStatus
+    if (designReviewStatus !== undefined) {
+      const userRole = session?.user?.role;
+      const VALID_REVIEW = ["PENDING_REVIEW", "REVISI", "ACC"];
+      if (!VALID_REVIEW.includes(designReviewStatus)) {
+        return NextResponse.json(
+          { error: "Status review tidak valid." },
+          { status: 400 }
+        );
+      }
+
+      // Desainer yang claim bisa request review (PENDING_REVIEW)
+      if (designReviewStatus === "PENDING_REVIEW") {
+        if (userRole !== "designer" || existing.designerId !== session?.user?.id) {
+          return NextResponse.json(
+            { error: "Hanya desainer yang mengambil tugas ini yang bisa request review." },
+            { status: 403 }
+          );
+        }
+        data.designReviewStatus = "PENDING_REVIEW";
+        // Notif ke admin dan kasir
+        try {
+          await createNotificationForRole(["admin", "kasir"], {
+            title: "Permintaan Review Desain",
+            message: `Desainer meminta review untuk Order #${existing.nomorOrder}. Silakan ACC atau Revisi.`,
+            jenis: JenisNotif.SISTEM,
+            linkUrl: `/production/design-queue`,
+          });
+        } catch (e) {
+          console.error("Failed to notify review request:", e);
+        }
+      }
+
+      // Admin/kasir bisa ACC atau Revisi
+      if (designReviewStatus === "ACC" || designReviewStatus === "REVISI") {
+        if (userRole !== "admin" && userRole !== "kasir") {
+          return NextResponse.json(
+            { error: "Hanya admin atau kasir yang bisa ACC atau Revisi desain." },
+            { status: 403 }
+          );
+        }
+        data.designReviewStatus = designReviewStatus;
+
+        // Jika ACC → set isDesignFinal true
+        if (designReviewStatus === "ACC") {
+          data.isDesignFinal = true;
+        }
+
+        // Notif ke desainer yang claim
+        if (existing.designerId) {
+          try {
+            await prisma.notification.create({
+              data: {
+                id: crypto.randomUUID(),
+                userId: existing.designerId,
+                title: designReviewStatus === "ACC" ? "✅ Desain Disetujui!" : "🔄 Desain Perlu Revisi",
+                message: designReviewStatus === "ACC"
+                  ? `Desain untuk Order #${existing.nomorOrder} telah di-ACC. Terima kasih!`
+                  : `Desain untuk Order #${existing.nomorOrder} perlu direvisi. Periksa komentar untuk detailnya.`,
+                jenis: JenisNotif.SISTEM,
+                linkUrl: `/production/design-queue`,
+                isRead: false,
+              },
+            });
+            // Jika ACC juga notif ke produksi
+            if (designReviewStatus === "ACC") {
+              await createNotificationForRole(["produksi"], {
+                title: "Desain ACC — Siap Produksi",
+                message: `Desain untuk Order #${existing.nomorOrder} telah di-ACC. Silakan buat SPK.`,
+                jenis: JenisNotif.SISTEM,
+                linkUrl: `/production/design-queue`,
+              });
+            }
+          } catch (e) {
+            console.error("Failed to notify designer review decision:", e);
+          }
         }
       }
     }
@@ -359,7 +446,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       statusProduksi !== undefined &&
       statusProduksi !== existing.statusProduksi
     ) {
-      await notifyOrderStatusChange(id, updated.nomorOrder, statusProduksi);
+      await notifyOrderStatusChange(id, String(updated.nomorOrder), statusProduksi);
     }
 
     // Replace items jika admin mengirimkan items baru (full replace)
@@ -374,7 +461,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
               harga: number;
               qty: number;
               subtotal: number;
-              catatan?: string;
             }) => ({
               id: crypto.randomUUID(),
               orderId: id,
@@ -383,7 +469,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
               harga: item.harga,
               qty: item.qty,
               subtotal: item.subtotal,
-              catatan: item.catatan || null,
             }),
           ),
         }),

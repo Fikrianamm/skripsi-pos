@@ -1,0 +1,29 @@
+sequenceDiagram
+    actor Admin
+    participant Aplikasi as Aplikasi Web
+    participant Server as Server
+    participant Database as Database
+
+    Admin->>Aplikasi: Isi form jurnal keuangan manual
+    Aplikasi->>Server: Kirim data jurnal (tanggal, akun debet, akun kredit, nominal)
+
+    Server->>Database: Periksa sesi dan peran pengguna
+    alt Bukan Admin atau Kasir
+        Server-->>Aplikasi: Tolak — Tidak diizinkan
+    end
+
+    alt Akun debet dan kredit sama
+        Server-->>Aplikasi: Tolak — Akun debet dan kredit tidak boleh sama
+    end
+
+    alt Pencatatan koreksi (reversal)
+        Note over Server: Tandai dengan kode "J-REV-..."
+    else Pencatatan biasa
+        Note over Server: Tandai dengan kode "J-MAN-..."
+    end
+
+    Server->>Database: Simpan catatan jurnal keuangan
+    Database-->>Server: Jurnal tersimpan
+
+    Server-->>Aplikasi: Jurnal berhasil dicatat
+    Aplikasi-->>Admin: Tampilkan konfirmasi pencatatan jurnal

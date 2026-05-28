@@ -34,7 +34,6 @@ export function getStatusBayarBadge(status: string): {
     BELUM_BAYAR: { label: "Belum Bayar", color: "default" },
     DP: { label: "DP", color: "warning" },
     LUNAS: { label: "Lunas", color: "success" },
-    REFUND: { label: "Refund", color: "danger" },
   };
   return map[status] ?? { label: status, color: "default" };
 }

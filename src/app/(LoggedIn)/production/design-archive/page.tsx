@@ -111,7 +111,7 @@ export default function Page() {
             <p className="text-sm mt-1">
               {activeFilters
                 ? "Coba ubah atau reset filter di atas."
-                : "File desain akan muncul di sini setelah diupload dari halaman Antrian Desain."}
+                : "File desain akan muncul di sini setelah diupload dari halaman Antrean Desain."}
             </p>
           </div>
           {activeFilters && (

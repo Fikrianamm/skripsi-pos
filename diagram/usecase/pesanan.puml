@@ -1,0 +1,38 @@
+@startuml use case pesanan
+left to right direction
+skinparam packageStyle rectangle
+skinparam BackgroundColor transparent
+
+actor "Kasir" as kasir
+actor "Administrator" as admin
+actor "Produksi" as produksi
+actor "Designer" as designer
+actor "Gudang" as gudang
+
+package "Modul Manajemen Pesanan" {
+  usecase "Mengelola Data Master Customer" as UC1
+  usecase "Menginput Pesanan Baru" as UC2
+  usecase "Melihat Daftar Pesanan" as UC3
+  usecase "Menambahkan Pembayaran Pesanan" as UC4
+  usecase "Mengelola Status Pesanan" as UC5
+}
+
+kasir --> UC1
+kasir --> UC2
+kasir --> UC3
+kasir --> UC4
+kasir --> UC5
+
+admin --> UC1
+admin --> UC2
+admin --> UC3
+admin --> UC4
+admin --> UC5
+
+UC3 <-- produksi
+UC5 <-- produksi
+
+UC3 <-- designer
+UC3 <-- gudang
+
+@enduml

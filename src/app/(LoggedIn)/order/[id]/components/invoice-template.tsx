@@ -87,11 +87,6 @@ export const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateP
               <tr key={idx} className="group">
                 <td className="py-4 px-4">
                   <div className="font-bold text-slate-800">{item.nama}</div>
-                  {item.catatan && (
-                    <div className="text-[10px] text-slate-500 mt-1 leading-relaxed max-w-xs italic">
-                      {item.catatan}
-                    </div>
-                  )}
                 </td>
                 <td className="py-4 px-4 text-center text-sm font-medium text-slate-600">
                   {item.qty}

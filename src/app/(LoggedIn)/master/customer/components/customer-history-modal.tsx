@@ -21,16 +21,15 @@ interface OrderRow {
   nomorOrder: string;
   grandTotal: number;
   createdAt: string;
-  statusPembayaran: "BELUM_BAYAR" | "DP" | "LUNAS" | "REFUND";
+  statusPembayaran: "BELUM_BAYAR" | "DP" | "LUNAS";
   statusProduksi: string;
 }
 
 function paymentColor(
   s: string,
-): "default" | "warning" | "success" | "danger" {
+): "default" | "warning" | "success" {
   if (s === "LUNAS") return "success";
   if (s === "DP") return "warning";
-  if (s === "REFUND") return "danger";
   return "default";
 }
 
@@ -39,7 +38,6 @@ function paymentLabel(s: string) {
     BELUM_BAYAR: "Belum Bayar",
     DP: "DP",
     LUNAS: "Lunas",
-    REFUND: "Refund",
   };
   return map[s] ?? s;
 }

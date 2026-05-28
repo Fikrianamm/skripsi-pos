@@ -27,7 +27,7 @@ export type StatusProduksiKey =
   | "SELESAI"
   | "BATAL";
 
-export type StatusPembayaranKey = "BELUM_BAYAR" | "DP" | "LUNAS" | "REFUND";
+export type StatusPembayaranKey = "BELUM_BAYAR" | "DP" | "LUNAS";
 export type OrderChannelKey =
   | "LANGSUNG"
   | "WHATSAPP"
@@ -69,5 +69,4 @@ export const STATUS_BAYAR_OPTIONS: {
   { key: "BELUM_BAYAR", label: "Belum Bayar" },
   { key: "DP", label: "DP" },
   { key: "LUNAS", label: "Lunas" },
-  { key: "REFUND", label: "Refund" },
 ];

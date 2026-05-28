@@ -1,0 +1,42 @@
+sequenceDiagram
+    actor Pengguna
+    participant Aplikasi as Aplikasi Web
+    participant Server as Server
+    participant Database as Database
+    participant Notifikasi as Sistem Notifikasi
+
+    Pengguna->>Aplikasi: Ubah status produksi atau pembayaran pesanan
+    Aplikasi->>Server: Kirim perubahan status pesanan
+
+    Server->>Database: Periksa sesi dan peran pengguna
+    Server->>Database: Ambil data pesanan saat ini
+
+    alt Kasir mencoba ubah data customer, channel, atau item
+        Server-->>Aplikasi: Tolak — Hanya admin yang dapat mengubah data ini
+    end
+
+    alt Status tidak valid
+        Server-->>Aplikasi: Tolak — Status tidak dikenali
+    end
+
+    Server->>Database: Simpan perubahan pada pesanan
+
+    alt Pesanan baru ditandai SELESAI
+        Server->>Database: Kurangi stok produk fisik sesuai jumlah pesanan
+        Note over Server,Database: Produk jasa tidak mengurangi stok
+    end
+
+    alt Desain baru saja difinalisasi
+        Server->>Notifikasi: Beritahu Admin dan Tim Produksi bahwa desain selesai
+    end
+
+    alt Status produksi berubah
+        Server->>Notifikasi: Kirim notifikasi perubahan status ke pihak terkait
+    end
+
+    alt Admin mengganti item pesanan
+        Server->>Database: Hapus item lama, simpan item baru
+    end
+
+    Database-->>Aplikasi: Data pesanan terbaru
+    Aplikasi-->>Pengguna: Tampilkan pesanan yang telah diperbarui

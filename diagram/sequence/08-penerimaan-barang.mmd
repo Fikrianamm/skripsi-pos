@@ -1,0 +1,42 @@
+sequenceDiagram
+    actor Gudang
+    participant Aplikasi as Aplikasi Web
+    participant Server as Server
+    participant Penyimpanan as Penyimpanan File (Cloud)
+    participant Database as Database
+    participant Notifikasi as Sistem Notifikasi
+
+    Gudang->>Aplikasi: Isi form penerimaan barang (item, supplier, nota)
+    Aplikasi->>Server: Kirim data penerimaan barang
+
+    Server->>Database: Periksa sesi dan peran pengguna
+    alt Bukan Admin atau Gudang
+        Server-->>Aplikasi: Tolak — Tidak diizinkan
+    end
+
+    alt Ada file bukti nota
+        Server->>Penyimpanan: Upload foto/scan nota ke cloud
+        Penyimpanan-->>Server: Tautan file tersimpan
+    end
+
+    Server->>Database: Simpan data penerimaan barang
+    loop Setiap bahan baku yang diterima
+        Database->>Database: Tambah jumlah stok bahan baku
+    end
+
+    alt Ada nilai tagihan
+        Database->>Database: Catat jurnal keuangan otomatis\n(Persediaan bertambah, Hutang Usaha bertambah)
+    end
+
+    Server->>Notifikasi: Beritahu Admin dan Gudang bahwa barang telah diterima
+    Notifikasi-->>Server: OK
+
+    loop Setiap item yang diterima
+        Server->>Database: Cek apakah stok bahan baku mendekati batas minimum
+        alt Stok di bawah batas minimum
+            Database->>Database: Buat notifikasi peringatan stok menipis
+        end
+    end
+
+    Server-->>Aplikasi: Penerimaan berhasil dicatat
+    Aplikasi-->>Gudang: Tampilkan konfirmasi penerimaan barang

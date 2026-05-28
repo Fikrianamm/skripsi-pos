@@ -1,0 +1,57 @@
+@startuml activity_designer
+|Pengguna|
+start
+:Melakukan Login;
+|Sistem|
+:Verifikasi kredensial;
+|Basis data|
+:SELECT users;
+|Sistem|
+:Menampilkan Dashboard Designer;
+
+|Pengguna|
+:Memilih Menu Antrean Desain;
+|Sistem|
+:Menampilkan daftar antrean desain;
+|Basis data|
+:SELECT orders WHERE status='Desain';
+
+|Pengguna|
+:Memilih salah satu pesanan;
+if (Status klaim antrean?) then (Belum ada)
+  :Menekan tombol "Ambil Antrean";
+  |Sistem|
+  :Memproses klaim;
+  |Basis data|
+  :UPDATE orders SET designerId;
+else (Milik Saya)
+endif
+
+|Pengguna|
+:Membuka panel diskusi pesanan;
+:Mengunggah file desain (Preview);
+|Sistem|
+:Menyimpan file ke Cloud Storage;
+|Basis data|
+:INSERT order_comments + order_comment_files;
+
+|Pengguna|
+if (Desain disetujui Customer/Admin?) then (Ya)
+  :Menekan tombol "Finalisasi & ACC Desain";
+  |Sistem|
+  :Memproses ACC Desain;
+  |Basis data|
+  :UPDATE orders SET isDesignFinal = true;
+  |Sistem|
+  :Kirim Notifikasi ke Produksi;
+else (Tidak)
+  |Pengguna|
+  :Membaca catatan revisi;
+  :Melakukan revisi desain;
+  :Mengunggah ulang file desain revisi;
+endif
+
+|Pengguna|
+:Logout / Selesai;
+stop
+@enduml

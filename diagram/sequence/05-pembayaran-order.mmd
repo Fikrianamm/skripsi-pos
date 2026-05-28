@@ -1,0 +1,39 @@
+sequenceDiagram
+    actor Kasir
+    participant Aplikasi as Aplikasi Web
+    participant Server as Server
+    participant Database as Database
+    participant Notifikasi as Sistem Notifikasi
+
+    Kasir->>Aplikasi: Input jumlah bayar dan pilih rekening tujuan
+    Aplikasi->>Server: Kirim data pembayaran (nominal, rekening)
+
+    Server->>Database: Periksa sesi login pengguna
+    alt Bukan Kasir atau Admin
+        Server-->>Aplikasi: Tolak — Tidak diizinkan
+    end
+
+    Server->>Database: Ambil data pesanan beserta riwayat pembayaran
+    alt Pesanan tidak ditemukan
+        Server-->>Aplikasi: Tolak — Pesanan tidak ditemukan
+    end
+
+    Server->>Database: Cari rekening kas/bank tujuan
+    alt Rekening tidak ditemukan
+        Server-->>Aplikasi: Tolak — Rekening tidak valid
+    end
+
+    Note over Server: Hitung total yang sudah dibayar\n→ Tentukan status baru (DP / Lunas / Belum Bayar)
+
+    alt Nominal melebihi sisa tagihan
+        Server-->>Aplikasi: Tolak — Nominal melebihi sisa tagihan
+    end
+
+    Server->>Database: Simpan pembayaran, perbarui status, dan catat jurnal kas sekaligus
+    Note over Server,Database: Jika ada yang gagal, semua dibatalkan otomatis
+
+    Server->>Notifikasi: Beritahu Admin dan Kasir bahwa pembayaran diterima
+    Notifikasi-->>Server: OK
+
+    Server-->>Aplikasi: Pembayaran berhasil dicatat, status baru
+    Aplikasi-->>Kasir: Tampilkan konfirmasi pembayaran

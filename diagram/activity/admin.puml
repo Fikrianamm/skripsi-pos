@@ -1,0 +1,51 @@
+@startuml activity_admin
+|Pengguna|
+start
+:Melakukan Login;
+|Sistem|
+:Verifikasi kredensial;
+|Basis data|
+:SELECT users WHERE email;
+|Sistem|
+:Menampilkan Dashboard Utama;
+
+|Pengguna|
+:Memilih Menu;
+if (Menu yang dipilih?) then (Karyawan)
+  |Sistem|
+  :Menampilkan daftar Karyawan;
+  |Basis data|
+  :SELECT users + roles;
+  
+  |Pengguna|
+  :Menginput form Karyawan baru/edit;
+  :Menyimpan data;
+  |Sistem|
+  :Memvalidasi input;
+  if (Input valid?) then (Ya)
+    |Basis data|
+    :INSERT / UPDATE users;
+    |Sistem|
+    :Tampilkan notifikasi sukses;
+  else (Tidak)
+    |Sistem|
+    :Tampilkan pesan error validasi;
+  endif
+
+else if (Laporan) then (Ya)
+  |Sistem|
+  :Merender grafik laporan keuangan;
+  |Basis data|
+  :SELECT orders + payments;
+
+else (Dashboard Utama)
+  |Sistem|
+  :Merender metrik ringkasan;
+  |Basis data|
+  :SELECT COUNT(orders), SUM(grandTotal);
+endif
+
+|Pengguna|
+:Logout / Selesai;
+stop
+@enduml

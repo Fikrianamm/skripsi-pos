@@ -66,12 +66,12 @@ export const NAV_ITEMS: NavGroup[] = [
         roles: ["admin", "designer", "produksi", "kasir"],
         items: [
           {
-            title: "Antrian Desain",
+            title: "Antrean Desain",
             url: "/production/design-queue",
-            roles: ["admin", "designer", "kasir"],
+            roles: ["admin", "designer", "kasir", "produksi"],
           },
           {
-            title: "Antrian Produksi (SPK)",
+            title: "Antrean Produksi (SPK)",
             url: "/production/spk",
             roles: ["admin", "produksi"],
           },
@@ -170,7 +170,7 @@ export const NAV_ITEMS: NavGroup[] = [
           {
             title: "Produk & Jasa",
             url: "/master/product",
-            roles: ["admin", "kasir"],
+            roles: ["admin", "kasir", "gudang"],
           },
           {
             title: "Data Pelanggan",

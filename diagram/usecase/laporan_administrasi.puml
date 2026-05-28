@@ -1,0 +1,24 @@
+@startuml usecase laporan_administrasi
+left to right direction
+skinparam packageStyle rectangle
+skinparam BackgroundColor transparent
+
+actor "Administrator" as admin
+
+package "Modul Laporan & Administrasi" {
+  usecase "Melihat Dashboard Analitik" as UC1
+  usecase "Melihat Laporan Keuangan" as UC2
+  usecase "Mengelola Data Karyawan" as UC3
+  usecase "Mengelola Pengaturan Toko" as UC4
+  usecase "Mengelola Jurnal Umum" as UC5
+  usecase "Mengelola Akun Keuangan" as UC6
+}
+
+admin --> UC1
+admin --> UC2
+admin --> UC3
+admin --> UC4
+admin --> UC5
+admin --> UC6
+
+@enduml

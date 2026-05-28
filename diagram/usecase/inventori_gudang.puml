@@ -1,0 +1,25 @@
+@startuml usecase inventori_gudang
+left to right direction
+skinparam packageStyle rectangle
+skinparam BackgroundColor transparent
+
+actor "Gudang" as gudang
+actor "Administrator" as admin
+
+package "Modul Manajemen Inventori" {
+  usecase "Mengelola Master Produk & Bahan Baku" as UC1
+  usecase "Mengelola Master Supplier" as UC2
+  usecase "Mencatat Penerimaan Barang" as UC3
+  usecase "Mencatat Pengeluaran Barang" as UC4
+}
+
+gudang --> UC1
+gudang --> UC2
+gudang --> UC3
+gudang --> UC4
+
+UC1 <-- admin
+UC2 <-- admin
+UC3 <-- admin
+UC4 <-- admin
+@enduml

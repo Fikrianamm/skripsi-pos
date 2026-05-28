@@ -4,7 +4,6 @@ export interface CartItem {
   nama: string;
   harga: number;
   qty: number;
-  catatan: string;
   unit: string;
 }
 

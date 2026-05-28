@@ -74,6 +74,7 @@ export default function Page() {
   const [nominalBayar, setNominalBayar] = useState<number | undefined>(
     undefined,
   );
+  const [nominalDpError, setNominalDpError] = useState<string>("");
 
   // Data KasBank
   const { data: kasBankData } = useSWR("/api/finance/kas-bank", fetcher);
@@ -120,12 +121,6 @@ export default function Page() {
     );
   }, []);
 
-  const updateNote = useCallback((productId: string, catatan: string) => {
-    setCart((prev) =>
-      prev.map((i) => (i.productId === productId ? { ...i, catatan } : i)),
-    );
-  }, []);
-
   const removeItem = useCallback((productId: string) => {
     setCart((prev) => prev.filter((i) => i.productId !== productId));
   }, []);
@@ -159,6 +154,22 @@ export default function Page() {
       return;
     }
 
+    // Validasi nominal DP
+    if (statusPembayaran === "DP") {
+      const dp = nominalBayar ?? 0;
+      if (dp <= 0) {
+        setNominalDpError("Nominal DP wajib diisi.");
+        return;
+      }
+      if (dp > grandTotal) {
+        setNominalDpError(
+          `Nominal DP tidak boleh melebihi Grand Total (${formatRupiah(grandTotal)}).`,
+        );
+        return;
+      }
+      setNominalDpError("");
+    }
+
     setIsSubmitting(true);
     try {
       const body = {
@@ -178,7 +189,6 @@ export default function Page() {
           harga: i.harga,
           qty: i.qty,
           subtotal: i.harga * i.qty,
-          catatan: i.catatan || undefined,
         })),
         kasBankId:
           statusPembayaran === "DP" || statusPembayaran === "LUNAS"
@@ -293,7 +303,6 @@ export default function Page() {
                       key={item.productId}
                       item={item}
                       onQtyChange={(qty) => updateQty(item.productId, qty)}
-                      onNoteChange={(note) => updateNote(item.productId, note)}
                       onRemove={() => removeItem(item.productId)}
                     />
                   ))}
@@ -333,7 +342,7 @@ export default function Page() {
                     key={customer.id!}
                     textValue={customer.nama}
                   >
-                      <p className="text-sm">{customer.nama}</p>
+                    <p className="text-sm">{customer.nama}</p>
                   </AutocompleteItem>
                 )}
               </Autocomplete>
@@ -475,9 +484,14 @@ export default function Page() {
                       label="Nominal DP"
                       placeholder="Masukkan jumlah DP"
                       value={nominalBayar ?? 0}
-                      onChange={(val) => setNominalBayar(Number(val))}
+                      onChange={(val) => {
+                        setNominalBayar(Number(val));
+                        setNominalDpError("");
+                      }}
                       size="sm"
                       isRequired
+                      isInvalid={!!nominalDpError}
+                      errorMessage={nominalDpError}
                       startContent={
                         <span className="text-default-400 text-xs">Rp</span>
                       }

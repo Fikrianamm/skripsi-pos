@@ -33,7 +33,7 @@ async function requireDesignAccess() {
   return { error: null, status: 200, session };
 }
 
-// ── POST /api/order/[id]/design-files — Upload file desain ke Neo S3 ──────────
+// ── POST /api/order/[id]/design-files — Upload file desain ke Neo S3 atau simpan URL ──────────
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { error, status, session } = await requireDesignAccess();
@@ -52,6 +52,57 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    const contentType = req.headers.get("content-type") || "";
+
+    // ── Mode URL: simpan link eksternal tanpa upload ke S3 ──────────────────
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+      const nama = body.nama?.trim();
+      const fileUrl = body.fileUrl?.trim();
+
+      if (!nama) {
+        return NextResponse.json(
+          { error: "Nama file tidak boleh kosong." },
+          { status: 400 },
+        );
+      }
+      if (!fileUrl) {
+        return NextResponse.json(
+          { error: "URL file tidak boleh kosong." },
+          { status: 400 },
+        );
+      }
+      // Validasi format URL
+      try {
+        new URL(fileUrl);
+      } catch {
+        return NextResponse.json(
+          { error: "Format URL tidak valid." },
+          { status: 400 },
+        );
+      }
+
+      const designFile = await prisma.designFile.create({
+        data: {
+          id: crypto.randomUUID(),
+          orderId,
+          nama,
+          filePath: fileUrl, // simpan URL langsung
+          uploadedById: session.user.id,
+        },
+        select: {
+          id: true,
+          nama: true,
+          filePath: true,
+          createdAt: true,
+          uploadedBy: { select: { id: true, name: true } },
+        },
+      });
+
+      return NextResponse.json({ designFile }, { status: 201 });
+    }
+
+    // ── Mode File: upload ke Neo S3 (existing logic) ──────────────────────
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const nama = (formData.get("nama") as string | null)?.trim();
@@ -153,11 +204,18 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         { status: 400 },
       );
 
-    // ── Hapus dari Neo S3 (tidak throw jika sudah tidak ada) ──────────────────
-    try {
-      await deleteFromNeo(designFile.filePath);
-    } catch (e) {
-      console.warn("[DESIGN FILE DELETE S3 WARNING]", e);
+    // ── Hapus dari Neo S3 hanya jika bukan URL eksternal ──────────────────
+    // URL mode: filePath adalah link langsung (tidak perlu delete dari S3)
+    const isExternalUrl = designFile.filePath.includes("drive.google") ||
+      designFile.filePath.includes("dropbox") ||
+      designFile.filePath.includes("blob.core") ||
+      (!designFile.filePath.includes("design/") && designFile.filePath.startsWith("http"));
+    if (!isExternalUrl) {
+      try {
+        await deleteFromNeo(designFile.filePath);
+      } catch (e) {
+        console.warn("[DESIGN FILE DELETE S3 WARNING]", e);
+      }
     }
 
     await prisma.designFile.delete({ where: { id: designFileId } });

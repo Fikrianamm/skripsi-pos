@@ -1,0 +1,40 @@
+@startuml usecase desain_produksi
+left to right direction
+skinparam packageStyle rectangle
+skinparam BackgroundColor transparent
+
+actor "Designer" as designer
+actor "Produksi" as produksi
+actor "Administrator" as admin
+actor "Kasir" as kasir
+
+package "Modul Manajemen Desain & Produksi" {
+  usecase "Melihat Daftar Antrean Desain" as UC1
+  usecase "Mengambil Antrean Desain" as UC2
+  usecase "Mengelola Diskusi & Revisi Desain" as UC3
+  usecase "Memfinalisasi Desain" as UC4
+  usecase "Membuat Surat Perintah Kerja" as UC5
+  usecase "Memperbarui Tahap Produksi" as UC6
+  usecase "Melihat Bank Desain" as UC7
+}
+
+designer --> UC1
+designer --> UC2
+designer --> UC3
+designer --> UC4
+designer --> UC7
+
+produksi --> UC5
+produksi --> UC6
+produksi --> UC7
+
+UC3 <-- kasir
+
+UC1 <-- admin
+UC3 <-- admin
+UC4 <-- admin
+UC5 <-- admin
+UC6 <-- admin
+UC7 <-- admin
+
+@enduml

@@ -66,7 +66,7 @@ npm run dev
 | ---------- | ------------------------------------------ |
 | `admin`    | Kendali penuh, User Management, Laporan Keuangan |
 | `kasir`    | Input Order, Pembayaran, Pelanggan         |
-| `designer` | Manajemen Antrian Desain & Upload File     |
+| `designer` | Manajemen Antrean Desain & Upload File     |
 | `produksi` | Update Status Produksi & Tracking          |
 | `gudang`   | Inventori Stok Bahan Baku                  |
 

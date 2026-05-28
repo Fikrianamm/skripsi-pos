@@ -1,0 +1,63 @@
+@startuml activity_kasir
+|Pengguna|
+start
+:Melakukan Login;
+|Sistem|
+:Verifikasi kredensial & role;
+|Basis data|
+:SELECT users WHERE email;
+|Sistem|
+:Menampilkan Dashboard Kasir;
+
+|Pengguna|
+:Memilih Menu;
+if (Menu yang dipilih?) then (Input Pesanan)
+  |Sistem|
+  :Menampilkan antarmuka POS;
+  |Basis data|
+  :SELECT products + categories;
+  
+  |Pengguna|
+  :Menginput data pesanan & pembayaran;
+  :Menekan "Simpan & Bayar";
+  |Sistem|
+  :Memvalidasi transaksi;
+  
+  if (Data valid?) then (Ya)
+    |Basis data|
+    :INSERT orders + order_items;
+    :INSERT payments;
+    |Sistem|
+    :Menampilkan Nota (Invoice);
+    |Pengguna|
+    :Mencetak Nota;
+  else (Tidak)
+    |Sistem|
+    :Menampilkan pesan error;     
+  endif
+
+else (Daftar Pesanan)
+  |Sistem|
+  :Menampilkan daftar pesanan;
+  |Basis data|
+  :SELECT orders + customers;
+  
+  |Pengguna|
+  :Melihat detail pesanan;
+  if (Pilih Aksi?) then (Update Status)
+    |Sistem|
+    :Memproses update;
+    |Basis data|
+    :UPDATE orders SET status;
+  else (Tambah Pembayaran)
+    |Sistem|
+    :Memproses pembayaran;
+    |Basis data|
+    :INSERT payments;
+  endif
+endif
+
+|Pengguna|
+:Logout / Selesai;
+stop
+@enduml

@@ -90,7 +90,7 @@ const ALL_RESOURCES = [
     description: "Data & riwayat pelanggan",
   },
   { key: "payment", label: "Pembayaran", description: "DP & pelunasan" },
-  { key: "design", label: "Desain", description: "Antrian & file desain" },
+  { key: "design", label: "Desain", description: "Antrean & file desain" },
   { key: "production", label: "Produksi", description: "Tracking produksi" },
   { key: "inventory", label: "Inventori", description: "Bahan baku & stok" },
   { key: "finance", label: "Keuangan", description: "Jurnal & akun" },

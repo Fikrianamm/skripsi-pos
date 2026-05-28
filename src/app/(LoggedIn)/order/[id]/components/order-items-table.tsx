@@ -54,11 +54,6 @@ export function OrderItemsTable({ items }: OrderItemsTableProps) {
                         {item.product.sku}
                       </p>
                     )}
-                    {item.catatan && (
-                      <p className="text-xs text-default-400 italic mt-0.5">
-                        {item.catatan}
-                      </p>
-                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-right text-default-600">

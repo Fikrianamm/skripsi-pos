@@ -1,0 +1,50 @@
+@startuml activity_produksi
+|Pengguna|
+start
+:Melakukan Login;
+|Sistem|
+:Verifikasi kredensial;
+|Basis data|
+:SELECT users;
+|Sistem|
+:Menampilkan Dashboard Produksi;
+
+|Pengguna|
+:Memilih Menu;
+if (Menu yang dipilih?) then (Antrean Produksi)
+  |Sistem|
+  :Menampilkan pesanan siap produksi;
+  |Basis data|
+  :SELECT orders WHERE isDesignFinal=true;
+  
+  |Pengguna|
+  :Memilih pesanan;
+  :Mengisi form SPK;
+  :Menekan "Buat SPK";
+  |Sistem|
+  :Memvalidasi input SPK;
+  
+  if (Form valid?) then (Ya)
+    |Basis data|
+    :INSERT spk;
+    :UPDATE orders SET statusProduksi;
+    |Sistem|
+    :Tampilkan pratinjau cetak SPK;
+    |Pengguna|
+    :Mencetak dokumen SPK;
+  else (Tidak)
+    |Sistem|
+    :Tampilkan pesan error validasi;
+  endif
+
+else (Bank Desain)
+  |Sistem|
+  :Menampilkan arsip desain;
+  |Basis data|
+  :SELECT design_files;
+endif
+
+|Pengguna|
+:Logout / Selesai;
+stop
+@enduml

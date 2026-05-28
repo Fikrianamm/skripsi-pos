@@ -31,7 +31,7 @@ async function requireOrderAccess() {
 async function generateNomorOrder(): Promise<string> {
   const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
   const basePrefix = settings?.prefixOrder || "ORD-";
-  
+
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
   const prefix = `${basePrefix}${dateStr}-`;
@@ -186,11 +186,22 @@ export async function POST(request: NextRequest) {
       (!kasBankId || !nominalBayar || Number(nominalBayar) <= 0)
     ) {
       return NextResponse.json(
-        { error: "Kas/Bank tujuan dan nominal bayar wajib diisi jika status LUNAS atau DP." },
+        {
+          error:
+            "Kas/Bank tujuan dan nominal bayar wajib diisi jika status LUNAS atau DP.",
+        },
         { status: 400 },
       );
     }
 
+    // Validasi: nominal DP tidak boleh melebihi grandTotal
+    if (statusPembayaran === "DP" && Number(nominalBayar) > Number(grandTotal)) {
+      return NextResponse.json(
+        { error: `Nominal DP (${Number(nominalBayar)}) tidak boleh melebihi Grand Total (${Number(grandTotal)}).` },
+        { status: 400 },
+      );
+    }
+    
     // Pastikan customer ada
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
@@ -221,14 +232,16 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const product = await prisma.product.findUnique({
         where: { id: item.productId },
-        select: { nama: true, stok: true, isService: true }
+        select: { nama: true, stok: true, isService: true },
       });
       if (product && !product.isService) {
         const currentStok = Number(product.stok || 0);
         if (currentStok < item.qty) {
           return NextResponse.json(
-            { error: `Stok produk "${product.nama}" tidak mencukupi (sisa: ${currentStok}).` },
-            { status: 400 }
+            {
+              error: `Stok produk "${product.nama}" tidak mencukupi (sisa: ${currentStok}).`,
+            },
+            { status: 400 },
           );
         }
       }
@@ -236,7 +249,7 @@ export async function POST(request: NextRequest) {
 
     const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
     const nomorOrder = await generateNomorOrder();
-    
+
     // Apply default deadline if not provided
     let finalDeadline = deadline ? new Date(deadline) : null;
     if (!finalDeadline && settings?.estimasiHariPengerjaan) {
@@ -272,7 +285,6 @@ export async function POST(request: NextRequest) {
                 harga: number;
                 qty: number;
                 subtotal: number;
-                catatan?: string;
               }) => ({
                 id: crypto.randomUUID(),
                 productId: item.productId,
@@ -280,7 +292,6 @@ export async function POST(request: NextRequest) {
                 harga: item.harga,
                 qty: item.qty,
                 subtotal: item.subtotal,
-                catatan: item.catatan || null,
               }),
             ),
           },
@@ -308,7 +319,6 @@ export async function POST(request: NextRequest) {
               harga: true,
               qty: true,
               subtotal: true,
-              catatan: true,
             },
           },
         },
@@ -316,27 +326,37 @@ export async function POST(request: NextRequest) {
 
       // 2. Jurnal Piutang Usaha saat pesanan dibuat (berlaku semua status)
       //    Debet = Piutang Usaha (1-003), Kredit = Pendapatan (Default from Settings or 4-001)
-      const piutangAkun    = await tx.akun.findUnique({ where: { kodeAkun: "1-003" } });
-      const pendapatanAkun = settings?.defaultPendapatanAkunId 
-        ? await tx.akun.findUnique({ where: { id: settings.defaultPendapatanAkunId } })
+      const piutangAkun = await tx.akun.findUnique({
+        where: { kodeAkun: "1-003" },
+      });
+      const pendapatanAkun = settings?.defaultPendapatanAkunId
+        ? await tx.akun.findUnique({
+            where: { id: settings.defaultPendapatanAkunId },
+          })
         : await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
 
       if (piutangAkun && pendapatanAkun) {
-        await createJurnalDoubleEntry({
-          ref:          `${nomorOrder.slice(0, 10)}`, // Using order number as ref part
-          tanggal:      new Date(),
-          keterangan:   `Piutang Order #${nomorOrder} - ${customer.nama}`,
-          namaBiaya:    `Piutang Order #${nomorOrder}`,
-          akunDebetId:  piutangAkun.id,
-          akunKreditId: pendapatanAkun.id,
-          nominal:      Number(grandTotal),
-          createdById:  session.user.id,
-        }, tx as any);
+        await createJurnalDoubleEntry(
+          {
+            ref: `${nomorOrder.slice(0, 10)}`, // Using order number as ref part
+            tanggal: new Date(),
+            keterangan: `Piutang Order #${nomorOrder} - ${customer.nama}`,
+            namaBiaya: `Piutang Order #${nomorOrder}`,
+            akunDebetId: piutangAkun.id,
+            akunKreditId: pendapatanAkun.id,
+            nominal: Number(grandTotal),
+            createdById: session.user.id,
+          },
+          tx as any,
+        );
       }
 
       // 3. Jika user membuat pesanan + langsung bayar (DP / Lunas)
       //    Catat juga jurnal pembayaran: Debet Kas/Bank, Kredit Piutang Usaha
-      if ((statusPembayaran === "DP" || statusPembayaran === "LUNAS") && kasBankId) {
+      if (
+        (statusPembayaran === "DP" || statusPembayaran === "LUNAS") &&
+        kasBankId
+      ) {
         const nominal = Number(nominalBayar);
         const paymentId = crypto.randomUUID();
 
@@ -359,22 +379,25 @@ export async function POST(request: NextRequest) {
         if (!kasBank || !kasBank.akunId) {
           throw new Error("Rekening Kas/Bank tujuan tidak valid.");
         }
-        
+
         // Note: SaldoKasBank via Jurnal Umum
 
         // Debet = Kas/Bank, Kredit = Piutang Usaha (mengurangi piutang)
         if (piutangAkun) {
-          await createJurnalDoubleEntry({
-            ref:          `PYM-${orderId.slice(0, 5)}`,
-            tanggal:      new Date(),
-            keterangan:   `Pembayaran Awal Order #${nomorOrder}`,
-            namaBiaya:    `Pembayaran Awal Order #${nomorOrder}`,
-            akunDebetId:  kasBank.akunId!,
-            akunKreditId: piutangAkun.id,
-            nominal:      nominal,
-            paymentId:    paymentId,
-            createdById:  session.user.id,
-          }, tx as any);
+          await createJurnalDoubleEntry(
+            {
+              ref: `PYM-${orderId.slice(0, 5)}`,
+              tanggal: new Date(),
+              keterangan: `Pembayaran Awal Order #${nomorOrder}`,
+              namaBiaya: `Pembayaran Awal Order #${nomorOrder}`,
+              akunDebetId: kasBank.akunId!,
+              akunKreditId: piutangAkun.id,
+              nominal: nominal,
+              paymentId: paymentId,
+              createdById: session.user.id,
+            },
+            tx as any,
+          );
         }
       }
 
@@ -390,7 +413,10 @@ export async function POST(request: NextRequest) {
         linkUrl: `/order/${order.id}`,
       };
       await Promise.all([
-        createNotificationForRole(["admin", "kasir", "produksi", "designer", "gudang"], notifInput),
+        createNotificationForRole(
+          ["admin", "kasir", "produksi", "designer", "gudang"],
+          notifInput,
+        ),
       ]);
     } catch (e) {
       console.error("Failed to send notification:", e);

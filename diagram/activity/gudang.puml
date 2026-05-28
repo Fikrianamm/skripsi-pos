@@ -1,0 +1,55 @@
+@startuml activity_gudang
+|Pengguna|
+start
+:Melakukan Login;
+|Sistem|
+:Verifikasi kredensial;
+|Basis data|
+:SELECT users;
+|Sistem|
+:Menampilkan Dashboard Gudang;
+
+|Pengguna|
+:Memilih Menu;
+if (Menu yang dipilih?) then (Master Produk)
+  |Sistem|
+  :Menampilkan daftar bahan baku;
+  |Basis data|
+  :SELECT products + categories;
+  |Pengguna|
+  :Mengelola produk (Tambah/Edit);
+  |Sistem|
+  :Validasi data;
+  |Basis data|
+  :INSERT / UPDATE products;
+
+else (Inventori Stok)
+  |Sistem|
+  :Menampilkan form mutasi;
+  |Pengguna|
+  :Menginput data mutasi barang;
+  
+  if (Jenis Mutasi?) then (Keluar)
+    |Sistem|
+    :Memeriksa ketersediaan stok;
+    if (Stok mencukupi?) then (Ya)
+      |Basis data|
+      :INSERT inventory_movements;
+      :UPDATE products SET stock;
+    else (Tidak)
+      |Sistem|
+      :Tampilkan pesan error stok kurang;
+    endif
+  else (Masuk)
+    |Sistem|
+    :Memproses penambahan stok;
+    |Basis data|
+    :INSERT inventory_movements;
+    :UPDATE products SET stock;
+  endif
+endif
+
+|Pengguna|
+:Logout / Selesai;
+stop
+@enduml

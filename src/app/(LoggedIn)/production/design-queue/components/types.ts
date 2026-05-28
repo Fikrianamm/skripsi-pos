@@ -19,5 +19,6 @@ export interface DesignOrder {
   spk: { id: string } | null;
   designerId: string | null;
   isDesignFinal: boolean;
+  designReviewStatus: "PENDING_REVIEW" | "REVISI" | "ACC" | null;
   designer: { id: string; name: string; image: string | null } | null;
 }

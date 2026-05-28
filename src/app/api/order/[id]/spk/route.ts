@@ -9,7 +9,7 @@ type Params = { params: Promise<{ id: string }> };
 async function requireAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized.", status: 401, session: null };
-  if (session.user.role !== "admin" && session.user.role !== "kasir")
+  if (session.user.role !== "admin" && session.user.role !== "kasir" && session.user.role !== "produksi")
     return { error: "Forbidden.", status: 403, session: null };
   return { error: null, status: 200, session };
 }

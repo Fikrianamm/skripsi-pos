@@ -26,7 +26,7 @@ export function PaymentSummary({ order }: PaymentSummaryProps) {
   const diskon = parseFloat(order.diskon);
   const ongkir = order.ongkir ? parseFloat(order.ongkir) : 0;
   const grandTotal = parseFloat(order.grandTotal);
-  const totalQty = order.items.reduce((s, i) => s + i.qty, 0);
+  const totalQty = order.items.reduce((s, i) => s + Number(i.qty), 0);
 
   const { data, mutate } = useSWR(`/api/order/${order.id}/payment`, fetcher);
   const payments: any[] = data?.payments || [];

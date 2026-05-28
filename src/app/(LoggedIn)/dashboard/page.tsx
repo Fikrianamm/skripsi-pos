@@ -137,7 +137,6 @@ function paymentChipColor(
 ): "default" | "warning" | "success" | "danger" {
   if (s === "LUNAS") return "success";
   if (s === "DP") return "warning";
-  if (s === "REFUND") return "danger";
   return "default";
 }
 
@@ -145,7 +144,6 @@ const paymentLabel: Record<string, string> = {
   BELUM_BAYAR: "Belum Bayar",
   DP: "DP",
   LUNAS: "Lunas",
-  REFUND: "Refund",
 };
 
 // ── Main Page ────────────────────────────────────────────────────────────────

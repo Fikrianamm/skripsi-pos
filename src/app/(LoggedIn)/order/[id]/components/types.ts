@@ -56,7 +56,6 @@ export interface OrderItem {
   harga: string;
   qty: number;
   subtotal: string;
-  catatan: string | null;
   product: { id: string; sku: string; nama: string } | null;
 }
 
