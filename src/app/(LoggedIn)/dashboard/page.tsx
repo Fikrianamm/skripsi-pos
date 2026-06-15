@@ -241,7 +241,11 @@ export default function Page() {
           value={String(data?.lowStockAlerts?.length ?? 0)}
           icon={AlertTriangle}
           iconColor="bg-rose-500"
-          sub="item perlu restock"
+          sub={
+            data
+              ? `${data.lowStockAlerts.filter((i) => i.type === "bahan_baku").length} bahan baku · ${data.lowStockAlerts.filter((i) => i.type === "product").length} produk`
+              : "item perlu restock"
+          }
           loading={isLoading}
         />
       </div>
@@ -385,8 +389,14 @@ export default function Page() {
                       <span className="text-sm font-medium truncate">
                         {item.nama}
                       </span>
-                      <span className="text-xs text-default-500">
-                        {item.type === "bahan_baku" ? "Bahan Baku" : "Produk"} ·
+                      <span className="text-xs text-default-500 flex items-center gap-1.5">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          item.type === "bahan_baku"
+                            ? "bg-violet-100 text-violet-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {item.type === "bahan_baku" ? "Bahan Baku" : "Produk"}
+                        </span>
                         Min {item.minStok} {item.unit.nama}
                       </span>
                     </div>

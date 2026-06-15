@@ -41,10 +41,16 @@ export function DeleteConfirmModal({
               <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-danger-50 text-danger-700 text-sm border border-danger-200">
                   <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                  <p>
-                    Apakah Anda yakin ingin menghapus entri jurnal ini? Tindakan
-                    ini tidak dapat dibatalkan.
-                  </p>
+                  <div>
+                    <p>
+                      Apakah Anda yakin ingin menghapus entri jurnal ini?
+                    </p>
+                    <ul className="list-disc list-inside text-xs mt-1.5 space-y-0.5 text-danger-600">
+                      <li>Pasangan debet/kredit akan ikut terhapus</li>
+                      <li>Saldo akun terkait akan disesuaikan otomatis</li>
+                      <li>Tindakan ini tidak dapat dibatalkan</li>
+                    </ul>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-2 p-4 rounded-xl border border-default-200 bg-default-50">

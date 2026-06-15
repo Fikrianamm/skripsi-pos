@@ -213,25 +213,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Soft Delete & Reversal Jurnal Lama (Hanya jika masih ada)
+      // 1. Soft Delete Jurnal Lama (Hanya jika masih ada)
       if (oldJurnal) {
         await tx.jurnalUmum.update({
           where: { id: oldJurnal.id },
           data: { deletedAt: now },
         });
-
-        await createJurnalDoubleEntry({
-          ref: `REV-${oldJurnal.ref}`,
-          tanggal: now,
-          keterangan: `Reversal untuk: ${oldJurnal.keterangan ?? oldJurnal.namaBiaya}`,
-          namaBiaya: `Reversal: ${oldJurnal.namaBiaya}`,
-          akunDebetId: oldJurnal.akunKreditId,
-          akunKreditId: oldJurnal.akunDebetId,
-          nominal: Number(oldJurnal.nominal),
-          paymentId: paymentId,
-          createdById: session.user.id,
-          deletedAt: now,
-        }, tx as any);
       }
 
       // 3. Update Data Payment
@@ -276,7 +263,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return { payment: updatedPayment, statusPembayaran: newStatus };
     });
 
-    return NextResponse.json({ message: "Pembayaran berhasil dikoreksi (reversal applied)", ...result });
+    return NextResponse.json({ message: "Pembayaran berhasil dikoreksi", ...result });
   } catch (err) {
     console.error("[PAYMENT PATCH ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -318,20 +305,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
           where: { id: oldJurnal.id },
           data: { deletedAt: now },
         });
-
-        // 2. Buat Jurnal Pembalik
-        await createJurnalDoubleEntry({
-          ref: `REV-${oldJurnal.ref}`,
-          tanggal: now,
-          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan ?? oldJurnal.namaBiaya}`,
-          namaBiaya: `Reversal (Delete): ${oldJurnal.namaBiaya}`,
-          akunDebetId: oldJurnal.akunKreditId,
-          akunKreditId: oldJurnal.akunDebetId,
-          nominal: Number(oldJurnal.nominal),
-          paymentId: paymentId,
-          createdById: session.user.id,
-          deletedAt: now,
-        }, tx as any);
       }
 
       // 3. Soft Delete Data Payment
@@ -356,7 +329,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       await tx.order.update({ where: { id: orderId }, data: { statusPembayaran: newStatus } });
     });
 
-    return NextResponse.json({ message: "Pembayaran dihapus (reversal applied)." });
+    return NextResponse.json({ message: "Pembayaran dihapus." });
   } catch (err) {
     console.error("[PAYMENT DELETE ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

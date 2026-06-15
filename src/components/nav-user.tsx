@@ -24,8 +24,16 @@ import { useState } from "react";
 import { addToast } from "@heroui/toast";
 import { getInitialName } from "@/lib/func";
 import { Button } from "./ui/button";
+import { ROLES } from "@/config/roles";
 
-export function NavUser({ user }: { user: User }) {
+type UserWithRole = User & { role?: string };
+
+function getRoleLabel(roleKey?: string): string {
+  if (!roleKey) return "";
+  return ROLES.find((r) => r.key === roleKey)?.label ?? roleKey;
+}
+
+export function NavUser({ user }: { user: UserWithRole }) {
   const { isMobile } = useSidebar();
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
@@ -68,14 +76,22 @@ export function NavUser({ user }: { user: User }) {
               className="data-[state=open]:bg-slate-200 data-[state=open]:text-sidebar-accent-foreground hover:bg-slate-200 text-slate-600"
             >
               <Avatar className="h-8 w-8 rounded-full">
-                <AvatarImage src={user.image as string} alt={user.name} className="object-cover"/>
+                <AvatarImage
+                  src={user.image as string}
+                  alt={user.name}
+                  className="object-cover"
+                />
                 <AvatarFallback className="rounded-full">
                   {getInitialName(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                {user.role && (
+                  <span className="text-[10px] uppercase font-semibold text-primary-600 bg-primary-100/60 px-1.5 py-0.5 rounded w-fit mt-0.5 leading-tight">
+                    {getRoleLabel(user.role)}
+                  </span>
+                )}
               </div>
               <EllipsisVertical className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -110,7 +126,7 @@ export function NavUser({ user }: { user: User }) {
   );
 }
 
-export function NavUserSimple({ user }: { user: User }) {
+export function NavUserSimple({ user }: { user: UserWithRole }) {
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
@@ -157,7 +173,11 @@ export function NavUserSimple({ user }: { user: User }) {
               variant={"ghost"}
             >
               <Avatar className="h-8 w-8 rounded-full">
-                <AvatarImage src={user.image as string} alt={user.name} className="object-cover"/>
+                <AvatarImage
+                  src={user.image as string}
+                  alt={user.name}
+                  className="object-cover"
+                />
                 <AvatarFallback className="rounded-full">
                   {getInitialName(user.name)}
                 </AvatarFallback>
@@ -173,12 +193,16 @@ export function NavUserSimple({ user }: { user: User }) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-full">
-                  <AvatarImage src={user.image as string} alt={user.name}/>
+                  <AvatarImage src={user.image as string} alt={user.name} />
                   <AvatarFallback className="rounded-full">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  {user.role && (
+                    <span className="text-[10px] uppercase font-semibold text-primary-600 bg-primary-100/60 px-1.5 py-0.5 rounded w-fit mt-0.5 leading-tight">
+                      {getRoleLabel(user.role)}
+                    </span>
+                  )}
                 </div>
               </div>
             </DropdownMenuLabel>

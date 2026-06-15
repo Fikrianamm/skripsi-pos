@@ -2,9 +2,9 @@
 
 import React from "react";
 import useSWR from "swr";
-import { fetcher } from "@/lib/func";
+import { fetcher, toISO } from "@/lib/func";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button, Divider, Pagination } from "@heroui/react";
+import { Button, Divider, Pagination, type RangeValue } from "@heroui/react";
 import { Images } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
@@ -13,7 +13,13 @@ import {
   FilterLanjutan,
   FilterSection,
 } from "@/components/filter-lanjutan";
-import { FileCard, FileCardSkeleton, DesignFileItem } from "./components/file-card";
+import {
+  FileCard,
+  FileCardSkeleton,
+  DesignFileItem,
+} from "./components/file-card";
+import { DateRangePicker } from "@heroui/date-picker";
+import type { DateValue } from "@internationalized/date";
 
 // ── Filter options ─────────────────────────────────────────────────────────────
 const TAHAP_OPTIONS = [
@@ -29,12 +35,16 @@ const TAHAP_OPTIONS = [
 export default function Page() {
   const [search, setSearch] = React.useState("");
   const [tahapFilter, setTahapFilter] = React.useState("all");
+  const [dateRange, setDateRange] =
+    React.useState<RangeValue<DateValue> | null>(null);
   const [page, setPage] = React.useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
   const limit = 24; // 4 kolom × 6 baris
 
-  const apiUrl = `/api/production/design-archive?page=${page}&limit=${limit}&search=${debouncedSearch}&tahap=${tahapFilter}`;
+  const dateFrom = toISO(dateRange?.start);
+  const dateTo = toISO(dateRange?.end);
+  const apiUrl = `/api/production/design-archive?page=${page}&limit=${limit}&search=${debouncedSearch}&tahap=${tahapFilter}${dateFrom ? `&dateFrom=${dateFrom}` : ""}${dateTo ? `&dateTo=${dateTo}` : ""}`;
 
   const { data, isLoading } = useSWR(apiUrl, fetcher, {
     keepPreviousData: true,
@@ -45,13 +55,17 @@ export default function Page() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, tahapFilter]);
+  }, [debouncedSearch, tahapFilter, dateRange]);
 
-  const activeFilters = tahapFilter !== "all" || search !== "";
+  const activeFilters =
+    tahapFilter !== "all" || search !== "" || dateRange !== null;
+  const filterCount =
+    (tahapFilter !== "all" ? 1 : 0) + (dateRange !== null ? 1 : 0);
 
   function resetFilters() {
     setSearch("");
     setTahapFilter("all");
+    setDateRange(null);
   }
 
   return (
@@ -71,15 +85,22 @@ export default function Page() {
           className="w-full"
         />
         <div className="flex flex-row gap-2 items-center justify-start">
-          <FilterLanjutan
-            activeCount={tahapFilter !== "all" ? 1 : 0}
-            onReset={resetFilters}
-          >
+          <FilterLanjutan activeCount={filterCount} onReset={resetFilters}>
             <FilterSection label="Tahap Produksi">
               <FilterButtonGroup
                 options={TAHAP_OPTIONS}
                 value={tahapFilter}
                 onChange={setTahapFilter}
+              />
+            </FilterSection>
+            <FilterSection label="Tanggal Upload">
+              <DateRangePicker
+                value={dateRange}
+                onChange={setDateRange}
+                granularity="day"
+                size="sm"
+                className="w-full"
+                label="Pilih rentang tanggal"
               />
             </FilterSection>
           </FilterLanjutan>

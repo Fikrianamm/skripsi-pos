@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -80,11 +81,6 @@ export function DesignDetailDrawer({
 
   const comments = React.useMemo(() => data?.comments ?? [], [data?.comments]);
 
-  // Hanya desainer yang claim atau admin yang bisa upload file di chat
-  const canUploadInChat =
-    currentUser?.role === "admin" ||
-    (currentUser?.role === "designer" && order.designerId === currentUser?.id);
-
   const [text, setText] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,6 +93,21 @@ export function DesignDetailDrawer({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [comments]);
+
+  // Mark comments as read when drawer is opened
+  React.useEffect(() => {
+    if (isOpen && order?.id && (order as any).hasUnreadComments) {
+      fetch(`/api/order/${order.id}/comments/read`, { method: "PATCH" })
+        .catch(console.error);
+    }
+  }, [isOpen, order?.id, order]);
+
+  // Handle onMutate when drawer closes so the card doesn't vanish while open
+  React.useEffect(() => {
+    if (!isOpen && order?.id && (order as any).hasUnreadComments) {
+       onMutate();
+    }
+  }, [isOpen, order?.id, order, onMutate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -140,7 +151,6 @@ export function DesignDetailDrawer({
       setSelectedFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       mutateComments();
-      onMutate();
     } catch (err) {
       console.error(err);
       addToast({
@@ -163,7 +173,7 @@ export function DesignDetailDrawer({
       }}
     >
       <DrawerContent>
-        {(_onClose) => (
+        {() => (
           <div className="flex flex-col h-full bg-content1">
             {/* Header */}
             <DrawerHeader className="border-b border-default-100 flex flex-col gap-1 p-4">
@@ -363,7 +373,6 @@ export function DesignDetailDrawer({
                 )}
 
                 <div className="flex gap-2 items-end">
-                  {canUploadInChat && (
                     <Button
                       isIconOnly
                       color="default"
@@ -373,7 +382,6 @@ export function DesignDetailDrawer({
                     >
                       <Paperclip size={18} />
                     </Button>
-                  )}
                   <input
                     type="file"
                     ref={fileInputRef}

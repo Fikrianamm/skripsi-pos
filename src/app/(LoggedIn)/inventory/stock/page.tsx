@@ -191,9 +191,6 @@ export default function Page() {
               {/* Nama */}
               <TableCell>
                 <div className="flex items-center gap-2 font-medium">
-                  <div className="size-8 rounded-lg bg-default-100 flex items-center justify-center shrink-0">
-                    <Box size={15} className="text-foreground-400" />
-                  </div>
                   {bb.nama}
                 </div>
               </TableCell>

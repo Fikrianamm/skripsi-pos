@@ -112,7 +112,7 @@ export default function DeleteCustomerModal({
                   </div>
                 </div>
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="gap-3">
                 <Alert
                   color="danger"
                   title="Konfirmasi Penghapusan"
@@ -126,6 +126,12 @@ export default function DeleteCustomerModal({
                     <li>Data terkait pada riwayat Order akan tetap tersimpan namun ditandai sebagai customer terhapus.</li>
                   </ul>
                 </Alert>
+                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 shrink-0 mt-0.5"><rect width="20" height="5" x="2" y="3" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
+                  <p className="text-xs text-blue-700">
+                    Data dipindahkan ke <strong>Sampah</strong> dan bisa dipulihkan kembali.
+                  </p>
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button color="default" variant="flat" onPress={onClose}>

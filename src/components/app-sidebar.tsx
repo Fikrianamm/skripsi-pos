@@ -14,6 +14,7 @@ import { NAV_ITEMS } from "@/config/navigation";
 import type { NavGroup, NavItem } from "@/config/navigation";
 import { User } from "better-auth";
 import { AppSetting } from "../../generated/prisma/client";
+import { UnreadCommentsBadge } from "@/components/unread-comments-badge";
 
 /**
  * Filter navigation items based on the user's role.
@@ -80,6 +81,7 @@ export function AppSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter>
+        <UnreadCommentsBadge userRole={role} />
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />

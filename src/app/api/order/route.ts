@@ -260,6 +260,12 @@ export async function POST(request: NextRequest) {
 
     const orderId = crypto.randomUUID();
 
+    // Auto-upgrade DP ke LUNAS jika nominal bayar >= grandTotal
+    let finalStatusPembayaran = statusPembayaran || "BELUM_BAYAR";
+    if (finalStatusPembayaran === "DP" && Number(nominalBayar) >= Number(grandTotal)) {
+      finalStatusPembayaran = "LUNAS";
+    }
+
     const order = await prisma.$transaction(async (tx) => {
       // 1. Buat Order
       const newOrder = await tx.order.create({
@@ -269,7 +275,7 @@ export async function POST(request: NextRequest) {
           nomorOrder,
           channel: channel || "LANGSUNG",
           statusProduksi: "PENDING",
-          statusPembayaran: statusPembayaran || "BELUM_BAYAR",
+          statusPembayaran: finalStatusPembayaran,
           metodePembayaran: metodePembayaran || "TUNAI",
           deadline: finalDeadline,
           catatan: catatan || null,

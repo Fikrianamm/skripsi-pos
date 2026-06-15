@@ -5,14 +5,17 @@ import { prisma } from "@/lib/prisma";
 const getRandomItem = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 const getRandomInt  = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Safe day range: May only goes to 10, other months up to 28
-const safeDayMax = (month: number) => (month === 5 ? 10 : 28);
+// Safe day range per month
+const safeDayMax = (month: number) => {
+  if (month === 6) return 30; // Juni: sampai akhir bulan
+  return 28;
+};
 
 export async function seedTransactions() {
-  console.log("🌱 Seeding Transactions (Januari - Mei tgl 10)...");
+  console.log("🌱 Seeding Transactions (Januari - Juni)...");
 
   const year   = 2026;
-  const months = [1, 2, 3, 4, 5];
+  const months = [1, 2, 3, 4, 5, 6];
 
   // ─── 1. Fetch master data ────────────────────────────────────
   const accounts   = await prisma.akun.findMany({ orderBy: { kodeAkun: "asc" } });
@@ -371,7 +374,7 @@ export async function seedTransactions() {
 
     // ── G. Pesanan (15 per bulan, Mei maks tgl 10) ────────────
     for (let i = 1; i <= 15; i++) {
-      const isCompleted = month < 5; // Jan–Apr selesai, Mei masih berjalan
+      const isCompleted = month < 6; // Jan–Mei selesai, Juni masih berjalan
       const orderId    = `order_dummy_${year}_${month}_${i}`;
       const nomorOrder = `DUMMY-ORD-${year}-${String(month).padStart(2, "0")}-${String(i).padStart(3, "0")}`;
 
@@ -606,7 +609,7 @@ export async function seedTransactions() {
       });
     }
 
-    console.log(`  ✅ Patch selesai: ${bebanAkun.namaAkun} (${bebanAkun.kodeAkun}) — 5 bulan`);
+    console.log(`  ✅ Patch selesai: ${bebanAkun.namaAkun} (${bebanAkun.kodeAkun}) — 6 bulan`);
   }
 
   console.log("✅ Transactions Seeding completed!");

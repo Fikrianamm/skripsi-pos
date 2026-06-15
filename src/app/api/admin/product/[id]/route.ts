@@ -20,7 +20,7 @@ export async function PUT(
       );
     }
 
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "admin" && session.user.role !== "kasir" && session.user.role !== "gudang") {
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },
         { status: 403 },
@@ -186,7 +186,7 @@ export async function DELETE(
       );
     }
 
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "admin" && session.user.role !== "kasir" && session.user.role !== "gudang") {
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },
         { status: 403 },

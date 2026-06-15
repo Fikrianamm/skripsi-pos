@@ -174,11 +174,53 @@ export async function POST(req: NextRequest, { params }: Params) {
         select: { id: true, filePath: true },
       });
 
+      // --- Create CommentRecipient for admin, kasir, designer (except sender) ---
+      const recipientUsers = await tx.user.findMany({
+        where: {
+          role: { in: ["admin", "kasir", "designer"] },
+          id: { not: session.user.id },
+        },
+        select: { id: true },
+      });
+
+      if (recipientUsers.length > 0) {
+        await tx.commentRecipient.createMany({
+          data: recipientUsers.map((u) => ({
+            commentId: newComment.id,
+            userId: u.id,
+          })),
+        });
+      }
+
       return {
         ...newComment,
         files: filesData,
       };
     });
+
+    // --- Broadcast real-time event for unread comment toast ---
+    try {
+      const { pusherServer } = await import("@/lib/pusher");
+      await pusherServer.trigger(
+        `private-order-${orderId}`,
+        "new-comment",
+        { comment }
+      );
+      // We can also trigger a global channel for admins/designers to update their badge and show a toast
+      await pusherServer.trigger(
+        "global-comments",
+        "new-comment",
+        { 
+          commentId: comment.id,
+          orderId,
+          senderId: session.user.id,
+          senderName: comment.user.name,
+          text: text ? text.substring(0, 50) + (text.length > 50 ? "..." : "") : "Mengirim file lampiran"
+        }
+      );
+    } catch (e) {
+      console.error("Failed to broadcast new comment:", e);
+    }
 
     return NextResponse.json({ comment }, { status: 201 });
   } catch (err) {

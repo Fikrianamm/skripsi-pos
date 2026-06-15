@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkAndNotifyLowStock } from "@/lib/notifications";
+import { checkAndNotifyLowStock, createNotificationForRole, JenisNotif } from "@/lib/notifications";
 
 // ── GET /api/admin/inventory/out — List all PengeluaranBarang (Barang Keluar)
 export async function GET(request: NextRequest) {
@@ -187,6 +187,17 @@ export async function POST(request: NextRequest) {
       );
     } catch (e) {
       console.error("Failed to check low stock:", e);
+    }
+
+    try {
+      await createNotificationForRole(["admin", "gudang"], {
+        title: "Pengeluaran Barang",
+        message: `Pengeluaran barang baru saja dicatat dengan ${items.length} item.`,
+        jenis: JenisNotif.BARANG_KELUAR,
+        linkUrl: `/inventory/out`,
+      });
+    } catch (e) {
+      console.error("Failed to notify barang keluar:", e);
     }
 
     return NextResponse.json(

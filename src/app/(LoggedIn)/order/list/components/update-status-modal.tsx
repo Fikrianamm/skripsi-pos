@@ -114,26 +114,30 @@ export function UpdateStatusModal({
   const newProduksiBadge = getStatusProduksiBadge(selectedProduksi);
   const curBayarBadge = getStatusBayarBadge(currentStatusBayar);
 
-  // Status yang memerlukan SPK sebelum bisa dipilih (kecuali BATAL selalu boleh)
-  const REQUIRES_SPK: StatusProduksiKey[] = ["PACKING", "SELESAI"];
-
-  // Status yang hanya bisa diakses produksi/admin (bukan kasir)
-  const KASIR_RESTRICTED: StatusProduksiKey[] = ["PRODUKSI", "PACKING", "SELESAI"];
+  // Status yang TIDAK bisa diubah dari modal ini — harus dari halaman antrean
+  const MODAL_LOCKED: StatusProduksiKey[] = ["PRODUKSI", "PACKING"];
   const isKasir = userRole === "kasir";
 
   function isStatusDisabled(key: StatusProduksiKey): boolean {
-    // 0. Kasir hanya bisa ke PENDING, DESAIN, atau BATAL
-    if (isKasir && KASIR_RESTRICTED.includes(key)) return true;
+    // PRODUKSI dan PACKING dikunci dari modal ini untuk semua role
+    if (MODAL_LOCKED.includes(key)) return true;
 
-    // 1. Jika belum ada SPK, tidak bisa loncat ke PACKING/SELESAI
-    if (!hasSPK && REQUIRES_SPK.includes(key)) return true;
+    // Kasir tidak bisa set SELESAI (hanya admin/produksi)
+    if (isKasir && key === "SELESAI") return true;
 
-    // 2. Jika belum bayar sama sekali, tidak bisa ke tahap PRODUKSI/setelahnya
-    const needsPayment = ["PRODUKSI", "PACKING", "SELESAI"];
-    if (currentStatusBayar === "BELUM_BAYAR" && needsPayment.includes(key))
-      return true;
+    // Belum bayar → tidak bisa ke SELESAI
+    if (currentStatusBayar === "BELUM_BAYAR" && key === "SELESAI") return true;
 
     return false;
+  }
+
+  // Helper: alasan kenapa status disabled
+  function getDisabledReason(key: StatusProduksiKey): string | null {
+    if (key === "PRODUKSI") return "(via Antrean Desain)";
+    if (key === "PACKING") return "(via Antrean Produksi)";
+    if (isKasir && key === "SELESAI") return "(hanya admin/produksi)";
+    if (currentStatusBayar === "BELUM_BAYAR" && key === "SELESAI") return "(belum bayar)";
+    return null;
   }
 
   return (
@@ -192,50 +196,36 @@ export function UpdateStatusModal({
                       >
                         <div className="flex items-center gap-2">
                           <span>{s.label}</span>
-                          {isKasir && KASIR_RESTRICTED.includes(s.key) && (
-                            <span className="text-xs text-default-500">(hanya produksi/admin)</span>
-                          )}
-                          {!isKasir && isStatusDisabled(s.key) && currentStatusBayar !== "BELUM_BAYAR" && (
-                            <span className="text-xs text-default-500">(butuh SPK)</span>
-                          )}
-                          {!isKasir && currentStatusBayar === "BELUM_BAYAR" && ["PRODUKSI","PACKING","SELESAI"].includes(s.key) && (
-                            <span className="text-xs text-default-500">(status belum bayar)</span>
+                          {isStatusDisabled(s.key) && getDisabledReason(s.key) && (
+                            <span className="text-xs text-default-400">{getDisabledReason(s.key)}</span>
                           )}
                         </div>
                       </SelectItem>
                     ))}
                   </Select>
 
-                  {selectedProduksi === "PRODUKSI" && !hasSPK && !isKasir && (
-                    <div className="flex items-start gap-2 rounded-lg bg-warning-50 border border-warning-200 px-3 py-2 text-xs text-warning-700">
-                      <ClipboardList size={13} className="mt-0.5 shrink-0" />
-                      <span>
-                        Pesanan belum memiliki SPK. Klik{" "}
-                        <strong>Lanjut</strong> untuk mengisi form SPK terlebih
-                        dahulu — status akan otomatis berubah ke{" "}
-                        <strong>Produksi</strong>.
-                      </span>
-                    </div>
-                  )}
+                  {/* Hint: flow produksi */}
+                  <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
+                    <ClipboardList size={13} className="mt-0.5 shrink-0" />
+                    <span>
+                      Status <strong>Produksi</strong> diubah dari halaman{" "}
+                      <Link href="/production/design-queue" className="underline font-medium">
+                        Antrean Desain
+                      </Link>{" "}
+                      setelah desain di-ACC. Status <strong>Packing</strong> diubah dari halaman{" "}
+                      <Link href="/production/spk" className="underline font-medium">
+                        Antrean Produksi
+                      </Link>.
+                    </span>
+                  </div>
 
-                  {/* Hint: PACKING/SELESAI dikunci karena belum ada SPK */}
-                  {!hasSPK && selectedProduksi !== "PRODUKSI" && (
-                    <div className="flex items-start gap-2 rounded-lg bg-default-50 border border-default-200 px-3 py-2 text-xs text-default-500">
-                      <ClipboardList size={13} className="mt-0.5 shrink-0" />
-                      <span>
-                        Status <strong>Packing</strong> dan <strong>Selesai</strong> hanya
-                        tersedia setelah SPK dibuat.
-                      </span>
-                    </div>
-                  )}
-                  {/* Hint: kasir tidak bisa lanjut ke tahap produksi */}
                   {isKasir && (
                     <div className="flex items-start gap-2 rounded-lg bg-default-50 border border-default-200 px-3 py-2 text-xs text-default-500">
                       <ClipboardList size={13} className="mt-0.5 shrink-0" />
                       <span>
-                        Sebagai <strong>Kasir</strong>, Anda hanya dapat mengubah status
-                        hingga tahap <strong>Desain</strong>. Status selanjutnya
-                        dilakukan oleh tim produksi.
+                        Sebagai <strong>Kasir</strong>, Anda dapat mengubah status
+                        ke <strong>Desain</strong> atau <strong>Batal</strong>. Status <strong>Selesai</strong>{" "}
+                        dilakukan oleh admin atau tim produksi.
                       </span>
                     </div>
                   )}
@@ -283,7 +273,7 @@ export function UpdateStatusModal({
                   isDisabled={isLoading || !hasChanges}
                   size="sm"
                 >
-                  {selectedProduksi === "PRODUKSI" && !hasSPK && !isKasir ? "Lanjut → Buat SPK" : "Simpan"}
+                  {selectedProduksi === "PRODUKSI" && !hasSPK && !isKasir ? "Lanjut \u2192 Buat SPK" : "Simpan"}
                 </Button>
               </ModalFooter>
             </>

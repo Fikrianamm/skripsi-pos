@@ -25,12 +25,28 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
     const search = searchParams.get("search")?.trim() ?? "";
     const tahap = searchParams.get("tahap") ?? "all";
+    const dateFrom = searchParams.get("dateFrom") ?? "";
+    const dateTo = searchParams.get("dateTo") ?? "";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
 
     if (tahap !== "all") {
       where.order = { statusProduksi: tahap };
+    }
+
+    // Filter by upload date range
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        // Add 1 day to make dateTo inclusive
+        const end = new Date(dateTo);
+        end.setDate(end.getDate() + 1);
+        where.createdAt.lte = end;
+      }
     }
 
     if (search) {

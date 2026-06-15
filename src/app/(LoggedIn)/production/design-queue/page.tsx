@@ -32,6 +32,14 @@ const HAS_FILE_OPTIONS = [
   { key: "false", label: "Belum Ada File" },
 ];
 
+const REVIEW_STATUS_OPTIONS = [
+  { key: "all", label: "Semua" },
+  { key: "null", label: "Belum Review" },
+  { key: "PENDING_REVIEW", label: "Menunggu Review" },
+  { key: "REVISI", label: "Revisi" },
+  { key: "ACC", label: "ACC" },
+];
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function Page() {
   const { data: sessionData } = authClient.useSession();
@@ -41,6 +49,7 @@ export default function Page() {
 
   const [search, setSearch] = React.useState("");
   const [hasFileFilter, setHasFileFilter] = React.useState("all");
+  const [reviewStatusFilter, setReviewStatusFilter] = React.useState("all");
   const [sortBy, setSortBy] = React.useState("createdAt");
   const [queueTab, setQueueTab] = React.useState("all"); // "all" | "mine"
   const [page, setPage] = React.useState(1);
@@ -49,7 +58,8 @@ export default function Page() {
   const limit = 12;
 
   const designerIdFilter = queueTab === "mine" && sessionData?.user?.id ? sessionData.user.id : "";
-  const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}&sortBy=${sortBy}&designerId=${designerIdFilter}`;
+  const actualReviewStatus = queueTab === "unread" ? "unread" : reviewStatusFilter;
+  const apiUrl = `/api/production/design-queue?page=${page}&limit=${limit}&search=${debouncedSearch}&hasFile=${hasFileFilter}&sortBy=${sortBy}&designerId=${designerIdFilter}&reviewStatus=${actualReviewStatus}`;
 
   const { data, isLoading, mutate } = useSWR(apiUrl, fetcher, {
     keepPreviousData: true,
@@ -61,9 +71,9 @@ export default function Page() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, hasFileFilter, sortBy, queueTab]);
+  }, [debouncedSearch, hasFileFilter, sortBy, queueTab, reviewStatusFilter]);
 
-  const activeFilters = hasFileFilter !== "all" || search !== "" || queueTab !== "all";
+  const activeFilters = hasFileFilter !== "all" || search !== "" || queueTab !== "all" || reviewStatusFilter !== "all";
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-5 mb-6">
@@ -84,6 +94,7 @@ export default function Page() {
         >
           <Tab key="all" title="Semua Antrean" />
           <Tab key="mine" title="Antrean Saya" />
+          <Tab key="unread" title="Ada Pesan Baru" />
         </Tabs>
       )}
 
@@ -101,13 +112,15 @@ export default function Page() {
             activeCount={
               (hasFileFilter !== "all" ? 1 : 0) +
               (sortBy !== "createdAt" ? 1 : 0) +
-              (queueTab !== "all" ? 1 : 0)
+              (queueTab !== "all" ? 1 : 0) +
+              (reviewStatusFilter !== "all" ? 1 : 0)
             }
             onReset={() => {
               setSearch("");
               setHasFileFilter("all");
               setSortBy("createdAt");
               setQueueTab("all");
+              setReviewStatusFilter("all");
             }}
           >
             <FilterSection label="Urutkan">
@@ -126,6 +139,14 @@ export default function Page() {
                 options={HAS_FILE_OPTIONS}
                 value={hasFileFilter}
                 onChange={setHasFileFilter}
+              />
+            </FilterSection>
+
+            <FilterSection label="Status Review">
+              <FilterButtonGroup
+                options={REVIEW_STATUS_OPTIONS}
+                value={reviewStatusFilter}
+                onChange={setReviewStatusFilter}
               />
             </FilterSection>
           </FilterLanjutan>
@@ -185,6 +206,7 @@ export default function Page() {
                 setSearch("");
                 setHasFileFilter("all");
                 setQueueTab("all");
+                setReviewStatusFilter("all");
               }}
             >
               Reset Filter

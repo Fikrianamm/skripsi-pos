@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React from "react";
@@ -74,7 +75,6 @@ interface DesignOrderCardProps {
 
 export function DesignOrderCard({
   order,
-  canEdit,
   onMutate,
   currentUser,
 }: DesignOrderCardProps) {
@@ -102,14 +102,16 @@ export function DesignOrderCard({
   const [isReviewing, setIsReviewing] = React.useState(false);
 
   // ── Permission logic ───────────────────────────────────────────────────────
+  const isAdmin = currentUser?.role === "admin";
   const isAdminOrKasir =
     currentUser?.role === "admin" || currentUser?.role === "kasir";
-  const isDesignerWhoClaimedThis =
-    currentUser?.role === "designer" && order.designerId === currentUser?.id;
+  const isUserWhoClaimedThis =
+    (currentUser?.role === "designer" || currentUser?.role === "admin") &&
+    order.designerId === currentUser?.id;
 
-  // Only the designer who claimed or admin can upload files
-  const canUploadFile =
-    currentUser?.role === "admin" || isDesignerWhoClaimedThis;
+  // Admin bisa semua aksi, desainer hanya yang dia claim
+  const canUploadFile = isAdmin || isUserWhoClaimedThis;
+  const canDeleteFile = isAdmin || isUserWhoClaimedThis;
 
   async function handleClaim() {
     if (!currentUser) return;
@@ -157,33 +159,6 @@ export function DesignOrderCard({
       onMutate();
     } finally {
       setIsClaiming(false);
-    }
-  }
-
-  async function handleFinalize() {
-    setIsFinalizing(true);
-    try {
-      const res = await fetch(`/api/order/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isDesignFinal: true }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        addToast({
-          title: "Gagal finalisasi",
-          description: json.error,
-          color: "danger",
-        });
-        return;
-      }
-      addToast({
-        title: "Desain berhasil di-ACC / Finalisasi!",
-        color: "success",
-      });
-      onMutate();
-    } finally {
-      setIsFinalizing(false);
     }
   }
 
@@ -353,6 +328,13 @@ export function DesignOrderCard({
           </div>
         )}
 
+        {(order as any).hasUnreadComments && (
+          <div className="bg-primary-50 border-b border-primary-200 px-4 py-1.5 flex items-center gap-1.5 text-primary-700 text-xs font-semibold">
+            <MessageSquare size={13} />
+            Ada balasan pesan/komentar baru
+          </div>
+        )}
+
         <div className="p-4 flex flex-col gap-3 flex-1">
           {/* ── Header ── */}
           <div className="flex items-start justify-between gap-2">
@@ -488,7 +470,8 @@ export function DesignOrderCard({
                   <User size={13} />
                   <span>Belum ada desainer yang mengambil antrean</span>
                 </div>
-                {currentUser?.role === "designer" && (
+                {(currentUser?.role === "designer" ||
+                  currentUser?.role === "admin") && (
                   <Button
                     size="sm"
                     color="primary"
@@ -513,7 +496,7 @@ export function DesignOrderCard({
                 <FileText size={13} />
                 File Desain ({order.designFiles.length})
               </span>
-              {canUploadFile && (
+              {canUploadFile && isUserWhoClaimedThis && order.designReviewStatus !== "PENDING_REVIEW" && order.designReviewStatus !== "ACC" && (
                 <Button
                   size="sm"
                   variant="flat"
@@ -568,7 +551,7 @@ export function DesignOrderCard({
                       >
                         <Eye size={12} />
                       </Button>
-                      {canUploadFile && (
+                      {canDeleteFile && (
                         <Button
                           size="sm"
                           color="danger"
@@ -598,7 +581,12 @@ export function DesignOrderCard({
           <div className="flex items-center justify-between text-xs text-default-400 mt-1 hover:text-default-600 transition-colors">
             <span className="flex items-center gap-1.5">
               <MessageSquare size={13} />
-              <span>Diskusi &amp; Komentar</span>
+              <span className="relative">
+                Diskusi &amp; Komentar
+                {(order as any).hasUnreadComments && (
+                  <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-danger"></span>
+                )}
+              </span>
             </span>
             <span className="text-[10px] bg-default-100 px-1.5 py-0.5 rounded-full">
               Lihat Detail ➜
@@ -611,7 +599,7 @@ export function DesignOrderCard({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Desainer yang claim: Kirim Permintaan Review */}
-            {isDesignerWhoClaimedThis &&
+            {isUserWhoClaimedThis &&
               !order.isDesignFinal &&
               order.designReviewStatus !== "PENDING_REVIEW" && (
                 <Button
@@ -625,21 +613,6 @@ export function DesignOrderCard({
                 >
                   Kirim Permintaan Review
                 </Button>
-              )}
-
-            {/* Tampilkan status jika menunggu review (desainer) */}
-            {isDesignerWhoClaimedThis &&
-              order.designReviewStatus === "PENDING_REVIEW" &&
-              !order.isDesignFinal && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-warning-50 border border-warning-200 rounded-lg">
-                  <AlertCircle
-                    size={13}
-                    className="text-warning-600 shrink-0"
-                  />
-                  <span className="text-xs text-warning-700">
-                    Menunggu review dari admin/kasir...
-                  </span>
-                </div>
               )}
 
             {/* Admin/Kasir: ACC atau Revisi saat ada permintaan review */}

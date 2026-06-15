@@ -7,16 +7,10 @@ import { Kbd } from "@heroui/kbd";
 import { Input } from "@heroui/input";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { NAV_ITEMS } from "@/config/navigation";
+import type { NavItem as ConfigNavItem, NavSubItem } from "@/config/navigation";
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { LucideIcon } from "lucide-react";
-
-interface NavItem {
-  title: string;
-  url: string;
-  icon?: LucideIcon;
-  items?: { title: string; url: string }[];
-}
 
 interface FlatNavItem {
   title: string;
@@ -30,18 +24,28 @@ interface GroupedNavItems {
   [key: string]: FlatNavItem[];
 }
 
-export default function SearchFeature() {
+interface SearchFeatureProps {
+  userRole?: string;
+}
+
+export default function SearchFeature({ userRole }: SearchFeatureProps) {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
 
-  // Flatten navigation items for search with group info
+  // Flatten navigation items for search, filtered by user role
   const flatNavItems = useMemo(() => {
     const items: FlatNavItem[] = [];
+    const role = userRole ?? "kasir"; // default fallback
 
     NAV_ITEMS.forEach((group) => {
-      group.items.forEach((item: NavItem) => {
+      group.items.forEach((item: ConfigNavItem) => {
+        // Skip parent item if user's role is not allowed
+        if (item.roles && !item.roles.includes(role as never)) {
+          return;
+        }
+
         // Add parent item if it has a valid URL (standalone items like Dashboard)
         if (item.url !== "#") {
           items.push({
@@ -52,9 +56,14 @@ export default function SearchFeature() {
           });
         }
 
-        // Add sub-items with parent as group
+        // Add sub-items with parent as group, filtered by role
         if (item.items) {
-          item.items.forEach((subItem) => {
+          item.items.forEach((subItem: NavSubItem) => {
+            // Skip sub-item if user's role is not allowed
+            if (subItem.roles && !subItem.roles.includes(role as never)) {
+              return;
+            }
+
             items.push({
               title: subItem.title,
               url: subItem.url,
@@ -68,7 +77,7 @@ export default function SearchFeature() {
     });
 
     return items;
-  }, []);
+  }, [userRole]);
 
   // Filter items based on query
   const filteredItems = useMemo(() => {

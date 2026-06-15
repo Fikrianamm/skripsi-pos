@@ -126,15 +126,28 @@ function DeleteConfirmModal({
             <ModalHeader className="text-danger">
               Hapus &ldquo;{itemName}&rdquo;?
             </ModalHeader>
-            <ModalBody>
+            <ModalBody className="gap-3">
               {(productCount ?? 0) > 0 ? (
-                <p className="text-sm text-default-600">
-                  Item ini digunakan oleh{" "}
-                  <span className="font-semibold text-warning">
-                    {productCount} produk
-                  </span>
-                  . Yakin ingin tetap menghapus?
-                </p>
+                <>
+                  <p className="text-sm text-default-600">
+                    Item ini digunakan oleh{" "}
+                    <span className="font-semibold text-warning">
+                      {productCount} produk
+                    </span>
+                    . Yakin ingin tetap menghapus?
+                  </p>
+                  <div className="flex items-start gap-2 p-3 bg-danger-50 border border-danger-200 rounded-lg">
+                    <Trash2 size={13} className="text-danger-600 shrink-0 mt-0.5" />
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-xs font-semibold text-danger-700">
+                        Data berikut akan terpengaruh:
+                      </p>
+                      <ul className="text-xs text-danger-600 list-disc list-inside">
+                        <li>{productCount} produk akan kehilangan kategori/satuan ini</li>
+                      </ul>
+                    </div>
+                  </div>
+                </>
               ) : (
                 <p className="text-sm text-default-600">
                   Tindakan ini tidak dapat dibatalkan. Yakin ingin menghapus?

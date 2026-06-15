@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const ALLOWED_GET = ["admin", "produksi"];
+    const ALLOWED_GET = ["admin", "produksi", "designer", "kasir"];
     if (!ALLOWED_GET.includes(session.user.role || "")) {
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },

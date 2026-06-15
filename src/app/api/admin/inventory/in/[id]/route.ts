@@ -10,7 +10,7 @@ import { createJurnalDoubleEntry } from "@/lib/finance";
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized.", status: 401 };
-  if (session.user.role !== "admin")
+  if (!["admin", "gudang"].includes(session.user.role || ""))
     return { error: "Forbidden.", status: 403 };
   return { session };
 }
@@ -78,7 +78,7 @@ export async function PATCH(
 
     const existing = await prisma.penerimaanBarang.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: true, jurnalUmums: true },
     });
     if (!existing || existing.deletedAt)
       return NextResponse.json(
@@ -174,33 +174,18 @@ export async function PATCH(
       ),
     ]);
 
-    // ── LOGIKA REVERSAL JURNAL ──────────────────────────────────────
     const now = new Date();
     await prisma.$transaction(async (tx) => {
-      const oldJurnal = await tx.jurnalUmum.findFirst({
-        where: { penerimaanId: id, deletedAt: null },
-      });
+
+      // ── LOGIKA UPDATE JURNAL ──────────────────────────────────────
+      const oldJurnal = existing.jurnalUmums.find((j) => !j.deletedAt);
 
       if (oldJurnal) {
-        // 1. Soft Delete Jurnal Lama
+        // Soft delete jurnal lama
         await tx.jurnalUmum.update({
           where: { id: oldJurnal.id },
           data: { deletedAt: now },
         });
-
-        // 2. Buat Jurnal Pembalik
-        await createJurnalDoubleEntry({
-          ref: `REV-${oldJurnal.ref}`,
-          tanggal: now,
-          keterangan: `Reversal untuk: ${oldJurnal.keterangan}`,
-          namaBiaya: `Reversal: ${oldJurnal.namaBiaya ?? oldJurnal.ref}`,
-          akunDebetId: oldJurnal.akunKreditId,
-          akunKreditId: oldJurnal.akunDebetId,
-          nominal: Number(oldJurnal.nominal),
-          penerimaanId: id,
-          createdById: authResult.session!.user.id,
-          deletedAt: now,
-        }, tx as any);
       }
 
       // 3. Buat Jurnal Baru (jika total > 0)
@@ -227,7 +212,7 @@ export async function PATCH(
       }
     });
 
-    return NextResponse.json({ message: "Penerimaan berhasil diperbarui (reversal applied)." });
+    return NextResponse.json({ message: "Penerimaan berhasil diperbarui." });
   } catch (error) {
     console.error("[PATCH PENERIMAAN ERROR]", error);
     return NextResponse.json(
@@ -271,7 +256,7 @@ export async function DELETE(
         });
       }
 
-      // 2. Logic Reversal Jurnal
+      // 2. Logic Jurnal
       const oldJurnal = await tx.jurnalUmum.findFirst({
         where: { penerimaanId: id, deletedAt: null },
       });
@@ -283,20 +268,6 @@ export async function DELETE(
           where: { id: oldJurnal.id },
           data: { deletedAt: now },
         });
-
-        // Create reversal
-        await createJurnalDoubleEntry({
-          ref: `REV-${oldJurnal.ref}`,
-          tanggal: now,
-          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan}`,
-          namaBiaya: `Reversal (Delete): ${oldJurnal.namaBiaya ?? oldJurnal.ref}`,
-          akunDebetId: oldJurnal.akunKreditId,
-          akunKreditId: oldJurnal.akunDebetId,
-          nominal: Number(oldJurnal.nominal),
-          penerimaanId: id,
-          createdById: authResult.session!.user.id,
-          deletedAt: now,
-        }, tx as any);
       }
 
       // 3. Soft Delete records

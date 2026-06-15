@@ -40,7 +40,7 @@ interface Props {
 }
 
 export function PenerimaanDetailModal({ id, isOpen, onClose }: Props) {
-  const { data, isLoading } = useSWR<PenerimaanDetail>(
+  const { data, isLoading, error, mutate } = useSWR<PenerimaanDetail>(
     id ? `/api/admin/inventory/in/${id}` : null,
     fetcher,
   );
@@ -66,7 +66,19 @@ export function PenerimaanDetailModal({ id, isOpen, onClose }: Props) {
           </ModalHeader>
 
           <ModalBody className="pb-2 gap-4">
-            {isLoading || !data ? (
+            {error ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3 text-danger">
+                <p className="text-sm">Gagal memuat data penerimaan.</p>
+                <Button
+                  size="sm"
+                  variant="flat"
+                  color="primary"
+                  onPress={() => mutate()}
+                >
+                  Coba Lagi
+                </Button>
+              </div>
+            ) : isLoading || !data ? (
               <div className="flex flex-col gap-3">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-10 w-full rounded-xl" />

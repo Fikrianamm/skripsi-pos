@@ -12,6 +12,7 @@ import { NavUserSimple } from "@/components/nav-user";
 import { NotificationBell } from "@/components/notification-bell";
 import SearchFeature from "@/components/search-feature";
 import { LowStockBanner } from "@/components/low-stock-banner";
+
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 
@@ -66,7 +67,7 @@ export default async function Layout({
                 orientation="vertical"
                 className="mr-2 data-[orientation=vertical]:h-4"
               />
-              <SearchFeature />
+              <SearchFeature userRole={session?.user?.role ?? ""} />
             </div>
             <div className="flex items-center gap-2 px-4">
               <NotificationBell userId={session.user.id} />
@@ -74,13 +75,14 @@ export default async function Layout({
                 orientation="vertical"
                 className="mr-2 data-[orientation=vertical]:h-4"
               />
-              <NavUserSimple user={session.user} />
+              <NavUserSimple user={{ ...session.user, role: session.user.role ?? undefined }} />
             </div>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 max-w-7xl mx-auto w-full">
           {children}
         </div>
+
       </SidebarInset>
     </SidebarProvider>
   );

@@ -164,7 +164,7 @@ export async function DELETE(request: NextRequest) {
         { status: 401 },
       );
     }
-    if (session.user.role !== "admin") {
+    if (session.user.role !== "admin" && session.user.role !== "kasir") {
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },
         { status: 403 },

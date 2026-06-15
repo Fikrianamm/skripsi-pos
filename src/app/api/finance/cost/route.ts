@@ -210,26 +210,13 @@ export async function PATCH(request: NextRequest) {
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Soft Delete & Reversal Jurnal Lama
-      await tx.jurnalUmum.update({
-        where: { id: oldJurnal.id },
-        data: { deletedAt: now },
-      });
-
-      await createJurnalDoubleEntry(
-        {
-          ref: `REV-${oldJurnal.ref}`,
-          tanggal: now,
-          keterangan: `Reversal untuk: ${oldJurnal.keterangan}`,
-          namaBiaya: `Reversal: ${oldJurnal.namaBiaya ?? oldJurnal.ref}`,
-          akunDebetId: oldJurnal.akunKreditId,
-          akunKreditId: oldJurnal.akunDebetId,
-          nominal: Number(oldJurnal.nominal),
-          createdById: session.user.id,
-          deletedAt: now,
-        },
-        tx as any
-      );
+      // 1. Soft Delete Jurnal Lama
+      if (oldJurnal) {
+        await tx.jurnalUmum.update({
+          where: { id: oldJurnal.id },
+          data: { deletedAt: now },
+        });
+      }
 
       // 2. Buat Jurnal Baru (Benar)
       const newJurnal = await createJurnalDoubleEntry(
@@ -250,7 +237,7 @@ export async function PATCH(request: NextRequest) {
       return newJurnal;
     });
 
-    return NextResponse.json({ message: "Pengeluaran berhasil dikoreksi (reversal applied)", jurnal: result });
+    return NextResponse.json({ message: "Pengeluaran berhasil dikoreksi", jurnal: result });
   } catch (err) {
     console.error("[COST PATCH ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -277,30 +264,16 @@ export async function DELETE(request: NextRequest) {
     const now = new Date();
 
     await prisma.$transaction(async (tx) => {
-      // 1. Soft Delete Jurnal Lama
-      await tx.jurnalUmum.update({
-        where: { id: oldJurnal.id },
-        data: { deletedAt: now },
-      });
-
-      // 2. Buat Jurnal Pembalik
-      await createJurnalDoubleEntry(
-        {
-          ref: `REV-${oldJurnal.ref}`,
-          tanggal: now,
-          keterangan: `Reversal (Delete) untuk: ${oldJurnal.keterangan}`,
-          namaBiaya: `Reversal (Delete): ${oldJurnal.namaBiaya ?? oldJurnal.ref}`,
-          akunDebetId: oldJurnal.akunKreditId,
-          akunKreditId: oldJurnal.akunDebetId,
-          nominal: Number(oldJurnal.nominal),
-          createdById: session.user.id,
-          deletedAt: now,
-        },
-        tx as any
-      );
+      if (oldJurnal) {
+        // 1. Soft Delete Jurnal Lama
+        await tx.jurnalUmum.update({
+          where: { id: oldJurnal.id },
+          data: { deletedAt: now },
+        });
+      }
     });
 
-    return NextResponse.json({ message: "Pengeluaran dipindahkan ke sampah." });
+    return NextResponse.json({ message: "Pengeluaran dihapus." });
   } catch (err) {
     console.error("[COST DELETE ERROR]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

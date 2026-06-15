@@ -36,6 +36,7 @@ model User {
   jurnalUmum        JurnalUmum[]
   designerOrders    Order[]             @relation("DesignerOrders")
   comments          OrderComment[]
+  commentRecipients CommentRecipient[]
 
   @@map("user")
 }
@@ -624,6 +625,7 @@ enum JenisNotif {
   PENERIMAAN_BARU
   PAYMENT_MASUK
   BIAYA_DICATAT
+  BARANG_KELUAR
   SISTEM
 }
 
@@ -637,10 +639,27 @@ model OrderComment {
   order     Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user      User               @relation(fields: [userId], references: [id], onDelete: Restrict)
   files     OrderCommentFile[]
+  recipients CommentRecipient[]
 
   @@index([orderId])
   @@index([userId])
   @@map("order_comment")
+}
+
+model CommentRecipient {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comment   OrderComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([userId, isRead])
+  @@map("comment_recipient")
 }
 
 model OrderCommentFile {

@@ -57,8 +57,12 @@ export const toISO = (
     : "";
 
 /** Format a date/string to Indonesian locale medium date */
-export const formatDate = (d: string | Date) =>
-  new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(d));
+export const formatDate = (d?: string | Date | null) => {
+  if (!d) return "-";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(date);
+};
 
 /** Parse ribuan-formatted string (e.g. "1.500.000") to number */
 export const parseRibuan = (formatted: string): number =>

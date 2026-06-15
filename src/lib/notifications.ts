@@ -2,6 +2,8 @@ import { prisma } from "./prisma";
 import { pusherServer } from "./pusher";
 import { JenisNotif } from "../../generated/prisma/enums";
 
+export { JenisNotif };
+
 interface CreateNotifInput {
   userId: string;
   title: string;

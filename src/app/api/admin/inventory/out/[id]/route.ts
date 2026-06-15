@@ -12,7 +12,7 @@ export async function GET(
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session)
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (session.user.role !== "admin")
+    if (session.user.role !== "admin" && session.user.role !== "gudang")
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
     const { id } = await params;
@@ -70,7 +70,7 @@ export async function DELETE(
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session)
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (session.user.role !== "admin")
+    if (session.user.role !== "admin" && session.user.role !== "gudang")
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
     const { id } = await params;

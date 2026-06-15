@@ -72,7 +72,14 @@ export async function GET(request: NextRequest) {
       }),
       // 6: Fetch all products
       prisma.product.findMany({
-        where: { isService: false, minStok: { not: null }, deletedAt: null },
+         where: {
+          isService: false,
+          deletedAt: null,
+          OR: [
+            { minStok: { not: null } },
+            { stok: { lte: 0 } },
+          ],
+        },
         select: { id: true, nama: true, stok: true, minStok: true, unit: { select: { nama: true } } },
       }),
       // 7: Recent orders (last 5)
@@ -99,8 +106,13 @@ export async function GET(request: NextRequest) {
       .slice(0, 10);
 
     const lowStockProducts = allProducts
-      .filter((p) => Number(p.stok) < Number(p.minStok))
-      .sort((a, b) => Number(a.stok) - Number(b.stok))
+      .filter((p) => {
+        const stok = Number(p.stok ?? 0);
+        const min = Number(p.minStok ?? 0);
+        // Tampilkan jika stok habis (stok <= 0) ATAU stok di bawah minimum
+        return stok <= 0 || (p.minStok !== null && stok < min);
+      })
+      .sort((a, b) => Number(a.stok ?? 0) - Number(b.stok ?? 0))
       .slice(0, 10);
 
     const todaySales = Number(sumPayToday._sum.nominal ?? 0);

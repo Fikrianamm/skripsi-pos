@@ -1,8 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { notifyOrderStatusChange, createNotificationForRole } from "@/lib/notifications";
+import {
+  notifyOrderStatusChange,
+  createNotificationForRole,
+  createNotification,
+} from "@/lib/notifications";
 import { JenisNotif } from "../../../../../generated/prisma/enums";
 
 type Params = { params: Promise<{ id: string }> };
@@ -83,7 +88,6 @@ const ORDER_DETAIL_SELECT = {
     where: { deletedAt: null },
     orderBy: { tanggal: "asc" as const },
   },
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 async function requireOrderAccess() {
@@ -270,20 +274,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (userRole !== "admin" && userRole !== "designer") {
         return NextResponse.json(
           { error: "Hanya desainer atau admin yang dapat mengklaim antrean." },
-          { status: 403 }
+          { status: 403 },
         );
       }
       if (userRole === "designer") {
         if (designerId !== session?.user?.id) {
           return NextResponse.json(
-            { error: "Desainer hanya dapat mengklaim antrean untuk diri sendiri." },
-            { status: 400 }
+            {
+              error:
+                "Desainer hanya dapat mengklaim antrean untuk diri sendiri.",
+            },
+            { status: 400 },
           );
         }
         if (existing.designerId && existing.designerId !== session?.user?.id) {
           return NextResponse.json(
             { error: "Antrean sudah diambil oleh desainer lain." },
-            { status: 400 }
+            { status: 400 },
           );
         }
       }
@@ -296,10 +303,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (userRole !== "admin" && userRole !== "kasir") {
         return NextResponse.json(
           { error: "Hanya admin atau kasir yang dapat memfinalisasi desain." },
-          { status: 403 }
+          { status: 403 },
         );
       }
       data.isDesignFinal = isDesignFinal;
+
+      // Sinkronkan designReviewStatus dengan isDesignFinal
+      if (isDesignFinal === true) {
+        data.designReviewStatus = "ACC";
+      }
 
       // Jika di-reset (false), reset juga designReviewStatus
       if (isDesignFinal === false) {
@@ -328,16 +340,22 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (!VALID_REVIEW.includes(designReviewStatus)) {
         return NextResponse.json(
           { error: "Status review tidak valid." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
-      // Desainer yang claim bisa request review (PENDING_REVIEW)
+      // Desainer yang claim atau admin bisa request review (PENDING_REVIEW)
       if (designReviewStatus === "PENDING_REVIEW") {
-        if (userRole !== "designer" || existing.designerId !== session?.user?.id) {
+        const isAdminUser = userRole === "admin";
+        const isDesignerWhoClaimed =
+          userRole === "designer" && existing.designerId === session?.user?.id;
+        if (!isAdminUser && !isDesignerWhoClaimed) {
           return NextResponse.json(
-            { error: "Hanya desainer yang mengambil tugas ini yang bisa request review." },
-            { status: 403 }
+            {
+              error:
+                "Hanya desainer yang mengambil tugas ini atau admin yang bisa request review.",
+            },
+            { status: 403 },
           );
         }
         data.designReviewStatus = "PENDING_REVIEW";
@@ -358,8 +376,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (designReviewStatus === "ACC" || designReviewStatus === "REVISI") {
         if (userRole !== "admin" && userRole !== "kasir") {
           return NextResponse.json(
-            { error: "Hanya admin atau kasir yang bisa ACC atau Revisi desain." },
-            { status: 403 }
+            {
+              error: "Hanya admin atau kasir yang bisa ACC atau Revisi desain.",
+            },
+            { status: 403 },
           );
         }
         data.designReviewStatus = designReviewStatus;
@@ -369,21 +389,21 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           data.isDesignFinal = true;
         }
 
-        // Notif ke desainer yang claim
+        // Notif ke desainer yang claim (dengan Pusher real-time)
         if (existing.designerId) {
           try {
-            await prisma.notification.create({
-              data: {
-                id: crypto.randomUUID(),
-                userId: existing.designerId,
-                title: designReviewStatus === "ACC" ? "✅ Desain Disetujui!" : "🔄 Desain Perlu Revisi",
-                message: designReviewStatus === "ACC"
+            await createNotification({
+              userId: existing.designerId,
+              title:
+                designReviewStatus === "ACC"
+                  ? "✅ Desain Disetujui!"
+                  : "🔄 Desain Perlu Revisi",
+              message:
+                designReviewStatus === "ACC"
                   ? `Desain untuk Order #${existing.nomorOrder} telah di-ACC. Terima kasih!`
                   : `Desain untuk Order #${existing.nomorOrder} perlu direvisi. Periksa komentar untuk detailnya.`,
-                jenis: JenisNotif.SISTEM,
-                linkUrl: `/production/design-queue`,
-                isRead: false,
-              },
+              jenis: JenisNotif.SISTEM,
+              linkUrl: `/production/design-queue`,
             });
             // Jika ACC juga notif ke produksi
             if (designReviewStatus === "ACC") {
@@ -446,7 +466,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       statusProduksi !== undefined &&
       statusProduksi !== existing.statusProduksi
     ) {
-      await notifyOrderStatusChange(id, String(updated.nomorOrder), statusProduksi);
+      await notifyOrderStatusChange(
+        id,
+        String(updated.nomorOrder),
+        statusProduksi,
+      );
     }
 
     // Replace items jika admin mengirimkan items baru (full replace)
@@ -513,7 +537,18 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     const { id } = await params;
     const existing = await prisma.order.findUnique({
       where: { id },
-      select: { id: true, nomorOrder: true },
+      select: { 
+        id: true, 
+        nomorOrder: true, 
+        statusProduksi: true,
+        items: {
+          select: {
+            productId: true,
+            qty: true,
+            product: { select: { isService: true } }
+          }
+        }
+      },
     });
     if (!existing) {
       return NextResponse.json(
@@ -524,7 +559,8 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
 
     // OrderItem, Payment, SPK, dan JurnalUmum terkait akan di-soft delete
     const now = new Date();
-    await prisma.$transaction([
+    
+    const transactions: any[] = [
       prisma.order.update({
         where: { id },
         data: { deletedAt: now },
@@ -545,7 +581,25 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
         where: { payment: { orderId: id } },
         data: { deletedAt: now },
       }),
-    ]);
+    ];
+
+    // Jika pesanan sudah SELESAI, stok produk sudah dikurangi. Kita perlu mengembalikannya.
+    if (existing.statusProduksi === "SELESAI") {
+      const produkItems = existing.items.filter(
+        (item) => item.product && !item.product.isService,
+      );
+      
+      for (const item of produkItems) {
+        transactions.push(
+          prisma.product.update({
+            where: { id: item.productId },
+            data: { stok: { increment: Number(item.qty) } }
+          })
+        );
+      }
+    }
+
+    await prisma.$transaction(transactions);
 
     return NextResponse.json({
       message: `Pesanan ${existing.nomorOrder} berhasil dihapus.`,

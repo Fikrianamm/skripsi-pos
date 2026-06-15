@@ -8,17 +8,17 @@ const ALLOWED_ROLES = ["admin", "designer", "produksi", "kasir"];
 
 async function requireAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return { error: "Unauthorized.", status: 401 };
+  if (!session) return { error: "Unauthorized.", status: 401, session: null };
   if (!session.user.role || !ALLOWED_ROLES.includes(session.user.role))
-    return { error: "Forbidden.", status: 403 };
-  return { error: null, status: 200 };
+    return { error: "Forbidden.", status: 403, session: null };
+  return { error: null, status: 200, session };
 }
 
 // GET /api/production/design-queue
 export async function GET(req: NextRequest) {
   try {
-    const { error, status } = await requireAccess();
-    if (error) return NextResponse.json({ error }, { status });
+    const { error, status, session } = await requireAccess();
+    if (error || !session) return NextResponse.json({ error }, { status });
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
     const hasFile = searchParams.get("hasFile") ?? "all"; // "all" | "true" | "false"
     const sortBy = searchParams.get("sortBy") ?? "createdAt";
     const designerId = searchParams.get("designerId") ?? "";
+    const reviewStatus = searchParams.get("reviewStatus") ?? "all";
 
     const where: any = {
       statusProduksi: "DESAIN",
@@ -49,6 +50,26 @@ export async function GET(req: NextRequest) {
 
     if (designerId) {
       where.designerId = designerId;
+    }
+
+    // Filter by review status (including unread comments)
+    if (reviewStatus !== "all") {
+      if (reviewStatus === "null") {
+        where.designReviewStatus = null;
+      } else if (reviewStatus === "unread") {
+        where.comments = {
+          some: {
+            recipients: {
+              some: {
+                userId: session.user.id,
+                isRead: false,
+              },
+            },
+          },
+        };
+      } else {
+        where.designReviewStatus = reviewStatus;
+      }
     }
 
     // Sort order
@@ -97,12 +118,29 @@ export async function GET(req: NextRequest) {
             },
             orderBy: { createdAt: "asc" },
           },
+          comments: {
+            where: {
+              recipients: {
+                some: {
+                  userId: session.user.id,
+                  isRead: false,
+                },
+              },
+            },
+            take: 1,
+            select: { id: true },
+          },
         } as any,
       }),
       prisma.order.count({ where }),
     ]);
 
-    return NextResponse.json({ results: orders, count: total, page, limit });
+    const formattedOrders = orders.map((order: any) => ({
+      ...order,
+      hasUnreadComments: order.comments && order.comments.length > 0,
+    }));
+
+    return NextResponse.json({ results: formattedOrders, count: total, page, limit });
   } catch (err) {
     console.error("[DESIGN QUEUE ERROR]", err);
     return NextResponse.json(

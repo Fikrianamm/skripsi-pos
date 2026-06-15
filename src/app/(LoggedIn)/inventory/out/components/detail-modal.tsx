@@ -150,7 +150,7 @@ export function PengeluaranDetailModal({ id, isOpen, onClose }: Props) {
                     <TableColumn>SATUAN</TableColumn>
                     <TableColumn>JUMLAH</TableColumn>
                   </TableHeader>
-                  <TableBody items={data.items as any[]}>
+                  <TableBody items={(data?.items as any[]) ?? []}>
                     {(item: any) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
