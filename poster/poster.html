@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Poster Skripsi - POS CV. Haqi Koleksi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+  @page { margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 2000px;
+    height: 2000px;
+    background: #FAF8F4;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #23262B;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :root {
+    --navy: #17335C;
+    --navy-deep: #0F2340;
+    --gold: #D99A2B;
+    --gold-light: #F0C46B;
+    --paper: #FAF8F4;
+    --ink: #1F242D;
+    --ink-soft: #343A44;
+    --line: #E0DAD0;
+    --teal: #2F8F6E;
+    --teal-dark: #1E5E48;
+  }
+
+  .poster {
+    width: 2000px;
+    height: 2000px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* ---------- HEADER ---------- */
+  .header {
+    background: linear-gradient(135deg, #0F2340 0%, #17335C 60%, #1D3E6E 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 34px 50px 28px 50px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    gap: 22px;
+  }
+  .header::after {
+    content: "";
+    position: absolute;
+    right: -100px; top: -140px;
+    width: 440px; height: 440px;
+    border-radius: 50%;
+    background: rgba(217,154,43,0.10);
+    pointer-events: none;
+  }
+  .header::before {
+    content: "";
+    position: absolute;
+    right: 200px; bottom: -200px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    pointer-events: none;
+  }
+
+  .header-main {
+    display: flex;
+    align-items: center;
+    z-index: 2;
+  }
+
+  .logo-box {
+    background: #FFFFFF;
+    border-radius: 18px;
+    width: 148px; height: 148px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    border: 3px solid rgba(240,196,107,0.35);
+  }
+  .logo-box img { width: 105px; height: 105px; object-fit: contain; }
+
+  .header-text { margin-left: 36px; flex: 1; }
+  .eyebrow {
+    color: var(--gold-light);
+    font-size: 22px;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    color: #FFFFFF;
+    font-size: 46px;
+    line-height: 1.22;
+    max-width: 1650px;
+    letter-spacing: -0.4px;
+  }
+  .title em { color: var(--gold-light); font-style: normal; }
+
+  /* Header Meta Cards (Row below logo & title) */
+  .header-meta {
+    display: flex;
+    gap: 24px;
+    z-index: 2;
+  }
+  .meta-card {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(240, 196, 107, 0.4);
+    border-radius: 12px;
+    padding: 12px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .meta-label {
+    color: var(--gold-light);
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .meta-val {
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  /* ---------- GOLD DIVIDER ---------- */
+  .divider {
+    height: 8px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+    flex-shrink: 0;
+  }
+
+  /* ---------- BODY ---------- */
+  .body {
+    flex: 1;
+    display: flex;
+    padding: 38px 50px 30px 50px;
+    gap: 44px;
+  }
+
+  .col { display: flex; flex-direction: column; justify-content: space-between; }
+  .col-left { width: 510px;  }
+  .col-mid  { flex: 1; }
+  .col-right{ width: 510px;  }
+
+  /* Sections without cards */
+  .sec-block {
+    padding-bottom: 26px;
+    margin-bottom: 26px;
+    border-bottom: 1.5px solid var(--line);
+  }
+  .sec-block:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .sec-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 40px;
+    color: var(--navy-deep);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    letter-spacing: -0.4px;
+  }
+  .sec-title .num-title {
+    color: var(--gold);
+  }
+
+  .sec-block p, .sec-block li {
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+  .sec-block p + p { margin-top: 16px; }
+
+  .sec-block p {
+    font-size: 24px !important;
+  }
+
+  /* method steps */
+  .steps { display: flex; flex-direction: column; gap: 0; margin-top: 12px; }
+  .step {
+    display: flex; align-items: center; gap: 18px;
+    padding: 13px 0;
+    position: relative;
+  }
+  .step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 21px; top: 48px; bottom: -8px;
+    width: 2px;
+    background: var(--line);
+  }
+  .step .num {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--navy);
+    color: #fff; font-weight: 800; font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; z-index: 1;
+  }
+  .step:nth-child(4) .num, .step:nth-child(5) .num { background: var(--teal); }
+  .step .txt { font-size: 26px; color: var(--ink); font-weight: 700; }
+  .step .sub { font-size: 20px; color: var(--ink-soft); font-weight: 600; margin-top: 3px; }
+
+  .stack-note {
+    margin-top: 16px;
+    background: #F4EFE3;
+    border-left: 4px solid var(--gold);
+    padding: 16px 20px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border-radius: 6px;
+    line-height: 1.52;
+  }
+
+  /* hero mid column */
+  .metric-row {
+    display: flex;
+    gap: 18px;
+    margin: 12px 0 28px 0;
+  }
+  .metric {
+    flex: 1;
+    background: var(--navy-deep);
+    border-radius: 14px;
+    padding: 22px 14px;
+    text-align: center;
+  }
+  .metric .num { font-size: 46px; font-weight: 800; color: var(--gold-light); line-height: 1; }
+  .metric .lbl { font-size: 16.5px; font-weight: 600; color: #E4E9F2; margin-top: 10px; line-height: 1.35; }
+  .metric.teal { background: var(--teal-dark); }
+  .metric.teal .num { color: #A9E3C9; }
+
+  .hero-shot { margin-top: 6px; }
+  .hero-shot .cap-title { font-size: 26px; font-weight: 800; color: var(--navy-deep); margin-bottom: 12px; }
+  .hero-shot img {
+    width: 100%;
+    display: block;
+    border-radius: 14px;
+    border: 1.5px solid var(--line);
+    box-shadow: 0 10px 28px rgba(20,30,50,0.14);
+  }
+  .hero-shot .cap-text { font-size: 24px; font-weight: 600; color: var(--ink-soft); line-height: 1.56; margin-top: 16px; }
+
+  .feature-grid { display: flex; gap: 18px; margin-top: 24px; }
+  .feature {
+    flex: 1;
+    background: #F4EFE3;
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid #E5DEC6;
+  }
+  .feature .ftitle { font-size: 24px; font-weight: 700; color: var(--navy-deep); margin-bottom: 6px; }
+  .feature .ftext { font-size: 20px; font-weight: 600; color: var(--ink-soft); line-height: 1.48; }
+
+  .module-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 26px;
+    padding: 20px 24px;
+    background: var(--navy-deep);
+    border-radius: 14px;
+    flex-wrap: nowrap;
+  }
+  .module-flow .mnode {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(240,196,107,0.4);
+    color: #FFFFFF;
+    font-size: 19px;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 22px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .module-flow .marrow { color: var(--gold-light); font-size: 20px; font-weight: 700; flex-shrink: 0; }
+
+  .closing-note {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1.5px dashed var(--gold);
+    font-size: 23px;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--navy-deep);
+    line-height: 1.55;
+  }
+
+  /* references */
+  .ref-list { list-style: none; margin-top: 6px; }
+  .ref-list li {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--line);
+    line-height: 1.5;
+  }
+  .ref-list li:last-child { border-bottom: none; }
+  .ref-list b { color: var(--ink); font-weight: 700; }
+
+  .chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    background: #F4EFE3;
+    border: 1px solid var(--gold-light);
+    border-radius: 18px;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy-deep);
+  }
+
+  .benefit-list { display:flex; flex-direction:column; gap: 18px; margin-top: 14px; }
+  .benefit { display:flex; gap:16px; align-items:flex-start; }
+  .benefit .chk {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--teal); color:#fff; font-size:15px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;
+  }
+  .benefit .btxt { font-size: 22px; font-weight: 600; color: var(--ink-soft); line-height: 1.52; }
+  .benefit .btxt b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- FOOTER ---------- */
+  .footer {
+    height: 100px;
+    background: var(--navy-deep);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 50px;
+    flex-shrink: 0;
+    border-top: 3px solid var(--gold);
+  }
+  .footer .fitem { display: flex; align-items: center; gap: 14px; color: #E6EAF2; font-size: 23px; font-weight: 600; }
+  .footer .fitem .ico {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--navy-deep); font-weight: 700; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .footer .fitem b { color: #FFFFFF; font-weight: 700; }
+  .footer .brand { color: var(--gold-light); font-size: 22px; font-weight: 700; letter-spacing: .3px; }
+</style>
+</head>
+<body>
+  <div class="poster">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-main">
+        <div class="logo-box"><img src="poster_assets/logo_umk.png" alt="Logo UMK"></div>
+        <div class="header-text">
+          <div class="eyebrow">Skripsi &middot; Program Studi Teknik Informatika &middot; Fakultas Teknik &middot; Universitas Muria Kudus &middot; 2026</div>
+          <div class="title">Implementasi <em>Point of Sale</em> (POS) Berbasis Web untuk Sistem Manajemen pada CV. Haqi Koleksi Daren Jepara</div>
+        </div>
+      </div>
+
+      <!-- 2 Cards below logo and title -->
+      <div class="header-meta">
+        <div class="meta-card">
+          <span class="meta-label">Disusun oleh</span>
+          <span class="meta-val">Fikri Taufiqul Anam &middot; NIM. 202251176</span>
+        </div>
+        <div class="meta-card">
+          <span class="meta-label">Dosen Pembimbing</span>
+          <span class="meta-val">Ir. Indra Lina Putra, S.Kom., M.Kom &middot; Tutik Khotimah, S.Kom., M.Kom</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- BODY -->
+    <div class="body">
+
+      <!-- LEFT COLUMN -->
+      <div class="col col-left">
+        <div class="sec-block">
+          <div class="sec-title"><span class="num-title">1</span>Latar Belakang</div>
+          <p class="sec-text">Pengelolaan operasional CV. Haqi Koleksi Daren Jepara sebelumnya masih tersebar di Google Sheet, Google Drive, dan penyimpanan NAS yang terpisah.</p>
+          <p class="sec-text">Kondisi ini membuat pesanan sulit dilacak, stok bahan baku tidak sinkron, dan file desain produksi tercecer di berbagai media.</p>
+          <p class="sec-text">Penelitian ini membangun sistem <i>Point of Sale</i> berbasis web yang menyatukan transaksi, produksi, inventori, desain, dan keuangan dalam satu platform terpusat.</p>
+        </div>
+
+        <div class="sec-block">
+          <div class="sec-title"><span class="num-title">2</span>Metode Penelitian</div>
+          <p style="margin-bottom:10px;" class="sec-text">Dikembangkan dengan model <i>Waterfall</i>, memakai <i>Next.js</i> sebagai <i>framework full-stack</i> dan <i>MySQL</i> sebagai basis data.</p>
+          <div class="steps">
+            <div class="step"><div class="num">1</div><div><div class="txt">Analisis Kebutuhan</div><div class="sub">Wawancara &amp; Observasi</div></div></div>
+            <div class="step"><div class="num">2</div><div><div class="txt">Perancangan Sistem</div><div class="sub">UML &amp; Desain Antarmuka Figma</div></div></div>
+            <div class="step"><div class="num">3</div><div><div class="txt">Implementasi</div><div class="sub">Next.js &amp; MySQL</div></div></div>
+            <div class="step"><div class="num">4</div><div><div class="txt">Pengujian</div><div class="sub">Black Box Testing &amp; UAT</div></div></div>
+            <div class="step"><div class="num">5</div><div><div class="txt">Penerapan &amp; Pemeliharaan</div><div class="sub">Uji Coba &amp; Evaluasi</div></div></div>
+          </div>
+          <div class="stack-note">Data penelitian dihimpun lewat observasi, wawancara, dokumentasi, dan studi literatur.</div>
+        </div>
+      </div>
+
+      <!-- MIDDLE COLUMN -->
+      <div class="col col-mid">
+        <div class="sec-block" style="border-bottom:none; padding-bottom:0; margin-bottom:0;">
+          <div class="sec-title"><span class="num-title">3</span>Hasil Utama Skripsi</div>
+          <p style="margin-bottom:14px;">Prototipe sistem POS web yang mengintegrasikan lima modul operasional: pesanan, produksi, inventori, desain, dan keuangan.</p>
+
+          <div class="metric-row">
+            <div class="metric"><div class="num">27</div><div class="lbl">tabel basis data relasional</div></div>
+            <div class="metric teal"><div class="num">100%</div><div class="lbl">skenario Black Box Testing lolos (15 skenario)</div></div>
+            <div class="metric"><div class="num">86,87%</div><div class="lbl">indeks penerimaan UAT (Sangat Baik)</div></div>
+            <div class="metric teal"><div class="num">5</div><div class="lbl">modul terintegrasi terpusat</div></div>
+          </div>
+
+          <div class="hero-shot">
+            <div class="cap-title">Antrean Produksi (SPK)</div>
+            <img src="poster_assets/antrean_produksi_crop.png" alt="Antrean Produksi SPK">
+            <div class="cap-text">Setiap Surat Perintah Kerja (SPK) terpantau secara <i>real-time</i>, menampilkan nomor pesanan, nama tukang, model &amp; ukuran produk, jumlah, hingga tenggat pengerjaan sehingga status produksi transparan bagi kasir, admin gudang, maupun pemilik usaha.</div>
+          </div>
+
+          <div class="feature-grid">
+            <div class="feature">
+              <div class="ftitle">Auto-Refresh 30 Detik</div>
+              <div class="ftext">Data antrean selalu terbaru secara otomatis tanpa perlu memuat ulang halaman.</div>
+            </div>
+            <div class="feature">
+              <div class="ftitle">Penanda Tenggat</div>
+              <div class="ftext">Label warna otomatis menandai deadline terlewat dan deadline kurang dari 2 hari.</div>
+            </div>
+            <div class="feature">
+              <div class="ftitle">Pencarian &amp; Filter</div>
+              <div class="ftext">Pencarian cepat berdasarkan nomor order, nama pelanggan, atau karyawan.</div>
+            </div>
+          </div>
+
+          <div class="module-flow">
+            <div class="mnode">Pesanan</div><div class="marrow">&rarr;</div>
+            <div class="mnode">Produksi</div><div class="marrow">&rarr;</div>
+            <div class="mnode">Inventori</div><div class="marrow">&rarr;</div>
+            <div class="mnode">Desain</div><div class="marrow">&rarr;</div>
+            <div class="mnode">Keuangan</div>
+          </div>
+
+          <div class="closing-note">&ldquo;Satu sistem yang menyatukan kasir, produksi, gudang, dan pembukuan CV. Haqi Koleksi dalam satu alur kerja.&rdquo;</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col col-right">
+        <div class="sec-block">
+          <div class="sec-title"><span class="num-title">4</span>Simpulan</div>
+          <p>Sistem POS berbasis web berhasil dibangun dan diterapkan di CV. Haqi Koleksi, menyatukan modul pesanan, produksi, inventori, desain, dan keuangan dalam satu platform.</p>
+          <p>Pengujian Black Box pada 15 skenario kritis mencapai keberhasilan 100%, sementara UAT memperoleh indeks penerimaan 86,87% berkategori sangat baik.</p>
+          <p>Modul keuangan masih memerlukan penyempurnaan alur akuntansi baku pada pengembangan berikutnya.</p>
+        </div>
+
+        <div class="sec-block">
+          <div class="sec-title"><span class="num-title">5</span>Manfaat Sistem</div>
+          <div class="benefit-list">
+            <div class="benefit"><div class="chk">&#10003;</div><div class="btxt"><b>Satu sumber data</b> untuk pesanan, stok, dan file desain tanpa lagi berpindah aplikasi.</div></div>
+            <div class="benefit"><div class="chk">&#10003;</div><div class="btxt"><b>Laporan keuangan otomatis</b> tersaji tiap kali transaksi tercatat, tanpa rekap manual.</div></div>
+            <div class="benefit"><div class="chk">&#10003;</div><div class="btxt"><b>Status produksi transparan</b> dari kasir hingga tukang sablon, secara <i>real-time</i>.</div></div>
+          </div>
+        </div>
+
+        <div class="sec-block">
+          <div class="sec-title"><span class="num-title">6</span>Referensi</div>
+          <ul class="ref-list">
+            <li><b>Andy &amp; Widiono (2024)</b> &mdash; Inovasi teknologi dalam manajemen penjualan: aplikasi POS berbasis web untuk UMKM. <i>Infomatek</i>, 26.</li>
+            <li><b>Anis dkk. (2023)</b> &mdash; Penerapan model Waterfall dalam pengembangan sistem informasi berbasis website. <i>KLIK</i>, 4.</li>
+            <li><b>Aliyah dkk. (2025)</b> &mdash; Penggunaan User Acceptance Testing (UAT) pada pengujian sistem informasi. <i>Switch</i>, 3.</li>
+            <li><b>Ailsa dkk. (2025)</b> &mdash; Pemanfaatan UML dalam perancangan sistem informasi berbasis web. <i>JITET</i>, 13.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="fitem"><div class="ico">@</div><div>Kontak &middot; <b>fikritaufiqulanam1@gmail.com</b></div></div>
+      <div class="brand">Universitas Muria Kudus</div>
+      <div class="fitem"><div class="ico">&#128197;</div><div>Sidang Skripsi &middot; <b>11 Agustus 2026</b></div></div>
+    </div>
+
+  </div>
+</body>
+</html>
