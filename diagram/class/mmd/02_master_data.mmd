@@ -1,0 +1,85 @@
+classDiagram
+    %% ============================================================
+    %% Modul Data Master
+    %% ============================================================
+
+    class Category {
+        +String id
+        +String nama
+        +getProducts() Product[]
+    }
+
+    class Unit {
+        +String id
+        +String nama
+        +getProducts() Product[]
+        +getBahanBaku() BahanBaku[]
+    }
+
+    class Product {
+        +String id
+        +String categoryId
+        +String unitId
+        +String sku
+        +String nama
+        +String image
+        +Decimal hpp
+        +Decimal hargaJual
+        +Decimal stok
+        +Decimal minStok
+        +Boolean isService
+        +DateTime deletedAt
+        +calculateSubtotal(qty) Decimal
+        +reduceStock(qty) void
+        +isLowStock() Boolean
+        +getBahanBakuList() ProductBahanBaku[]
+    }
+
+    class ProductBahanBaku {
+        +String id
+        +String productId
+        +String bahanBakuId
+        +Decimal jumlahButuh
+        +getProduct() Product
+        +getBahanBaku() BahanBaku
+    }
+
+    class Customer {
+        +String id
+        +String nama
+        +String nomorHp
+        +String image
+        +DateTime deletedAt
+        +getOrders() Order[]
+    }
+
+    class Supplier {
+        +String id
+        +String nama
+        +String nomorHp
+        +String email
+        +String alamat
+        +String keterangan
+        +Boolean isActive
+        +getPenerimaan() PenerimaanBarang[]
+        +deactivate() void
+    }
+
+    class Karyawan {
+        +String id
+        +String nama
+        +String nomorHp
+        +String posisi
+        +Boolean isActive
+        +getSPK() SPK[]
+        +deactivate() void
+    }
+
+    Category "1" --> "0..*" Product
+    Unit "1" --> "0..*" Product 
+    Unit "1" --> "0..*" BahanBaku
+    Supplier "1" --> "0..*" PenerimaanBarang
+    Karyawan "1" --> "0..*" SPK 
+    Customer "1" --> "0..*" Order 
+    Product "1" --> "0..*" ProductBahanBaku
+    BahanBaku "1" --> "0..*" ProductBahanBaku

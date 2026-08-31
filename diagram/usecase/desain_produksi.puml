@@ -3,7 +3,7 @@ left to right direction
 skinparam packageStyle rectangle
 skinparam BackgroundColor transparent
 
-actor "Designer" as designer
+actor "Desainer" as designer
 actor "Produksi" as produksi
 actor "Administrator" as admin
 actor "Kasir" as kasir

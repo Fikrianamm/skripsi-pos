@@ -20,11 +20,20 @@ export function CartItemRow({
     <div className="flex flex-col gap-2 py-3 border-b border-default-100 last:border-0">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-default-800 truncate">
-            {item.nama}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium text-default-800 truncate">
+              {item.nama}
+            </p>
+            {item.isService && (
+              <span className="text-[10px] bg-secondary-100 text-secondary-700 px-1.5 py-0.5 rounded font-medium">
+                Custom/Jasa
+              </span>
+            )}
+          </div>
           <p className="text-xs text-default-400">
-            {formatRupiah(item.harga)} / {item.unit}
+            {item.isService && item.harga === 0
+              ? "Harga menunggu desain"
+              : `${formatRupiah(item.harga)} / ${item.unit}`}
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -75,7 +84,9 @@ export function CartItemRow({
 
       <div className="flex items-center justify-end gap-2">
         <span className="text-sm font-semibold text-primary shrink-0">
-          {formatRupiah(item.harga * item.qty)}
+          {item.isService && item.harga === 0
+            ? "Rp 0 (Pending)"
+            : formatRupiah(item.harga * item.qty)}
         </span>
       </div>
     </div>

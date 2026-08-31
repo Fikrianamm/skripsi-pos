@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -41,6 +42,7 @@ export async function PUT(
       isService,
       categoryId,
       unitId,
+      bahanBakuList, // array of { bahanBakuId, jumlahButuh }
     } = body;
 
     // Cek apakah produk ada
@@ -134,6 +136,13 @@ export async function PUT(
         isService: Boolean(isService),
         categoryId,
         unitId,
+        bahanBakuList: bahanBakuList && Array.isArray(bahanBakuList) ? {
+          deleteMany: {},
+          create: bahanBakuList.map((item: any) => ({
+            bahanBakuId: item.bahanBakuId,
+            jumlahButuh: typeof item.jumlahButuh === 'string' ? parseFloat(item.jumlahButuh) : item.jumlahButuh,
+          }))
+        } : undefined,
       },
       select: {
         id: true,
@@ -152,6 +161,16 @@ export async function PUT(
         },
         unit: {
           select: { id: true, nama: true },
+        },
+        bahanBakuList: {
+          select: {
+            id: true,
+            bahanBakuId: true,
+            jumlahButuh: true,
+            bahanBaku: {
+              select: { id: true, nama: true, unit: { select: { nama: true } } }
+            }
+          }
         },
       },
     });

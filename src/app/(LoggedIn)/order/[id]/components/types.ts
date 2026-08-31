@@ -49,6 +49,21 @@ export interface Payment {
   user?: { name: string };
 }
 
+export interface KebutuhanBahanCustomItem {
+  id: string;
+  bahanBakuId: string;
+  jumlahDibutuhkan: string | number;
+  satuan: string;
+  createdAt: string;
+  bahanBaku?: {
+    id: string;
+    nama: string;
+    stok: string | number;
+    unit?: { nama: string };
+  };
+  dicatatOleh?: { id: string; name: string };
+}
+
 export interface OrderItem {
   id: string;
   productId: string;
@@ -56,7 +71,9 @@ export interface OrderItem {
   harga: string;
   qty: number;
   subtotal: string;
-  product: { id: string; sku: string; nama: string } | null;
+  statusHarga?: "NA" | "MENUNGGU_DESAIN" | "MENUNGGU_NEGOSIASI" | "DISEPAKATI";
+  product: { id: string; sku: string; nama: string; isService?: boolean } | null;
+  kebutuhanBahanCustom?: KebutuhanBahanCustomItem[];
 }
 
 export interface DesignFile {

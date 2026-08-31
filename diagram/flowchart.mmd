@@ -1,0 +1,22 @@
+flowchart TD
+
+    %% 1. TAHAP ORDER MASUK
+    Start([Mulai]):::startEnd --> KasirInput[/Kasir buat order baru/]:::process
+    KasirInput --> CekTipe{Tipe item?}:::decision
+
+    %% 2A. ALUR PRODUK STANDAR (HANYA GANTI GAMBAR)
+    CekTipe -- "Produk" --> StdOrder[Harga otomatis terisi<br>dari data Produk]:::standardFlow
+    StdOrder --> TahapDesain
+    TahapDesain --> CekTipe2{Tipe item?}:::decision
+    CekTipe2 -- "Produk" --> A((A))
+    
+
+    %% 2B. ALUR PRODUK CUSTOM (JASA / SPESIFIKASI KHUSUS)
+    CekTipe -- "Jasa (Custom)" --> CustOrder[Harga kosong<br>status: Menunggu Desain]:::customFlow
+    CustOrder --> TahapDesain
+    CekTipe2 -- "Jasa (Custom)" --> dsnbhn[/Desainer input</br>kebutuhan bahan baku/]
+    dsnbhn --> menunggunegosiasi[Status: Menunggu</br>Negosiasi]
+    menunggunegosiasi --> kasirharga[/Kasir konfirmasi</br>harga ke customer/]
+    kasirharga --> hargasepakat[Status: Disepakati]
+    hargasepakat --> A
+    

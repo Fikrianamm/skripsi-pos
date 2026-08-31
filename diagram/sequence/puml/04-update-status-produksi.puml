@@ -1,0 +1,66 @@
+@startuml update_status_produksi
+title Sequence Diagram — Update Status Produksi (SPK)
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceArrowColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceDividerBackgroundColor Black
+skinparam sequenceDividerFontColor White
+skinparam sequenceGroupBackgroundColor White
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceGroupFontColor Black
+skinparam sequenceNoteBackgroundColor White
+skinparam sequenceNoteBorderColor Black
+
+actor "Produksi" as produksi
+boundary "Aplikasi Web" as app
+control "Server" as server
+entity "spk" as tbl_spk
+entity "order" as tbl_order
+entity "notification" as tbl_notif
+
+== Daftar SPK ==
+
+produksi -> app : Buka daftar SPK produksi
+app -> server : Minta daftar SPK beserta data pesanan
+
+server -> tbl_spk : Ambil daftar SPK beserta relasi order & karyawan
+tbl_spk --> server : Data SPK + detail pesanan + nama karyawan
+
+server --> app : Tampilkan daftar SPK
+app --> produksi : Tabel SPK dengan status saat ini
+
+== Perubahan Status ==
+
+produksi -> app : Pilih SPK, ubah status (misal DRAFT → AKTIF)
+app -> server : Kirim perubahan status SPK
+
+server -> tbl_spk : Cari SPK berdasarkan orderId
+tbl_spk --> server : Data SPK saat ini
+
+alt SPK tidak ditemukan
+  server --> app : Tolak — SPK tidak ditemukan
+end
+
+server -> tbl_spk : Update tahapProduksi dan statusSPK
+tbl_spk --> server : Perubahan tersimpan
+
+server -> tbl_order : Sinkronkan statusProduksi\nsesuai tahapProduksi SPK
+tbl_order --> server : Status pesanan diperbarui
+
+== Notifikasi ==
+
+alt SPK ditandai SELESAI
+  server -> tbl_order : Update statusProduksi = PACKING
+  tbl_order --> server : Status diperbarui
+  server -> tbl_notif : Buat notifikasi STATUS_ORDER_UBAH\nuntuk Admin & Kasir — pesanan masuk tahap Packing
+  tbl_notif --> server : Notifikasi tersimpan
+else Status produksi berubah\n(DESAIN → PRODUKSI → PACKING)
+  server -> tbl_notif : Buat notifikasi STATUS_ORDER_UBAH\nuntuk pihak terkait
+  tbl_notif --> server : Notifikasi tersimpan
+end
+
+server --> app : Status SPK berhasil diperbarui
+app --> produksi : Tampilkan status SPK & pesanan terbaru
+
+@enduml

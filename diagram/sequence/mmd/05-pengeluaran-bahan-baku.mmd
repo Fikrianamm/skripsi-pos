@@ -1,0 +1,67 @@
+sequenceDiagram
+    actor Gudang
+    participant Website@{ "type" : "boundary" }
+    participant Server@{ "type" : "control" }
+    participant spk@{ "type" : "database" }
+    participant bahan_baku@{ "type" : "database" }
+    participant pengeluaran_barang@{ "type" : "database" }
+    participant stok_keluar@{ "type" : "database" }
+    participant notification@{ "type" : "database" }
+
+    Gudang->>Website: Buka form pengeluaran bahan baku
+    Website->>Server: Minta daftar SPK aktif & bahan baku
+
+    Server->>spk: Ambil SPK dengan status AKTIF
+    spk-->>Server: Daftar SPK aktif
+
+    Server->>bahan_baku: Ambil daftar bahan baku beserta stok
+    bahan_baku-->>Server: Data bahan baku & stok terkini
+
+    Server-->>Website: Tampilkan form (SPK, bahan baku, stok)
+    Website-->>Gudang: Form siap diisi
+
+    Gudang->>Website: Pilih referensi SPK, pilih bahan baku & jumlah
+    Website->>Server: Kirim data pengeluaran bahan baku
+
+    Server->>spk: Validasi SPK yang dipilih masih aktif
+    spk-->>Server: Data SPK valid
+
+    alt SPK tidak ditemukan atau tidak aktif
+        Server-->>Website: Tolak — SPK tidak valid
+    end
+
+    loop Setiap item bahan baku yang diminta
+        Server->>bahan_baku: Cek ketersediaan stok
+        bahan_baku-->>Server: Nilai stok saat ini
+
+        alt Stok tidak mencukupi
+            Server-->>Website: Tolak — Stok bahan baku tidak cukup
+        end
+    end
+
+    Server->>pengeluaran_barang: Simpan data pengeluaran barang<br/>(spkId, tanggal, keterangan)
+    pengeluaran_barang-->>Server: ID pengeluaran baru
+
+    loop Setiap item bahan baku
+        Server->>stok_keluar: Insert record stok keluar<br/>(pengeluaranId, bahanBakuId, jumlah)
+        stok_keluar-->>Server: Record tersimpan
+        Server->>bahan_baku: Kurangi stok bahan baku<br/>(stok = stok - jumlah)
+        bahan_baku-->>Server: Stok berhasil dikurangi
+    end
+
+    Note over Server,bahan_baku: Semua insert dan update stok<br/>dalam satu transaksi
+
+    loop Setiap item bahan baku
+        Server->>bahan_baku: Cek apakah stok di bawah minStok
+        bahan_baku-->>Server: Status stok
+        alt Stok di bawah batas minimum
+            Server->>notification: Buat notifikasi STOK_MENIPIS<br/>untuk Admin dan Gudang
+            notification-->>Server: Notifikasi tersimpan
+        end
+    end
+
+    Server->>notification: Buat notifikasi BARANG_KELUAR untuk Admin
+    notification-->>Server: Notifikasi tersimpan
+
+    Server-->>Website: Pengeluaran bahan baku berhasil dicatat
+    Website-->>Gudang: Tampilkan konfirmasi pengeluaran

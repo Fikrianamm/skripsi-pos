@@ -5,17 +5,42 @@ import { prisma } from "@/lib/prisma";
 const getRandomItem = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
 const getRandomInt  = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Safe day range per month
-const safeDayMax = (month: number) => {
-  if (month === 6) return 30; // Juni: sampai akhir bulan
-  return 28;
+// ─── Dynamic Date Boundaries ─────────────────────────────────
+const today     = new Date();
+const SEED_YEAR = 2026;
+
+/** Hitung bulan mana saja yang perlu di-seed berdasarkan tanggal hari ini */
+const getMonthsToSeed = (): number[] => {
+  if (today.getFullYear() > SEED_YEAR)  return Array.from({ length: 12 }, (_, i) => i + 1);
+  if (today.getFullYear() === SEED_YEAR) return Array.from({ length: today.getMonth() + 1 }, (_, i) => i + 1);
+  return [];
 };
 
-export async function seedTransactions() {
-  console.log("🌱 Seeding Transactions (Januari - Juni)...");
+/** Batas hari maksimum untuk seeding di bulan tertentu */
+const safeDayMax = (month: number) => {
+  // Bulan berjalan: hanya sampai hari ini
+  if (today.getFullYear() === SEED_YEAR && month === today.getMonth() + 1) {
+    return today.getDate();
+  }
+  // Bulan lalu: gunakan hari terakhir bulan sebenarnya
+  return new Date(SEED_YEAR, month, 0).getDate();
+};
 
-  const year   = 2026;
-  const months = [1, 2, 3, 4, 5, 6];
+/** Bulan saat ini (1-indexed), atau 13 jika sudah lewat tahun seed */
+const currentMonth = today.getFullYear() === SEED_YEAR ? today.getMonth() + 1 : 13;
+
+export async function seedTransactions() {
+  const year   = SEED_YEAR;
+  const months = getMonthsToSeed();
+
+  if (months.length === 0) {
+    console.log("⏭️ Tahun seed belum dimulai, skip.");
+    return;
+  }
+
+  const lastMonth     = months[months.length - 1];
+  const lastMonthName = new Intl.DateTimeFormat("id-ID", { month: "long" }).format(new Date(year, lastMonth - 1));
+  console.log(`🌱 Seeding Transactions (Januari - ${lastMonthName}, sampai ${today.toLocaleDateString("id-ID")})...`);
 
   // ─── 1. Fetch master data ────────────────────────────────────
   const accounts   = await prisma.akun.findMany({ orderBy: { kodeAkun: "asc" } });
@@ -372,9 +397,9 @@ export async function seedTransactions() {
       }
     }
 
-    // ── G. Pesanan (15 per bulan, Mei maks tgl 10) ────────────
+    // ── G. Pesanan (15 per bulan) ─────────────────────────────
     for (let i = 1; i <= 15; i++) {
-      const isCompleted = month < 6; // Jan–Mei selesai, Juni masih berjalan
+      const isCompleted = month < currentMonth; // Bulan lalu selesai, bulan ini masih berjalan
       const orderId    = `order_dummy_${year}_${month}_${i}`;
       const nomorOrder = `DUMMY-ORD-${year}-${String(month).padStart(2, "0")}-${String(i).padStart(3, "0")}`;
 
@@ -586,30 +611,26 @@ export async function seedTransactions() {
       const kreditAkunId = cfg.tabunganAkunId
         ?? (cfg.viaKas ? kasCashForPatch!.akunId! : kasBankForPatch!.akunId!);
 
-      await prisma.jurnalUmum.upsert({
-        where: { id: jurnalId },
-        update: {
-          // Perbarui nominal & keterangan jika record sudah ada
-          nominal,
-          keterangan: `${bebanAkun.namaAkun} ${monthName}`,
-          namaBiaya: `Biaya ${bebanAkun.namaAkun}`,
-          akunKreditId: kreditAkunId,
-        },
-        create: {
-          id: jurnalId,
-          ref: `COST-${year}${String(month).padStart(2, "0")}-${cfg.kode}`,
-          tanggal,
-          keterangan: `${bebanAkun.namaAkun} ${monthName}`,
-          namaBiaya: `Biaya ${bebanAkun.namaAkun}`,
-          akunDebetId: bebanAkun.id,
-          akunKreditId: kreditAkunId,
-          nominal,
-          createdById: adminUser?.id,
-        },
-      });
+      // Hanya buat jika belum ada (tidak overwrite data lama)
+      const existing = await prisma.jurnalUmum.findUnique({ where: { id: jurnalId } });
+      if (!existing) {
+        await prisma.jurnalUmum.create({
+          data: {
+            id: jurnalId,
+            ref: `COST-${year}${String(month).padStart(2, "0")}-${cfg.kode}`,
+            tanggal,
+            keterangan: `${bebanAkun.namaAkun} ${monthName}`,
+            namaBiaya: `Biaya ${bebanAkun.namaAkun}`,
+            akunDebetId: bebanAkun.id,
+            akunKreditId: kreditAkunId,
+            nominal,
+            createdById: adminUser?.id,
+          },
+        });
+      }
     }
 
-    console.log(`  ✅ Patch selesai: ${bebanAkun.namaAkun} (${bebanAkun.kodeAkun}) — 6 bulan`);
+    console.log(`  ✅ Patch selesai: ${bebanAkun.namaAkun} (${bebanAkun.kodeAkun}) — ${months.length} bulan`);
   }
 
   console.log("✅ Transactions Seeding completed!");

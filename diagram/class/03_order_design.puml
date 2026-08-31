@@ -1,0 +1,118 @@
+@startuml class_diagram_order_design
+title Class Diagram — Pesanan, Desain & Komentar
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #4A90D9
+  HeaderBackgroundColor #4A90D9
+  HeaderFontColor White
+  FontName Segoe UI
+  FontSize 11
+  HeaderFontSize 12
+  StereotypeFontSize 0
+  AttributeFontSize 10
+  ArrowColor #666666
+}
+
+skinparam package {
+  BackgroundColor #EEF3FC
+  BorderColor #4A90D9
+  FontSize 13
+  FontStyle bold
+  RoundCorner 10
+}
+
+package "Pesanan" {
+  class "order" as Order {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *customerId : String
+    userId : String?
+    designerId : String?
+    nomorOrder : VarChar(50)
+    channel : Enum(OrderChannel)
+    statusProduksi : Enum(StatusProduksi)
+    statusPembayaran : Enum(StatusPembayaran)
+    metodePembayaran : Enum(MetodePembayaran)
+    deadline : DateTime?
+    catatan : Text?
+    subtotal : Decimal(12,2)
+    diskon : Decimal(12,2)
+    ongkir : Decimal(12,2)?
+    grandTotal : Decimal(12,2)
+    isDesignFinal : Boolean
+    designReviewStatus : Enum?
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+
+  class "order_item" as OrderItem {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *orderId : String
+    *productId : String
+    nama : Text
+    harga : Decimal(12,2)
+    qty : Decimal(10,2)
+    subtotal : Decimal(12,2)
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+}
+
+package "Desain" {
+  class "design_file" as DesignFile {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *orderId : String
+    *uploadedById : String
+    nama : Text
+    filePath : Text
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Komentar Pesanan" {
+  class "order_comment" as OrderComment {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *orderId : String
+    *userId : String
+    text : Text
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "comment_recipient" as CommentRecipient {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *commentId : String
+    *userId : String
+    isRead : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "order_comment_file" as OrderCommentFile {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *commentId : String
+    filePath : Text
+    createdAt : DateTime
+  }
+}
+
+Order "1" -- "0..*" OrderItem : orderId
+Order "1" -- "0..*" DesignFile : orderId
+Order "1" -- "0..*" OrderComment : orderId
+OrderComment "1" -- "0..*" CommentRecipient : commentId
+OrderComment "1" -- "0..*" OrderCommentFile : commentId
+
+@enduml

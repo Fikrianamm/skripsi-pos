@@ -106,10 +106,11 @@ export default function Page() {
         {
           productId: product.id!,
           nama: product.nama,
-          harga: Number(product.hargaJual),
+          harga: product.isService ? 0 : Number(product.hargaJual),
           qty: 1,
           catatan: "",
           unit: product.unit?.nama ?? "pcs",
+          isService: product.isService,
         },
       ];
     });

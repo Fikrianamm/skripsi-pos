@@ -1,0 +1,1 @@
+A Next.js-based enterprise resource planning application for managing point-of-sale, production workflows, inventory, and double-entry accounting.

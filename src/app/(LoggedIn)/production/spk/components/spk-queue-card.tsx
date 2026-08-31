@@ -8,6 +8,7 @@ import {
   Divider,
   Skeleton,
   Switch,
+  useDisclosure,
 } from "@heroui/react";
 import {
   AlertCircle,
@@ -16,6 +17,7 @@ import {
   ExternalLink,
   User,
 } from "lucide-react";
+import { SpkDetailModal } from "@/app/(LoggedIn)/order/[id]/components/spk-detail-modal";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 export interface SpkItem {
@@ -98,13 +100,16 @@ export function SpkQueueCard({
   const overdue = isOverdue(spk.tanggalSetor);
   const days = daysUntil(spk.tanggalSetor);
   const isSelesai = spk.statusSPK === "SELESAI";
+  const detailModalDisclosure = useDisclosure();
 
   return (
-    <div
-      className={`rounded-xl border bg-content1 shadow-sm overflow-hidden transition-opacity ${
-        isSelesai ? "opacity-60" : ""
-      }`}
-    >
+    <>
+      <div
+        onClick={detailModalDisclosure.onOpen}
+        className={`rounded-xl border bg-content1 shadow-sm overflow-hidden transition-all cursor-pointer hover:border-primary/60 hover:shadow-md ${
+          isSelesai ? "opacity-75" : ""
+        }`}
+      >
       {/* ── Top bar: deadline warning ── */}
       {overdue && !isSelesai && (
         <div className="bg-danger-50 border-b border-danger-200 px-4 py-1.5 flex items-center gap-1.5 text-danger text-xs font-medium">
@@ -124,7 +129,7 @@ export function SpkQueueCard({
         {/* ── Header row ── */}
         <div className="flex justify-between items-center">
           <p className="text-xs text-default-400">No. SPK</p>
-          <p className="font-mono font-semibold text-sm text-primary hover:underline flex items-center gap-1">
+          <p className="font-mono font-semibold text-sm text-primary flex items-center gap-1">
             {spk.nomorSpk}
           </p>
         </div>
@@ -132,6 +137,7 @@ export function SpkQueueCard({
           <div className="flex flex-col gap-0.5">
             <Link
               href={`/order/${spk.orderId}`}
+              onClick={(e) => e.stopPropagation()}
               className="font-mono font-semibold text-sm text-primary hover:underline flex items-center gap-1"
             >
               {spk.order.nomorOrder}
@@ -235,7 +241,10 @@ export function SpkQueueCard({
           </div>
 
           {/* ACC Cetak */}
-          <div className="flex items-center gap-1.5">
+          <div
+            className="flex items-center gap-1.5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <CheckCircle2
               size={14}
               className={spk.accCetak ? "text-success" : "text-default-300"}
@@ -253,8 +262,8 @@ export function SpkQueueCard({
 
         {/* ── Advance button ── */}
         {!isSelesai && badge.color !== "danger" && (
-          <>
-            <Divider className="my-0" />
+          <div onClick={(e) => e.stopPropagation()}>
+            <Divider className="my-0 mb-3" />
             <Button
               size="sm"
               color="primary"
@@ -267,10 +276,19 @@ export function SpkQueueCard({
                 ? "Selesai Produksi (Lanjut Packing)"
                 : "Belum ACC Cetak"}
             </Button>
-          </>
+          </div>
         )}
       </div>
     </div>
+
+    {/* SPK Detail Modal */}
+    <SpkDetailModal
+      isOpen={detailModalDisclosure.isOpen}
+      onOpenChange={detailModalDisclosure.onOpenChange}
+      orderId={spk.orderId}
+      spk={spk}
+    />
+  </>
   );
 }
 

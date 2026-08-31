@@ -93,5 +93,36 @@ export async function seedDummy() {
     await prisma.bahanBaku.createMany({ data: bahanBakuData, skipDuplicates: true });
   }
 
+  // 5. Seed BOM (ProductBahanBaku)
+  const productBOMCount = await prisma.productBahanBaku.count();
+  if (productBOMCount > 0) {
+    console.log("  ⏭️ Product BOM already seeded, skipping...");
+  } else {
+    console.log("⏳ Seeding Product BOM (Resep Bahan Baku)...");
+    const products = await prisma.product.findMany({ select: { id: true, isService: true } });
+    const bahanBakus = await prisma.bahanBaku.findMany({ select: { id: true } });
+
+    if (products.length > 0 && bahanBakus.length > 0) {
+      const bomData = [];
+      for (const p of products) {
+        if (p.isService) continue; // Jasa tidak butuh bahan baku
+        // Pilih 2-4 bahan baku random untuk setiap produk
+        const numBahan = getRandomInt(2, 4);
+        const selectedBahan = new Set<string>();
+        while (selectedBahan.size < numBahan) {
+          selectedBahan.add(getRandomItem(bahanBakus).id);
+        }
+        for (const bbId of selectedBahan) {
+          bomData.push({
+            productId: p.id,
+            bahanBakuId: bbId,
+            jumlahButuh: getRandomInt(1, 10) / 10, // 0.1 - 1.0
+          });
+        }
+      }
+      await prisma.productBahanBaku.createMany({ data: bomData, skipDuplicates: true });
+    }
+  }
+
   console.log("✅ Dummy Seeding completed!");
 }

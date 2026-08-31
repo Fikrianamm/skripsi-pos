@@ -196,7 +196,13 @@ export default function Page() {
         {/* Left */}
         <div className="flex flex-col gap-5">
           <OrderInfoCard order={order} />
-          <OrderItemsTable items={order.items} />
+          <OrderItemsTable
+            items={order.items}
+            orderId={order.id}
+            nomorOrder={order.nomorOrder}
+            canAgreePrice={isAdmin || userRole === "kasir"}
+            onMutate={() => mutate()}
+          />
           <DesignFilesCard files={order.designFiles} />
         </div>
 
@@ -205,11 +211,12 @@ export default function Page() {
           <PaymentSummary order={order} />
 
           {/* SPK — muncul saat status PRODUKSI */}
-          {order.statusProduksi === "PRODUKSI" && (
+          {order.statusProduksi !== "PENDING" && order.statusProduksi !== "DESAIN" && (
             <>
               {order.spk ? (
                 <SpkCard
                   orderId={order.id}
+                  order={order}
                   spk={order.spk}
                   onUpdated={() => mutate()}
                 />

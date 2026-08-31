@@ -1,0 +1,92 @@
+@startuml pengeluaran_bahan_baku
+title Sequence Diagram — Pengeluaran Bahan Baku
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceArrowColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceDividerBackgroundColor Black
+skinparam sequenceDividerFontColor White
+skinparam sequenceGroupBackgroundColor White
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceGroupFontColor Black
+skinparam sequenceNoteBackgroundColor White
+skinparam sequenceNoteBorderColor Black
+
+actor "Gudang" as gudang
+boundary "Aplikasi Web" as app
+control "Server" as server
+entity "spk" as tbl_spk
+entity "bahan_baku" as tbl_bahan
+entity "pengeluaran_barang" as tbl_keluar
+entity "stok_keluar" as tbl_stok_out
+entity "notification" as tbl_notif
+
+== Pengambilan Data Awal ==
+
+gudang -> app : Buka form pengeluaran bahan baku
+app -> server : Minta daftar SPK aktif & bahan baku
+
+server -> tbl_spk : Ambil SPK dengan status AKTIF
+tbl_spk --> server : Daftar SPK aktif
+
+server -> tbl_bahan : Ambil daftar bahan baku beserta stok
+tbl_bahan --> server : Data bahan baku & stok terkini
+
+server --> app : Tampilkan form (SPK, bahan baku, stok)
+app --> gudang : Form siap diisi
+
+== Proses Pengeluaran ==
+
+gudang -> app : Pilih referensi SPK, pilih bahan baku & jumlah
+app -> server : Kirim data pengeluaran bahan baku
+
+server -> tbl_spk : Validasi SPK yang dipilih masih aktif
+tbl_spk --> server : Data SPK valid
+
+alt SPK tidak ditemukan atau tidak aktif
+  server --> app : Tolak — SPK tidak valid
+end
+
+loop Setiap item bahan baku yang diminta
+  server -> tbl_bahan : Cek ketersediaan stok
+  tbl_bahan --> server : Nilai stok saat ini
+
+  alt Stok tidak mencukupi
+    server --> app : Tolak — Stok bahan baku tidak cukup
+  end
+end
+
+== Penyimpanan Pengeluaran ==
+
+server -> tbl_keluar : Simpan data pengeluaran barang\n(spkId, tanggal, keterangan)
+tbl_keluar --> server : ID pengeluaran baru
+
+loop Setiap item bahan baku
+  server -> tbl_stok_out : Insert record stok keluar\n(pengeluaranId, bahanBakuId, jumlah)
+  tbl_stok_out --> server : Record tersimpan
+  server -> tbl_bahan : Kurangi stok bahan baku\n(stok = stok - jumlah)
+  tbl_bahan --> server : Stok berhasil dikurangi
+end
+
+note over server, tbl_bahan
+  Semua insert dan update stok\ndalam satu transaksi
+end note
+
+== Cek Stok Minimum & Notifikasi ==
+
+loop Setiap item bahan baku
+  server -> tbl_bahan : Cek apakah stok di bawah minStok
+  tbl_bahan --> server : Status stok
+  alt Stok di bawah batas minimum
+    server -> tbl_notif : Buat notifikasi STOK_MENIPIS\nuntuk Admin dan Gudang
+    tbl_notif --> server : Notifikasi tersimpan
+  end
+end
+
+server -> tbl_notif : Buat notifikasi BARANG_KELUAR untuk Admin
+tbl_notif --> server : Notifikasi tersimpan
+
+server --> app : Pengeluaran bahan baku berhasil dicatat
+app --> gudang : Tampilkan konfirmasi pengeluaran
+
+@enduml

@@ -1,0 +1,99 @@
+classDiagram
+    %% ============================================================
+    %% Modul Produksi & Inventori
+    %% ============================================================
+
+    class BahanBaku {
+        +String id
+        +String unitId
+        +String nama
+        +Decimal stok
+        +Decimal minStok
+        +String keterangan
+        +Boolean isActive
+        +DateTime createdAt
+        +DateTime updatedAt
+        +addStock(jumlah) void
+        +reduceStock(jumlah) void
+        +isLowStock() Boolean
+    }
+
+    class SPK {
+        +String id
+        +String orderId
+        +String karyawanId
+        +String userId
+        +String nomorSpk
+        +String tahapProduksi
+        +String statusSPK
+        +String model
+        +String tali
+        +String ukuran
+        +Decimal jumlah
+        +String catatan
+        +DateTime tanggalSetor
+        +Boolean accCetak
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +updateStatus(status) void
+        +syncOrderStatus() void
+        +approveCetak(user) void
+    }
+
+    class PenerimaanBarang {
+        +String id
+        +String supplierId
+        +String addedById
+        +String nomorFaktur
+        +DateTime tanggal
+        +String keterangan
+        +String buktiNota
+        +Decimal totalTagihan
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +addItem(bahanBakuId, jumlah, harga) StokMasuk
+        +calculateTotal() Decimal
+        +generateJurnal() void
+    }
+
+    class StokMasuk {
+        +String id
+        +String penerimaanId
+        +String bahanBakuId
+        +Decimal jumlah
+        +Decimal hargaBeli
+        +Decimal totalHargaItem
+        +DateTime createdAt
+        +DateTime updatedAt
+        +calculateTotalHarga() Decimal
+    }
+
+    class PengeluaranBarang {
+        +String id
+        +String spkId
+        +String addedById
+        +DateTime tanggal
+        +String keterangan
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +addItem(bahanBakuId, jumlah) StokKeluar
+    }
+
+    class StokKeluar {
+        +String id
+        +String pengeluaranId
+        +String bahanBakuId
+        +Decimal jumlah
+        +DateTime createdAt
+        +DateTime updatedAt
+    }
+
+    SPK "1" --> "0..1" Order
+    SPK "1" --> "0..*" PengeluaranBarang
+    BahanBaku "1" --> "0..*" StokMasuk 
+    BahanBaku "1" --> "0..*" StokKeluar
+    PenerimaanBarang "1" --> "0..*" StokMasuk
+    PengeluaranBarang "1" --> "0..*" StokKeluar

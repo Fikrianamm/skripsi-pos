@@ -6,6 +6,28 @@ export interface DesignFile {
   uploadedBy: { id: string; name: string } | null;
 }
 
+export interface KebutuhanBahanCustomItem {
+  id: string;
+  bahanBakuId: string;
+  jumlahDibutuhkan: number | string;
+  satuan: string;
+  bahanBaku?: {
+    id: string;
+    nama: string;
+    stok: number | string;
+    unit?: { nama: string };
+  };
+}
+
+export interface DesignOrderItem {
+  id: string;
+  nama: string;
+  qty: number;
+  statusHarga?: "NA" | "MENUNGGU_DESAIN" | "MENUNGGU_NEGOSIASI" | "DISEPAKATI";
+  product?: { sku: string; isService?: boolean } | null;
+  kebutuhanBahanCustom?: KebutuhanBahanCustomItem[];
+}
+
 export interface DesignOrder {
   id: string;
   nomorOrder: string;
@@ -14,7 +36,7 @@ export interface DesignOrder {
   catatan: string | null;
   createdAt: string;
   customer: { id: string; nama: string; nomorHp: string };
-  items: { nama: string; qty: number; product: { sku: string } | null }[];
+  items: DesignOrderItem[];
   designFiles: DesignFile[];
   spk: { id: string } | null;
   designerId: string | null;

@@ -26,13 +26,15 @@ import {
   MessageSquare,
   Send,
   X,
+  Package,
 } from "lucide-react";
 import { addToast } from "@heroui/toast";
-import { DesignOrder, DesignFile } from "./types";
+import { DesignOrder, DesignFile, DesignOrderItem } from "./types";
 import { UploadModal } from "./upload-modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { SpkFormModal } from "@/app/(LoggedIn)/order/[id]/components/spk-form-modal";
 import { DesignDetailDrawer } from "./design-detail-drawer";
+import { FinalisasiDesainModal } from "./finalisasi-desain-modal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function isOverdue(deadline: string | null) {
@@ -86,6 +88,7 @@ export function DesignOrderCard({
   const spkDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const detailDrawerDisclosure = useDisclosure();
+  const finalisasiModalDisclosure = useDisclosure();
 
   const [deletingFileId, setDeletingFileId] = React.useState<string | null>(
     null,
@@ -413,12 +416,65 @@ export function DesignOrderCard({
 
           {/* ── Items ── */}
           {order.items.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {order.items.map((item, i) => (
-                <Chip key={i} size="sm" variant="flat" color="default">
-                  {item.nama} ×{Number(item.qty)}
-                </Chip>
-              ))}
+            <div className="flex flex-col gap-1.5">
+              {order.items.map((item, i) => {
+                const isCustom =
+                  item.product?.isService ||
+                  (item.statusHarga && item.statusHarga !== "NA");
+
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between gap-2 p-2 rounded-lg text-xs transition-colors ${
+                      isCustom
+                        ? "bg-secondary-50/60 border border-secondary-200/70"
+                        : "bg-default-50 border border-default-100"
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-default-800 truncate">
+                          {item.nama} ×{Number(item.qty)}
+                        </span>
+                        {isCustom && (
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={
+                              item.statusHarga === "DISEPAKATI"
+                                ? "success"
+                                : item.statusHarga === "MENUNGGU_NEGOSIASI"
+                                  ? "primary"
+                                  : "warning"
+                            }
+                            className="h-4 text-[9px] px-1 font-medium"
+                          >
+                            {item.statusHarga === "DISEPAKATI"
+                              ? "Harga Deal"
+                              : item.statusHarga === "MENUNGGU_NEGOSIASI"
+                                ? "Menunggu Kasir"
+                                : "Perlu Bahan"}
+                          </Chip>
+                        )}
+                      </div>
+                      {isCustom && (
+                        <span className="text-[10px] text-default-400">
+                          {item.kebutuhanBahanCustom &&
+                          item.kebutuhanBahanCustom.length > 0
+                            ? `${item.kebutuhanBahanCustom.length} jenis bahan dikunci`
+                            : "Belum ada bahan yang dikunci"}
+                        </span>
+                      )}
+                    </div>
+
+                    {isCustom && item.kebutuhanBahanCustom && item.kebutuhanBahanCustom.length > 0 && (
+                      <Chip size="sm" variant="flat" color="secondary" className="h-5 text-[9px] shrink-0">
+                        {item.kebutuhanBahanCustom.length} bahan
+                      </Chip>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -598,7 +654,27 @@ export function DesignOrderCard({
             className="mt-auto flex flex-col gap-2"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Desainer yang claim: Kirim Permintaan Review */}
+            {/* Desainer yang claim: Tentukan Bahan Baku Custom (Hanya untuk order custom/jasa) */}
+            {isUserWhoClaimedThis &&
+              !order.isDesignFinal &&
+              order.items.some(
+                (item) =>
+                  item.product?.isService ||
+                  (item.statusHarga && item.statusHarga !== "NA"),
+              ) && (
+                <Button
+                  size="sm"
+                  color="secondary"
+                  variant="flat"
+                  startContent={<Package size={13} />}
+                  onPress={finalisasiModalDisclosure.onOpen}
+                  className="w-full"
+                >
+                  Tentukan Bahan Baku Custom
+                </Button>
+              )}
+
+            {/* Desainer: Kirim Permintaan Review (tetap tersedia sebelum finalisasi) */}
             {isUserWhoClaimedThis &&
               !order.isDesignFinal &&
               order.designReviewStatus !== "PENDING_REVIEW" && (
@@ -746,6 +822,27 @@ export function DesignOrderCard({
         orderId={order.id}
         nomorOrder={order.nomorOrder}
         order={order}
+        onSuccess={onMutate}
+      />
+
+      {/* Finalisasi Desain & Bahan Modal */}
+      <FinalisasiDesainModal
+        isOpen={finalisasiModalDisclosure.isOpen}
+        onOpenChange={finalisasiModalDisclosure.onOpenChange}
+        orderId={order.id}
+        nomorOrder={order.nomorOrder}
+        customItems={order.items
+          .filter(item => item.product?.isService || (item.statusHarga && item.statusHarga !== "NA"))
+          .map(item => ({
+            id: item.id,
+            nama: item.nama,
+            qty: item.qty,
+            kebutuhanBahanCustom: item.kebutuhanBahanCustom?.map(k => ({
+              bahanBakuId: k.bahanBakuId,
+              jumlahDibutuhkan: k.jumlahDibutuhkan,
+              satuan: k.satuan,
+            })) || [],
+          }))}
         onSuccess={onMutate}
       />
     </>

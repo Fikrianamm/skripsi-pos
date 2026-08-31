@@ -13,9 +13,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { fetcher } from "@/lib/func";
 import useSWR from "swr";
-import { CheckCircle, ClipboardList, Pencil, User, X } from "lucide-react";
-import { SPKDetail } from "./types";
+import { CheckCircle, ClipboardList, Eye, Pencil, User, X } from "lucide-react";
+import { OrderDetail, SPKDetail } from "./types";
 import { FormattedNumberInput } from "@/components/ui/formatted-number-input";
+import { useDisclosure } from "@heroui/react";
+import { SpkDetailModal } from "./spk-detail-modal";
 
 const editSpkSchema = z.object({
   karyawanId: z.string().min(1, "Karyawan wajib dipilih"),
@@ -31,14 +33,16 @@ type EditSpkFormData = z.infer<typeof editSpkSchema>;
 
 interface Props {
   orderId: string;
+  order?: OrderDetail;
   spk: SPKDetail;
   onUpdated: () => void;
 }
 
-export function SpkCard({ orderId, spk, onUpdated }: Props) {
+export function SpkCard({ orderId, order, spk, onUpdated }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editError, setEditError] = useState("");
   const [isTogglingAcc, setIsTogglingAcc] = useState(false);
+  const detailModalDisclosure = useDisclosure();
 
   const { data: karyawanData } = useSWR(
     "/api/admin/karyawan?isActive=true&limit=100",
@@ -119,7 +123,20 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
           : { color: "default" as const, label: spk.statusSPK };
 
   return (
-    <Card shadow="none" className="border border-default-200">
+    <>
+      <Card
+        shadow="none"
+        className={`border border-default-200 transition-all ${
+          !isEditing && order
+            ? "cursor-pointer hover:border-primary/60 hover:shadow-md"
+            : ""
+        }`}
+        onClick={() => {
+          if (!isEditing && order) {
+            detailModalDisclosure.onOpen();
+          }
+        }}
+      >
       <CardHeader className="pb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ClipboardList size={16} className="text-default-500" />
@@ -129,14 +146,16 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
           </Chip>
         </div>
         {!isEditing && (
-          <Button
-            size="sm"
-            variant="light"
-            isIconOnly
-            onPress={() => setIsEditing(true)}
-          >
-            <Pencil size={14} />
-          </Button>
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <Button
+              size="sm"
+              variant="light"
+              isIconOnly
+              onPress={() => setIsEditing(true)}
+            >
+              <Pencil size={14} />
+            </Button>
+          </div>
         )}
       </CardHeader>
 
@@ -314,7 +333,10 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
             <Divider className="my-0.5" />
 
             {/* ACC Cetak toggle */}
-            <div className="flex items-center justify-between">
+            <div
+              className="flex items-center justify-between"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center gap-1.5">
                 <CheckCircle
                   size={14}
@@ -342,5 +364,16 @@ export function SpkCard({ orderId, spk, onUpdated }: Props) {
         )}
       </CardBody>
     </Card>
+
+    {/* SPK Detail Modal */}
+    {order && (
+      <SpkDetailModal
+        isOpen={detailModalDisclosure.isOpen}
+        onOpenChange={detailModalDisclosure.onOpenChange}
+        order={order}
+        spk={spk}
+      />
+    )}
+  </>
   );
 }

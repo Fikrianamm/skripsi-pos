@@ -1,0 +1,120 @@
+@startuml class_diagram_finance
+title Class Diagram — Keuangan & Akuntansi
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #4A90D9
+  HeaderBackgroundColor #4A90D9
+  HeaderFontColor White
+  FontName Segoe UI
+  FontSize 11
+  HeaderFontSize 12
+  StereotypeFontSize 0
+  AttributeFontSize 10
+  ArrowColor #666666
+}
+
+skinparam package {
+  BackgroundColor #EEF3FC
+  BorderColor #4A90D9
+  FontSize 13
+  FontStyle bold
+  RoundCorner 10
+}
+
+package "Pembayaran" {
+  class "payment" as Payment {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *orderId : String
+    userId : String?
+    nominal : Decimal(12,2)
+    metodePembayaran : Enum(MetodePembayaran)
+    keterangan : Text?
+    tanggal : DateTime
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+}
+
+package "Chart of Account (Akun)" {
+  class "akun" as Akun {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    kodeAkun : VarChar(20) (unique)
+    namaAkun : Text
+    kelompok : String
+    posisiNormal : Enum(PosisiNormal)
+    isActive : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Jurnal Umum" {
+  class "jurnal_umum" as JurnalUmum {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    ref : VarChar(30)
+    tanggal : DateTime
+    keterangan : Text?
+    namaBiaya : Text
+    buktiNota : Text?
+    *akunDebetId : String
+    *akunKreditId : String
+    nominal : Decimal(12,2)
+    paymentId : String?
+    penerimaanId : String?
+    createdById : String?
+    createdAt : DateTime
+    deletedAt : DateTime?
+    updatedAt : DateTime
+  }
+}
+
+package "Kas & Bank (Rekening)" {
+  class "kas_bank" as KasBank {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    namaRekening : Text
+    jenisRekening : VarChar(20)
+    nomorRekening : VarChar(50)?
+    akunId : String?
+    isActive : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Pengaturan Sistem" {
+  class "app_setting" as AppSetting {
+    <b>id</b> : Int ⚪
+    ────────────────────────
+    namaPerusahaan : VarChar(100)
+    logoUrl : Text?
+    alamat : Text?
+    nomorKontak : VarChar(50)?
+    email : VarChar(100)?
+    prefixOrder : VarChar(20)
+    catatanKakiStruk : Text?
+    prefixSpk : VarChar(20)
+    estimasiHariPengerjaan : Int
+    defaultPendapatanAkunId : String?
+    invoiceRekeningIds : Text?
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+Akun "1" -- "0..*" JurnalUmum : akunDebetId
+Akun "1" -- "0..*" JurnalUmum : akunKreditId
+Payment "1" -- "0..*" JurnalUmum : paymentId
+Akun "1" -- "0..*" KasBank : akunId
+Akun "1" -- "0..1" AppSetting : defaultPendapatanAkunId
+
+@enduml

@@ -1,0 +1,93 @@
+classDiagram
+    %% ============================================================
+    %% Modul Pesanan & Desain
+    %% ============================================================
+
+    class Order {
+        +String id
+        +String customerId
+        +String userId
+        +String designerId
+        +String nomorOrder
+        +String channel
+        +String statusProduksi
+        +String statusPembayaran
+        +String metodePembayaran
+        +DateTime deadline
+        +String catatan
+        +Decimal subtotal
+        +Decimal diskon
+        +Decimal ongkir
+        +Decimal grandTotal
+        +Boolean isDesignFinal
+        +String designReviewStatus
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +calculateGrandTotal() Decimal
+        +updateStatusProduksi(status) void
+        +updateStatusPembayaran(status) void
+        +assignDesigner(designerId) void
+        +approveDesign() void
+        +requestRevision() void
+    }
+
+    class OrderItem {
+        +String id
+        +String orderId
+        +String productId
+        +String nama
+        +Decimal harga
+        +Decimal qty
+        +Decimal subtotal
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +calculateSubtotal() Decimal
+    }
+
+    class DesignFile {
+        +String id
+        +String orderId
+        +String uploadedById
+        +String nama
+        +String filePath
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getFileUrl() String
+    }
+
+    class OrderComment {
+        +String id
+        +String orderId
+        +String userId
+        +String text
+        +DateTime createdAt
+        +DateTime updatedAt
+        +addFile(file) OrderCommentFile
+        +addRecipient(userId) CommentRecipient
+    }
+
+    class CommentRecipient {
+        +String id
+        +String commentId
+        +String userId
+        +Boolean isRead
+        +DateTime createdAt
+        +DateTime updatedAt
+        +markAsRead() void
+    }
+
+    class OrderCommentFile {
+        +String id
+        +String commentId
+        +String filePath
+        +DateTime createdAt
+        +getFileUrl() String
+    }
+
+    Order "1" --> "0..*" OrderItem
+    Order "1" --> "0..*" DesignFile
+    Order "1" --> "0..*" OrderComment
+    OrderComment "1" --> "0..*" CommentRecipient
+    OrderComment "1" --> "0..*" OrderCommentFile

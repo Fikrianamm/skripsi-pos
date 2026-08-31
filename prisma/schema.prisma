@@ -37,6 +37,7 @@ model User {
   designerOrders    Order[]             @relation("DesignerOrders")
   comments          OrderComment[]
   commentRecipients CommentRecipient[]
+  kebutuhanBahanCustom KebutuhanBahanCustom[]
 
   @@map("user")
 }
@@ -118,26 +119,44 @@ model Unit {
 
 model Product {
   id         String      @id
-  categoryId String
-  unitId     String
-  sku        String      @unique
-  nama       String      @db.Text
-  image      String?     @db.Text
-  hpp        Decimal     @db.Decimal(10, 2)
-  hargaJual  Decimal     @db.Decimal(10, 2)
-  stok       Decimal?    @db.Decimal(10, 2)
-  minStok    Decimal?    @db.Decimal(10, 2)
-  isService  Boolean     @default(false)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  deletedAt  DateTime?
-  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  unit       Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[]
+  categoryId   String
+  unitId       String
+  sku          String             @unique
+  nama         String             @db.Text
+  image        String?            @db.Text
+  hpp          Decimal            @db.Decimal(10, 2)
+  hargaJual    Decimal            @db.Decimal(10, 2)
+  stok         Decimal?           @db.Decimal(10, 2)
+  minStok      Decimal?           @db.Decimal(10, 2)
+  isService    Boolean            @default(false)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  deletedAt    DateTime?
+  category     Category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  unit         Unit               @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+  bahanBakuList ProductBahanBaku[]
 
   @@index([sku(length: 191)])
   @@index([nama(length: 191)])
   @@map("product")
+}
+
+model ProductBahanBaku {
+  id          String    @id @default(cuid())
+  productId   String
+  bahanBakuId String
+  jumlahButuh Decimal   @db.Decimal(10, 4) // Kebutuhan bahan baku per 1 unit produk
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bahanBaku   BahanBaku @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, bahanBakuId])
+  @@index([productId])
+  @@index([bahanBakuId])
+  @@map("product_bahan_baku")
 }
 
 // ============================================================
@@ -187,11 +206,13 @@ model BahanBaku {
   minStok     Decimal?         @db.Decimal(10, 2)
   keterangan  String?          @db.Text
   isActive    Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  unit        Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  stokMasuk   StokMasuk[]
-  stokKeluar  StokKeluar[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  unit           Unit               @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  stokMasuk      StokMasuk[]
+  stokKeluar     StokKeluar[]
+  productBahanBaku ProductBahanBaku[]
+  kebutuhanBahanCustom KebutuhanBahanCustom[]
 
   @@index([nama(length: 191)])
   @@index([unitId])
@@ -296,22 +317,43 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id
-  orderId   String
-  productId String
-  nama      String   @db.Text
-  harga     Decimal  @db.Decimal(12, 2)
-  qty       Decimal  @db.Decimal(10, 2)
-  subtotal  Decimal  @db.Decimal(12, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  id                  String                 @id
+  orderId             String
+  productId           String
+  nama                String                 @db.Text
+  harga               Decimal?               @db.Decimal(12, 2)
+  qty                 Decimal                @db.Decimal(10, 2)
+  subtotal            Decimal?               @db.Decimal(12, 2)
+  statusHarga         StatusHarga            @default(NA)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  deletedAt           DateTime?
+  order               Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product             Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  kebutuhanBahanCustom KebutuhanBahanCustom[]
 
   @@index([orderId])
   @@index([productId])
   @@map("order_item")
+}
+
+model KebutuhanBahanCustom {
+  id               String    @id @default(cuid())
+  orderItemId      String
+  bahanBakuId      String
+  jumlahDibutuhkan Decimal   @db.Decimal(10, 2)
+  satuan           String    @db.VarChar(20)
+  dicatatOlehId    String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  orderItem        OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  bahanBaku        BahanBaku @relation(fields: [bahanBakuId], references: [id], onDelete: Restrict)
+  dicatatOleh      User      @relation(fields: [dicatatOlehId], references: [id], onDelete: Restrict)
+
+  @@index([orderItemId])
+  @@index([bahanBakuId])
+  @@index([dicatatOlehId])
+  @@map("kebutuhan_bahan_custom")
 }
 
 model DesignFile {
@@ -556,6 +598,13 @@ enum DesignReviewStatus {
 // ============================================================
 // ENUMS — FINANCE (BARU)
 // ============================================================
+
+enum StatusHarga {
+  NA
+  MENUNGGU_DESAIN
+  MENUNGGU_NEGOSIASI
+  DISEPAKATI
+}
 
 enum PosisiNormal {
   DEBET

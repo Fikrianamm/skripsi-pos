@@ -102,8 +102,29 @@ export async function GET(req: NextRequest) {
             select: { id: true, nama: true, nomorHp: true },
           },
           items: {
-            select: { nama: true, qty: true, product: { select: { sku: true } } },
-            take: 5,
+            select: {
+              id: true,
+              nama: true,
+              qty: true,
+              statusHarga: true,
+              product: { select: { id: true, sku: true, isService: true } },
+              kebutuhanBahanCustom: {
+                select: {
+                  id: true,
+                  bahanBakuId: true,
+                  jumlahDibutuhkan: true,
+                  satuan: true,
+                  bahanBaku: {
+                    select: {
+                      id: true,
+                      nama: true,
+                      stok: true,
+                      unit: { select: { nama: true } },
+                    },
+                  },
+                },
+              },
+            },
           },
           spk: {
             select: { id: true },

@@ -1,0 +1,3 @@
+- Page-level components are co-located with feature-specific sub-components in a `components` directory within each route segment.
+- Form validations and data schemas are centralized using Zod in `src/lib/schemas` or local `schema.ts` files.
+- Database interactions are abstracted through a singleton Prisma client instance exported from `src/lib/prisma.ts`.

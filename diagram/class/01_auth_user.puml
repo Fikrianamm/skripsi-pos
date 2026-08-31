@@ -1,0 +1,105 @@
+@startuml class_diagram_auth_user
+title Class Diagram — Autentikasi & Manajemen Pengguna
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #4A90D9
+  HeaderBackgroundColor #4A90D9
+  HeaderFontColor White
+  FontName Segoe UI
+  FontSize 11
+  HeaderFontSize 12
+  StereotypeFontSize 0
+  AttributeFontSize 10
+  ArrowColor #666666
+}
+
+skinparam package {
+  BackgroundColor #EEF3FC
+  BorderColor #4A90D9
+  FontSize 13
+  FontStyle bold
+  RoundCorner 10
+}
+
+package "Autentikasi" {
+  class "user" as User {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    name : Text
+    email : String (unique)
+    emailVerified : Boolean
+    image : Text?
+    role : Text?
+    banned : Boolean?
+    banExpires : DateTime?
+    banReason : Text?
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "session" as Session {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    expiresAt : DateTime
+    token : String (unique)
+    ipAddress : Text?
+    userAgent : Text?
+    *userId : String
+    impersonatedBy : Text?
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "account" as Account {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    accountId : Text
+    providerId : Text
+    *userId : String
+    accessToken : Text?
+    refreshToken : Text?
+    idToken : Text?
+    accessTokenExpiresAt : DateTime?
+    refreshTokenExpiresAt : DateTime?
+    scope : Text?
+    password : Text?
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "verification" as Verification {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    identifier : Text
+    value : Text
+    expiresAt : DateTime
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Notifikasi" {
+  class "notification" as Notification {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *userId : String
+    title : VarChar(100)
+    message : Text
+    jenis : Enum(JenisNotif)
+    isRead : Boolean
+    linkUrl : Text?
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+User "1" -- "0..*" Session : userId
+User "1" -- "0..*" Account : userId
+User "1" -- "0..*" Notification : userId
+
+@enduml

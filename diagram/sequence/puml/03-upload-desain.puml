@@ -1,0 +1,83 @@
+@startuml upload_desain
+title Sequence Diagram — Upload Desain oleh Desainer
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceArrowColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceDividerBackgroundColor Black
+skinparam sequenceDividerFontColor White
+skinparam sequenceGroupBackgroundColor White
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceGroupFontColor Black
+skinparam sequenceNoteBackgroundColor White
+skinparam sequenceNoteBorderColor Black
+
+actor "Desainer" as desainer
+boundary "Aplikasi Web" as app
+control "Server" as server
+database "Penyimpanan File" as storage
+entity "order" as tbl_order
+entity "design_file" as tbl_design
+entity "notification" as tbl_notif
+
+== Antrean Desain ==
+
+desainer -> app : Buka halaman antrean desain
+app -> server : Minta daftar pesanan berstatus DESAIN
+
+server -> tbl_order : Ambil pesanan dengan statusProduksi = DESAIN
+tbl_order --> server : Daftar antrean desain
+
+server --> app : Tampilkan antrean desain
+app --> desainer : Daftar pesanan yang perlu didesain
+
+== Pengambilan Antrean ==
+
+desainer -> app : Pilih pesanan, klik "Ambil Antrean"
+app -> server : Tetapkan desainer ke pesanan
+
+server -> tbl_order : Update designerId = id desainer saat ini
+tbl_order --> server : Pesanan berhasil di-assign
+
+== Upload Desain ==
+
+desainer -> app : Upload file desain (gambar/vektor)
+app -> server : Kirim file desain beserta orderId
+
+server -> storage : Upload file ke penyimpanan
+storage --> server : URL / path file tersimpan
+
+server -> tbl_design : Simpan record file desain\n(orderId, nama, filePath, uploadedById)
+tbl_design --> server : Data desain tersimpan
+
+server -> tbl_order : Update designReviewStatus = PENDING_REVIEW
+tbl_order --> server : Status review diperbarui
+
+== Notifikasi ==
+
+server -> tbl_notif : Buat notifikasi untuk Admin\nbahwa desain siap di-review
+tbl_notif --> server : Notifikasi tersimpan
+
+server --> app : File desain berhasil diunggah
+app --> desainer : Tampilkan konfirmasi upload
+
+== Review Desain oleh Admin ==
+
+note over desainer, tbl_notif
+  Admin kemudian melakukan review desain
+  melalui halaman terpisah
+end note
+
+alt Admin ACC desain
+  server -> tbl_order : Update isDesignFinal = true,\ndesignReviewStatus = ACC
+  tbl_order --> server : Status diperbarui
+  server -> tbl_notif : Buat notifikasi untuk Produksi\nbahwa desain selesai
+  tbl_notif --> server : Notifikasi tersimpan
+else Admin minta REVISI
+  server -> tbl_order : Update designReviewStatus = REVISI
+  tbl_order --> server : Status diperbarui
+  server -> tbl_notif : Buat notifikasi untuk Desainer\nagar merevisi desain
+  tbl_notif --> server : Notifikasi tersimpan
+end
+
+@enduml

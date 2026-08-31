@@ -1,0 +1,15 @@
+flowchart TD
+    
+
+    %% 2A. ALUR PRODUK STANDAR (HANYA GANTI GAMBAR)
+    A((A)) --- PembuatanSPK[Lanjut ke pembuatan SPK]
+    PembuatanSPK --> disepakati{Semua item</br>sudah disepakati?}:::decision
+    disepakati -- "Tidak" --> tsepakat[/Tampilkan pembuatan</br>SPK ditolak/]
+    disepakati -- "Ya" --> sepakat[SPK dibuat ambil</br>kebutuhan bahan]
+    sepakat --> stkbhn{Stok bahan baku</br>mencukupi?}:::decision
+    stkbhn -- "Tidak" --> pesankurang[/Sistem tampilkan</br>bahan baku kurang/]
+    stkbhn -- "Ya" --> pesancukup[Stok terpotong otomatis</br>status: Produksi]
+    pesancukup --> packing[Status: Packing]
+    packing --> selesai[Status: Selesai]
+    selesai --> finish([Selesai]):::startEnd
+    

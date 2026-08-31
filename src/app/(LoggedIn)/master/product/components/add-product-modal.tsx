@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import {
@@ -8,9 +9,9 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/modal";
-import { PackagePlus, ImagePlus, X } from "lucide-react";
+import { PackagePlus, ImagePlus, X, Plus, Trash2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { CreateProductFormData, createProductSchema } from "@/lib/schemas";
 import { useRef, useState } from "react";
 import { Alert } from "@heroui/alert";
@@ -46,20 +47,37 @@ export default function AddProductModal({
       minStok: 0,
       isService: false,
       image: "",
+      bahanBakuList: [],
     },
   });
 
-  const { data: categoryData } = useSWR(`/api/category?limit=100`, fetcher);
+  const {
+    fields: bomFields,
+    append: appendBom,
+    remove: removeBom,
+  } = useFieldArray({
+    control: form.control,
+    name: "bahanBakuList",
+  });
+
+  const { data: categoryData } = useSWR(`/api/category`, fetcher);
   const categories = categoryData?.results ?? [];
 
-  const { data: unitData } = useSWR(`/api/unit?limit=100`, fetcher);
+  const { data: unitData } = useSWR(`/api/unit`, fetcher);
   const units = unitData?.results ?? [];
+
+  const { data: bbData } = useSWR(`/api/admin/bahan-baku`, fetcher);
+  const bahanBakus = bbData?.results ?? [];
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      addToast({ title: "File terlalu besar", description: "Maksimal 5MB", color: "danger" });
+      addToast({
+        title: "File terlalu besar",
+        description: "Maksimal 5MB",
+        color: "danger",
+      });
       return;
     }
     setImageFile(file);
@@ -86,6 +104,7 @@ export default function AddProductModal({
       minStok: 0,
       isService: false,
       image: "",
+      bahanBakuList: [],
     });
     setImagePreview("");
     setImageFile(null);
@@ -103,7 +122,10 @@ export default function AddProductModal({
         const formData = new FormData();
         formData.append("file", imageFile);
         formData.append("folder", "products");
-        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
         if (!uploadRes.ok) {
           const err = await uploadRes.json();
           setGlobalError(err.error || "Gagal mengunggah gambar.");
@@ -153,7 +175,7 @@ export default function AddProductModal({
         isOpen={isOpen}
         placement="bottom-center"
         scrollBehavior="inside"
-        size="lg"
+        size="xl"
         onOpenChange={(open) => {
           onOpenChange();
           if (!open) resetForm();
@@ -162,6 +184,7 @@ export default function AddProductModal({
         <ModalContent>
           {(onClose) => (
             <form
+              className="contents"
               noValidate
               onSubmit={form.handleSubmit((data) => onSubmit(data, onClose))}
             >
@@ -175,7 +198,7 @@ export default function AddProductModal({
               <ModalBody>
                 {globalError && <Alert color="danger" title={globalError} />}
 
-                <div className="grid gap-4">
+                <div className="grid gap-4 grid-cols-2">
                   {/* ── Image + Nama side by side ── */}
                   <div className="flex gap-3 items-start">
                     {/* Image picker */}
@@ -399,6 +422,127 @@ export default function AddProductModal({
                       </Switch>
                     )}
                   />
+                  {/* Resep BOM (Bahan Baku) - Hanya muncul jika BUKAN Jasa */}
+                  {!form.watch("isService") && (
+                    <div className="flex flex-col gap-2 mt-2 border border-default-200 rounded-md p-3 bg-default-50/50 col-span-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-semibold">
+                          Resep Bahan Baku (BOM)
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="primary"
+                          onPress={() =>
+                            appendBom({ bahanBakuId: "", jumlahButuh: 0 })
+                          }
+                          startContent={<Plus size={14} />}
+                        >
+                          Tambah Bahan
+                        </Button>
+                      </div>
+
+                      {bomFields.length === 0 ? (
+                        <p className="text-xs text-default-400 text-center py-2">
+                          Tidak ada bahan baku yang diatur. Otomatisasi
+                          pemotongan bahan baku tidak akan berjalan untuk produk
+                          ini.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          {bomFields.map((field, index) => (
+                            <div
+                              key={field.id}
+                              className="flex gap-2 items-start"
+                            >
+                              <div className="flex-1">
+                                <Controller
+                                  name={`bahanBakuList.${index}.bahanBakuId`}
+                                  control={form.control}
+                                  render={({ field: bbField }) => (
+                                    <Select
+                                      aria-label="Pilih bahan baku"
+                                      placeholder="Pilih Bahan Baku"
+                                      size="sm"
+                                      isRequired
+                                      selectedKeys={
+                                        bbField.value ? [bbField.value] : []
+                                      }
+                                      onSelectionChange={(keys) =>
+                                        bbField.onChange(
+                                          Array.from(keys)[0] as string,
+                                        )
+                                      }
+                                      isInvalid={
+                                        !!form.formState.errors.bahanBakuList?.[
+                                          index
+                                        ]?.bahanBakuId
+                                      }
+                                      errorMessage={
+                                        form.formState.errors.bahanBakuList?.[
+                                          index
+                                        ]?.bahanBakuId?.message
+                                      }
+                                    >
+                                      {bahanBakus.map((b: any) => (
+                                        <SelectItem
+                                          key={b.id}
+                                          textValue={`${b.nama} (${b.unit?.nama || "-"})`}
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <span>{b.nama}</span>
+                                            <span className="text-xs text-default-400">
+                                              {b.unit?.nama}
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </Select>
+                                  )}
+                                />
+                              </div>
+                              <div className="w-[120px]">
+                                <Controller
+                                  name={`bahanBakuList.${index}.jumlahButuh`}
+                                  control={form.control}
+                                  render={({ field: qtyField }) => (
+                                    <FormattedNumberInput
+                                      aria-label="Jumlah butuh"
+                                      placeholder="Jumlah"
+                                      size="sm"
+                                      isRequired
+                                      value={qtyField.value}
+                                      onChange={qtyField.onChange}
+                                      onBlur={qtyField.onBlur}
+                                      isInvalid={
+                                        !!form.formState.errors.bahanBakuList?.[
+                                          index
+                                        ]?.jumlahButuh
+                                      }
+                                      errorMessage={
+                                        form.formState.errors.bahanBakuList?.[
+                                          index
+                                        ]?.jumlahButuh?.message
+                                      }
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <Button
+                                isIconOnly
+                                color="danger"
+                                variant="light"
+                                size="sm"
+                                onPress={() => removeBom(index)}
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </ModalBody>
 

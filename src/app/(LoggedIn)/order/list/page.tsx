@@ -5,8 +5,8 @@ import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { fetcher } from "@/lib/func";
 import { PageHeader } from "@/components/page-header";
-import { Spinner, Divider } from "@heroui/react";
-import { ShoppingBag } from "lucide-react";
+import { Spinner, Divider, Chip } from "@heroui/react";
+import { ShoppingBag, AlertCircle } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { OrderRow } from "../components/types";
 import { OrderToolbar } from "./components/order-toolbar";
@@ -42,14 +42,28 @@ export default function Page() {
     { keepPreviousData: true },
   );
 
+  // Fetch orders waiting for price approval (MENUNGGU_NEGOSIASI) — separate, no pagination
+  const canSeeApproval = userRole === "kasir" || userRole === "admin" || userRole === "administrator";
+  const { data: pendingPriceData, mutate: mutatePending } = useSWR(
+    canSeeApproval ? `/api/order?statusHarga=MENUNGGU_NEGOSIASI&limit=50&page=1` : null,
+    fetcher,
+    { keepPreviousData: true },
+  );
+
   const orders: OrderRow[] = data?.results ?? [];
   const totalPages: number = data?.totalPages ?? 1;
   const totalCount: number = data?.count ?? 0;
+  const pendingPriceOrders: OrderRow[] = pendingPriceData?.results ?? [];
 
   const hasFilters = !!(search || filterStatusProduksi || filterStatusBayar);
 
   function resetPage() {
     setPage(1);
+  }
+
+  function handleMutateAll() {
+    mutate();
+    mutatePending();
   }
 
   return (
@@ -80,10 +94,41 @@ export default function Page() {
           setSortBy(v);
           resetPage();
         }}
-        onRefresh={() => mutate()}
+        onRefresh={() => handleMutateAll()}
         onCreateOrder={() => router.push("/order/pos")}
         showCreateOrder={userRole === "kasir" || userRole === "admin" || userRole === "administrator"}
       />
+
+      {/* ── Section: Menunggu Persetujuan Harga ── */}
+      {canSeeApproval && pendingPriceOrders.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-warning-700 bg-warning-50 border border-warning-200 rounded-lg px-3 py-1.5">
+              <AlertCircle size={15} className="shrink-0" />
+              <span className="text-xs font-semibold">Menunggu Persetujuan Harga</span>
+              <Chip size="sm" color="warning" variant="flat" className="h-4 text-[10px] px-1">
+                {pendingPriceOrders.length}
+              </Chip>
+            </div>
+            <Divider className="flex-1" />
+          </div>
+          <p className="text-xs text-default-500 -mt-1">
+            Pesanan custom berikut memiliki item yang bahan bakunya sudah ditentukan desainer dan menunggu kesepakatan harga dengan customer.
+          </p>
+          <div className="flex flex-col gap-3">
+            {pendingPriceOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onNavigate={() => router.push(`/order/${order.id}`)}
+                onStatusUpdated={() => handleMutateAll()}
+                userRole={userRole}
+              />
+            ))}
+          </div>
+          <Divider />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex flex-col gap-2 justify-center items-center py-24">
@@ -115,7 +160,7 @@ export default function Page() {
                 key={order.id}
                 order={order}
                 onNavigate={() => router.push(`/order/${order.id}`)}
-                onStatusUpdated={() => mutate()}
+                onStatusUpdated={() => handleMutateAll()}
                 userRole={userRole}
               />
             ))}

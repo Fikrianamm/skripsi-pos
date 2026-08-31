@@ -1,0 +1,57 @@
+// ============================================================
+// Modul Autentikasi & Pengguna
+// ============================================================
+
+Table user {
+  id varchar [pk]
+  name text [not null]
+  email varchar [unique, not null]
+  emailVerified boolean [default: false]
+  image text
+  role text
+  banned boolean [default: false]
+  banReason text
+  banExpires datetime
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}
+
+Table session {
+  id varchar [pk]
+  token varchar [unique, not null]
+  expiresAt datetime [not null]
+  ipAddress text
+  userAgent text
+  userId varchar [not null, ref: > user.id]
+  impersonatedBy text
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}
+
+Table account {
+  id varchar [pk]
+  providerId text [not null]
+  accountId text [not null]
+  password text
+  accessToken text
+  refreshToken text
+  userId varchar [not null, ref: > user.id]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}
+
+Table notification {
+  id varchar [pk]
+  userId varchar [not null, ref: > user.id]
+  title varchar(100) [not null]
+  message text [not null]
+  jenis varchar [not null]
+  isRead boolean [default: false]
+  linkUrl text
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}

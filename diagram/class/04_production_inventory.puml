@@ -1,0 +1,128 @@
+@startuml class_diagram_production_inventory
+title Class Diagram — Produksi & Inventori
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #4A90D9
+  HeaderBackgroundColor #4A90D9
+  HeaderFontColor White
+  FontName Segoe UI
+  FontSize 11
+  HeaderFontSize 12
+  StereotypeFontSize 0
+  AttributeFontSize 10
+  ArrowColor #666666
+}
+
+skinparam package {
+  BackgroundColor #EEF3FC
+  BorderColor #4A90D9
+  FontSize 13
+  FontStyle bold
+  RoundCorner 10
+}
+
+package "Produksi (SPK)" {
+  class "spk" as SPK {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    orderId : String (unique)
+    nomorSpk : VarChar(50)?
+    *karyawanId : String
+    userId : String?
+    tahapProduksi : Enum(StatusProduksi)
+    model : Text?
+    tali : Text?
+    ukuran : Text?
+    jumlah : Decimal(10,2)
+    catatan : Text?
+    tanggalSetor : DateTime?
+    accCetak : Boolean
+    accCetakAt : DateTime?
+    accCetakOleh : Text?
+    statusSPK : Enum(StatusSPK)
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+}
+
+package "Bahan Baku" {
+  class "bahan_baku" as BahanBaku {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *unitId : String
+    nama : Text
+    stok : Decimal(10,2)
+    minStok : Decimal(10,2)?
+    keterangan : Text?
+    isActive : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Penerimaan Barang (Stok Masuk)" {
+  class "penerimaan_barang" as PenerimaanBarang {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    nomorFaktur : VarChar(100)?
+    supplierId : String?
+    tanggal : DateTime
+    keterangan : Text?
+    buktiNota : Text?
+    totalTagihan : Decimal(12,2)
+    addedById : String?
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+
+  class "stok_masuk" as StokMasuk {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *penerimaanId : String
+    *bahanBakuId : String
+    jumlah : Decimal(10,2)
+    hargaBeli : Decimal(10,2)?
+    totalHargaItem : Decimal(12,2)?
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Pengeluaran Barang (Stok Keluar)" {
+  class "pengeluaran_barang" as PengeluaranBarang {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    spkId : String?
+    tanggal : DateTime
+    keterangan : Text?
+    addedById : String?
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+
+  class "stok_keluar" as StokKeluar {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *pengeluaranId : String
+    *bahanBakuId : String
+    jumlah : Decimal(10,2)
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+PenerimaanBarang "1" -- "0..*" StokMasuk : penerimaanId
+BahanBaku "1" -- "0..*" StokMasuk : bahanBakuId
+PengeluaranBarang "1" -- "0..*" StokKeluar : pengeluaranId
+BahanBaku "1" -- "0..*" StokKeluar : bahanBakuId
+SPK "1" -- "0..*" PengeluaranBarang : spkId
+
+@enduml

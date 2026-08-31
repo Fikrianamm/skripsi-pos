@@ -1,0 +1,18 @@
+schema_version: 1
+module_path: frontend_style
+title: Hybrid Component Library with Tailwind v4 and OKLCH Design Tokens
+scope: []
+source_files:
+    - tailwind.config.js
+    - src/app/globals.css
+    - components.json
+    - postcss.config.mjs
+    - package.json
+    - src/lib/utils.ts
+    - src/app/providers.tsx
+    - src/app/layout.tsx
+    - src/app/(LoggedIn)/layout.tsx
+    - src/components/ui/button.tsx
+    - src/components/ui/input.tsx
+depends_on: []
+related_to: []

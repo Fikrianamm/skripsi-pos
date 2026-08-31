@@ -214,7 +214,7 @@ export async function seedProduct() {
         hargaJual,
         stok,
         minStok,
-        isService: true,
+        isService: false,
         image: "",
       },
     });

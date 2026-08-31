@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
         { status: 401 },
       );
 
-    if (!["admin", "gudang"].includes(session.user.role || ""))
+    const ALLOWED = ["admin", "gudang", "designer", "kasir", "produksi"];
+    if (!ALLOWED.includes(session.user.role || ""))
       return NextResponse.json(
         { error: "Forbidden. Anda tidak memiliki akses." },
         { status: 403 },

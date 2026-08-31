@@ -242,6 +242,14 @@ export function UpdateStatusModal({
                       </span>
                     </div>
                   )}
+                  {selectedProduksi === "PRODUKSI" && (
+                    <div className="flex items-start gap-2 rounded-lg bg-warning-50 border border-warning-200 px-3 py-2 text-xs text-warning-700">
+                      <ClipboardList size={13} className="mt-0.5 shrink-0" />
+                      <span>
+                        Sistem akan <strong>otomatis memotong stok bahan baku</strong> berdasarkan Resep/BOM (Bill of Materials) produk pada pesanan ini setelah berubah ke Produksi.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <Divider />

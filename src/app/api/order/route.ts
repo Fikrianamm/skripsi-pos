@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
     const statusPembayaran = searchParams.get("statusPembayaran") || "";
     const customerId = searchParams.get("customerId") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
+    const statusHargaFilter = searchParams.get("statusHarga") || "";
     const skip = (page - 1) * limit;
 
     const where: Record<string, any> = {
@@ -81,6 +82,14 @@ export async function GET(request: NextRequest) {
     if (statusProduksi) where.statusProduksi = statusProduksi;
     if (statusPembayaran) where.statusPembayaran = statusPembayaran;
     if (customerId) where.customerId = customerId;
+    if (statusHargaFilter) {
+      where.items = {
+        some: {
+          statusHarga: statusHargaFilter,
+          deletedAt: null,
+        },
+      };
+    }
 
     // Sort: deadline asc nulls-last, or createdAt desc (default)
     const orderBy =
@@ -116,7 +125,10 @@ export async function GET(request: NextRequest) {
           },
           _count: { select: { items: true, designFiles: true } },
           spk: { select: { id: true } },
-          items: { select: { nama: true, qty: true }, take: 5 },
+          items: {
+            select: { nama: true, qty: true, statusHarga: true },
+            take: 10,
+          },
         },
       }),
       prisma.order.count({ where }),
@@ -219,7 +231,7 @@ export async function POST(request: NextRequest) {
     );
     const existingProducts = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true },
+      select: { id: true, isService: true },
     });
     if (existingProducts.length !== productIds.length) {
       return NextResponse.json(
@@ -227,6 +239,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    const productMap = new Map(existingProducts.map((p) => [p.id, p]));
 
     // Validasi stok produk (Fitur #3)
     for (const item of items) {
@@ -288,17 +301,26 @@ export async function POST(request: NextRequest) {
               (item: {
                 productId: string;
                 nama: string;
-                harga: number;
+                harga?: number;
                 qty: number;
-                subtotal: number;
-              }) => ({
-                id: crypto.randomUUID(),
-                productId: item.productId,
-                nama: item.nama,
-                harga: item.harga,
-                qty: item.qty,
-                subtotal: item.subtotal,
-              }),
+                subtotal?: number;
+              }) => {
+                const prod = productMap.get(item.productId);
+                const isService = prod?.isService ?? false;
+                const statusHarga = isService ? "MENUNGGU_DESAIN" : "NA";
+                const itemHarga = item.harga ? Number(item.harga) : 0;
+                const itemSubtotal = item.subtotal ? Number(item.subtotal) : (itemHarga * Number(item.qty));
+
+                return {
+                  id: crypto.randomUUID(),
+                  productId: item.productId,
+                  nama: item.nama,
+                  harga: itemHarga,
+                  qty: item.qty,
+                  subtotal: itemSubtotal,
+                  statusHarga: statusHarga as any,
+                };
+              },
             ),
           },
         },
@@ -330,8 +352,11 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 2. Jurnal Piutang Usaha saat pesanan dibuat (berlaku semua status)
+      // 2. Jurnal Piutang Usaha saat pesanan dibuat (hanya jika nominal > 0 dan bukan custom item tanpa harga)
       //    Debet = Piutang Usaha (1-003), Kredit = Pendapatan (Default from Settings or 4-001)
+      const hasCustomItems = existingProducts.some((p) => p.isService);
+      const grandTotalNum = Number(grandTotal || 0);
+
       const piutangAkun = await tx.akun.findUnique({
         where: { kodeAkun: "1-003" },
       });
@@ -341,7 +366,7 @@ export async function POST(request: NextRequest) {
           })
         : await tx.akun.findUnique({ where: { kodeAkun: "4-001" } });
 
-      if (piutangAkun && pendapatanAkun) {
+      if (!hasCustomItems && grandTotalNum > 0 && piutangAkun && pendapatanAkun) {
         await createJurnalDoubleEntry(
           {
             ref: `${nomorOrder.slice(0, 10)}`, // Using order number as ref part
@@ -350,7 +375,7 @@ export async function POST(request: NextRequest) {
             namaBiaya: `Piutang Order #${nomorOrder}`,
             akunDebetId: piutangAkun.id,
             akunKreditId: pendapatanAkun.id,
-            nominal: Number(grandTotal),
+            nominal: grandTotalNum,
             createdById: session.user.id,
           },
           tx as any,

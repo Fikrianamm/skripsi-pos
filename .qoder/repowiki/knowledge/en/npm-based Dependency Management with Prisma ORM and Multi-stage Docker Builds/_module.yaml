@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: dependency_management
+title: npm-based Dependency Management with Prisma ORM and Multi-stage Docker Builds
+scope: []
+source_files:
+    - package.json
+    - package-lock.json
+    - prisma/schema.prisma
+    - next.config.ts
+    - tsconfig.json
+    - Dockerfile
+    - .github/workflows/ci.yml
+    - docker-compose.yaml
+    - prisma.config.ts
+depends_on: []
+related_to: []

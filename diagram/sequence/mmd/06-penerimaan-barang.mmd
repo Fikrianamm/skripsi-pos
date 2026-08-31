@@ -1,0 +1,77 @@
+sequenceDiagram
+    actor Gudang
+    participant Website@{ "type" : "boundary" }
+    participant Server@{ "type" : "control" }
+    participant Storage@{ "type" : "database" }
+    participant supplier@{ "type" : "database" }
+    participant bahan_baku@{ "type" : "database" }
+    participant penerimaan_barang@{ "type" : "database" }
+    participant stok_masuk@{ "type" : "database" }
+    participant jurnal_umum@{ "type" : "database" }
+    participant notification@{ "type" : "database" }
+
+    Gudang->>Website: Buka form penerimaan barang
+    Website->>Server: Minta daftar supplier & bahan baku
+
+    Server->>supplier: Ambil daftar supplier aktif
+    supplier-->>Server: Daftar supplier
+
+    Server->>bahan_baku: Ambil daftar bahan baku
+    bahan_baku-->>Server: Daftar bahan baku
+
+    Server-->>Website: Tampilkan form (supplier, bahan baku, stok)
+    Website-->>Gudang: Form siap diisi
+
+    Gudang->>Website: Isi form (supplier, item bahan baku, jumlah, harga, nomor faktur, upload nota)
+    Website->>Server: Kirim data penerimaan barang
+
+    Server->>supplier: Validasi supplier yang dipilih
+    supplier-->>Server: Data supplier valid
+
+    alt Supplier tidak ditemukan
+        Server-->>Website: Tolak — Supplier tidak valid
+    end
+
+    alt Ada file bukti nota
+        Server->>Storage: Upload foto/scan nota
+        Storage-->>Server: URL / path file tersimpan
+    end
+
+    Server->>penerimaan_barang: Simpan data penerimaan barang\n(supplierId, nomorFaktur, tanggal, buktiNota, totalTagihan)
+    penerimaan_barang-->>Server: ID penerimaan baru
+
+    loop Setiap bahan baku yang diterima
+        Server->>stok_masuk: Insert record stok masuk\n(penerimaanId, bahanBakuId, jumlah, hargaBeli)
+        stok_masuk-->>Server: Record tersimpan
+        Server->>bahan_baku: Tambah stok bahan baku\n(stok = stok + jumlah)
+        bahan_baku-->>Server: Stok berhasil ditambah
+    end
+
+    Note over Server,bahan_baku: Penerimaan + stok masuk + update stok\ndisimpan dalam satu transaksi
+
+    alt Ada nilai tagihan (totalTagihan > 0)
+        Server->>bahan_baku: Ambil akun persediaan (debet) dari pengaturan
+        bahan_baku-->>Server: Data akun persediaan
+        Server->>jurnal_umum: Ambil akun hutang usaha (kredit)
+        jurnal_umum-->>Server: Data akun hutang
+
+        Server->>jurnal_umum: Catat jurnal otomatis\n(Debet: Persediaan, Kredit: Hutang Usaha)
+        jurnal_umum-->>Server: Jurnal tersimpan
+
+        Note over Server,jurnal_umum: Jurnal double-entry:\nPersediaan bertambah, Hutang Usaha bertambah
+    end
+
+    Server->>notification: Buat notifikasi PENERIMAAN_BARU\nuntuk Admin dan Gudang
+    notification-->>Server: Notifikasi tersimpan
+
+    loop Setiap bahan baku yang diterima
+        Server->>bahan_baku: Cek apakah stok masih di bawah minStok
+        bahan_baku-->>Server: Status stok
+        alt Stok masih di bawah batas minimum
+            Server->>notification: Buat notifikasi STOK_MENIPIS\nuntuk Admin dan Gudang
+            notification-->>Server: Notifikasi tersimpan
+        end
+    end
+
+    Server-->>Website: Penerimaan barang berhasil dicatat
+    Website-->>Gudang: Tampilkan konfirmasi penerimaan

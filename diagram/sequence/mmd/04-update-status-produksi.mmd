@@ -1,0 +1,49 @@
+sequenceDiagram
+    actor Produksi
+    participant Website@{ "type" : "boundary" }
+    participant Server@{ "type" : "control" }
+    participant spk@{ "type" : "database" }
+    participant order@{ "type" : "database" }
+    participant product@{ "type" : "database" }
+    participant bahan_baku@{ "type" : "database" }
+    participant pengeluaran_barang@{ "type" : "database" }
+
+    Produksi->>Website: Buka daftar SPK produksi
+    Website->>Server: Minta daftar SPK <br/>beserta data pesanan
+
+    Server->>spk: Ambil daftar SPK <br/>beserta relasi order & karyawan
+    spk-->>Server: Data SPK + <br/>detail pesanan + nama karyawan
+
+    Server-->>Website: Tampilkan daftar SPK
+    Website-->>Produksi: Tabel SPK dengan status saat ini
+
+    Produksi->>Website: Pilih SPK, <br/>ubah status
+    Website->>Server: Kirim perubahan status SPK
+
+    Server->>spk: update status SPK berdasarkan orderId
+
+    alt Jika Status diubah menjadi PRODUKSI 
+        Server -->> product: ambil product & resep bahan baku pesanan 
+        Server -->> bahan_baku: cek ketersediaan stok bahan baku
+        alt Stok bahan baku tidak mencukupi
+            bahan_baku -->> Server: Tolak perubahan status,<br/>tampilkan pesan error
+        end
+        Server -->> bahan_baku: kurangi stok
+        bahan_baku -->> Server: stok diperbarui
+        Server -->> pengeluaran_barang: entri barang keluar otomatis
+        pengeluaran_barang -->> Server: Data tersimpan
+    end
+
+    Server->>spk: Update tahapProduksi <br/>dan statusSPK
+    spk-->>Server: Perubahan tersimpan
+
+    Server->>order: Sinkronkan statusProduksi<br/>sesuai tahapProduksi SPK
+    order-->>Server: Status pesanan diperbarui
+    
+    alt SPK ditandai SELESAI
+        Server->>order: Update statusProduksi = PACKING
+        order-->>Server: Status diperbarui
+    end
+
+    Server-->>Website: Status SPK berhasil diperbarui
+    Website-->>Produksi: Tampilkan status SPK & pesanan terbaru

@@ -1,0 +1,82 @@
+// ============================================================
+// Modul Keuangan & Akuntansi
+// ============================================================
+
+// --- Cross-module references (defined in other DBML files) ---
+Table user { id varchar [pk] }
+Table order { id varchar [pk] }
+Table penerimaan_barang { id varchar [pk] }
+
+Table payment {
+  id varchar [pk]
+  orderId varchar [not null, ref: > order.id]
+  userId varchar [ref: > user.id]
+  nominal decimal(12,2) [not null]
+  metodePembayaran varchar
+  keterangan text
+  tanggal datetime [default: `now()`]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+}
+
+Table akun {
+  id varchar [pk]
+  kodeAkun varchar(20) [unique, not null]
+  namaAkun text [not null]
+  kelompok varchar [not null]
+  posisiNormal varchar [not null]
+  isActive boolean [default: true]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}
+
+Table jurnal_umum {
+  id varchar [pk]
+  ref varchar(30) [not null]
+  tanggal datetime [not null]
+  keterangan text
+  namaBiaya text [not null]
+  buktiNota text
+  akunDebetId varchar [not null, ref: > akun.id]
+  akunKreditId varchar [not null, ref: > akun.id]
+  nominal decimal(12,2) [not null]
+  paymentId varchar [ref: > payment.id]
+  penerimaanId varchar [ref: > penerimaan_barang.id]
+  createdById varchar [ref: > user.id]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+}
+
+Table kas_bank {
+  id varchar [pk]
+  namaRekening text [not null]
+  jenisRekening varchar(20) [not null]
+  nomorRekening varchar(50)
+  akunId varchar [ref: > akun.id]
+  isActive boolean [default: true]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}
+
+Table app_setting {
+  id int [pk, default: 1]
+  namaPerusahaan varchar(100) [default: 'CV. Haqi Koleksi']
+  logoUrl text
+  alamat text
+  nomorKontak varchar(50)
+  email varchar(100)
+  prefixOrder varchar(20) [default: 'INV-HQ-']
+  prefixSpk varchar(20) [default: 'SPK-']
+  estimasiHariPengerjaan int [default: 14]
+  defaultPendapatanAkunId varchar [ref: > akun.id]
+  invoiceRekeningIds text
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+}

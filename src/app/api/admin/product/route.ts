@@ -82,6 +82,16 @@ export async function GET(request: NextRequest) {
             },
             select: { qty: true },
           },
+          bahanBakuList: {
+            select: {
+              id: true,
+              bahanBakuId: true,
+              jumlahButuh: true,
+              bahanBaku: {
+                select: { id: true, nama: true, unit: { select: { nama: true } } }
+              }
+            }
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -148,6 +158,7 @@ export async function POST(request: NextRequest) {
       isService,
       categoryId,
       unitId,
+      bahanBakuList, // array of { bahanBakuId, jumlahButuh }
     } = body;
 
     const missingFields: string[] = [];
@@ -156,8 +167,8 @@ export async function POST(request: NextRequest) {
     if (!nama) missingFields.push("nama");
     if (hpp === undefined || hpp === null || hpp === "")
       missingFields.push("hpp");
-    if (hargaJual === undefined || hargaJual === null || hargaJual === "")
-      missingFields.push("hargaJual");
+    // if (hargaJual === undefined || hargaJual === null || hargaJual === "")
+    //   missingFields.push("hargaJual");
     // stok dan minStok bersifat opsional (nullable di schema)
     if (isService === undefined || isService === null)
       missingFields.push("isService");
@@ -216,8 +227,8 @@ export async function POST(request: NextRequest) {
         sku,
         nama,
         image: image || null,
-        hpp: parseFloat(hpp),
-        hargaJual: parseFloat(hargaJual),
+        hpp: hpp ? parseFloat(hpp) : 0,
+        hargaJual: hargaJual !== undefined && hargaJual !== null && hargaJual !== "" ? parseFloat(hargaJual) : 0,
         stok:
           stok !== undefined && stok !== null && stok !== ""
             ? parseFloat(stok)
@@ -229,6 +240,12 @@ export async function POST(request: NextRequest) {
         isService: Boolean(isService),
         categoryId,
         unitId,
+        bahanBakuList: bahanBakuList && Array.isArray(bahanBakuList) && bahanBakuList.length > 0 ? {
+          create: bahanBakuList.map((item: any) => ({
+            bahanBakuId: item.bahanBakuId,
+            jumlahButuh: typeof item.jumlahButuh === 'string' ? parseFloat(item.jumlahButuh) : item.jumlahButuh,
+          }))
+        } : undefined,
       },
       select: {
         id: true,
@@ -246,6 +263,16 @@ export async function POST(request: NextRequest) {
         },
         unit: {
           select: { id: true, nama: true },
+        },
+        bahanBakuList: {
+          select: {
+            id: true,
+            bahanBakuId: true,
+            jumlahButuh: true,
+            bahanBaku: {
+              select: { id: true, nama: true, unit: { select: { nama: true } } }
+            }
+          }
         },
       },
     });

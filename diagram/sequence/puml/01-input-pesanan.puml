@@ -1,0 +1,79 @@
+@startuml input_pesanan
+title Sequence Diagram — Input Pesanan Baru
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceArrowColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceDividerBackgroundColor Black
+skinparam sequenceDividerFontColor White
+skinparam sequenceGroupBackgroundColor White
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceGroupFontColor Black
+skinparam sequenceNoteBackgroundColor White
+skinparam sequenceNoteBorderColor Black
+
+actor "Kasir" as kasir
+boundary "Aplikasi Web" as app
+control "Server" as server
+entity "order" as tbl_order
+entity "order_item" as tbl_item
+entity "jurnal_umum" as tbl_jurnal
+entity "notification" as tbl_notif
+entity "app_setting" as tbl_setting
+
+== Pengambilan Data Awal ==
+
+kasir -> app : Buka form pesanan baru
+app -> server : Minta data customer, produk & pengaturan
+server -> tbl_order : Verifikasi sesi & peran pengguna
+tbl_order --> server : Data sesi valid (Kasir)
+server -> tbl_setting : Ambil prefix nomor order
+tbl_setting --> server : Prefix (misal "INV-HQ-")
+
+server --> app : Data customer, produk & prefix
+app --> kasir : Form siap diisi
+
+== Pengisian Pesanan ==
+
+kasir -> app : Pilih customer, tambah item produk & qty, pilih channel
+app -> server : Kirim data pesanan untuk diproses
+
+loop Setiap item produk
+  server -> tbl_order : Cek stok produk tersedia
+  tbl_order --> server : Nilai stok saat ini
+  alt Stok tidak mencukupi
+    server --> app : Tolak — Stok produk tidak cukup
+  end
+end
+
+server --> app : Kirim rincian grand total
+app --> kasir : Tampilkan ringkasan pesanan
+
+== Penyimpanan Pesanan ==
+
+kasir -> app : Klik "Simpan Pesanan"
+app -> server : Kirim data pesanan lengkap
+
+server -> tbl_order : Generate nomor order & simpan pesanan\n(customer, channel, grand total, status PENDING)
+tbl_order --> server : ID pesanan baru
+
+server -> tbl_item : Simpan seluruh item pesanan\n(produk, qty, harga, subtotal)
+tbl_item --> server : Item tersimpan
+
+server -> tbl_jurnal : Catat jurnal otomatis\n(Debet: Piutang/Kas, Kredit: Pendapatan)
+tbl_jurnal --> server : Jurnal tersimpan
+
+note over server, tbl_jurnal
+  Semua operasi dalam satu transaksi.
+  Jika salah satu gagal, semuanya dibatalkan.
+end note
+
+== Notifikasi ==
+
+server -> tbl_notif : Buat notifikasi ORDER_BARU\nuntuk Admin, Produksi, Desainer, Gudang
+tbl_notif --> server : Notifikasi tersimpan
+
+server --> app : Pesanan berhasil disimpan
+app --> kasir : Tampilkan daftar pesanan dengan entri baru
+
+@enduml

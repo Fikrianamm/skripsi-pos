@@ -1,0 +1,4 @@
+- Authentication: `better-auth` with Argon2 password hashing and custom RBAC plugins.
+- Database: MySQL via `@prisma/client` and `@prisma/adapter-mariadb`.
+- UI Framework: Next.js 16 with React 19, HeroUI components, and Tailwind CSS v4.
+- Real-time: Pusher for live notifications and status updates.

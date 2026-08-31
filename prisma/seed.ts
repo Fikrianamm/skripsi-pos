@@ -21,7 +21,7 @@ async function main() {
     {
       id: "AR9sCq9NcZ0aXaag9SWAJRnGfgKFHxMB",
       name: "Raya",
-      email: "raya@gmail.com",
+      email: "desainer@gmail.com",
       image: "/assets/avatar/female/94.png",
       role: "designer",
       banned: false,
@@ -30,7 +30,7 @@ async function main() {
     {
       id: "uRIFE34uCYKNh0awQOvlB5XL1CoJjGCF",
       name: "Putri",
-      email: "putri@gmail.com",
+      email: "produksi@gmail.com",
       image: "/assets/avatar/female/91.png",
       role: "produksi",
       banned: false,
@@ -39,7 +39,7 @@ async function main() {
     {
       id: "a5m1pZeT4dUMhioUkoYpyBTGYkQRXeMY",
       name: "Budii",
-      email: "budi@gmail.com",
+      email: "kasir@gmail.com",
       image: "/assets/avatar/male/41.png",
       role: "kasir",
       banned: false,
@@ -48,7 +48,7 @@ async function main() {
     {
       id: "bfQCJ5mesozbsEfrnBZyxUMnZRU41uej",
       name: "Dani",
-      email: "dani@gmail.com",
+      email: "gudang@gmail.com",
       image: "/assets/avatar/female/91.png",
       role: "gudang",
       banned: false,

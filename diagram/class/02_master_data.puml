@@ -1,0 +1,108 @@
+@startuml class_diagram_master_data
+title Class Diagram — Data Master (Produk, Pelanggan, Supplier, Karyawan)
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor White
+  BorderColor #4A90D9
+  HeaderBackgroundColor #4A90D9
+  HeaderFontColor White
+  FontName Segoe UI
+  FontSize 11
+  HeaderFontSize 12
+  StereotypeFontSize 0
+  AttributeFontSize 10
+  ArrowColor #666666
+}
+
+skinparam package {
+  BackgroundColor #EEF3FC
+  BorderColor #4A90D9
+  FontSize 13
+  FontStyle bold
+  RoundCorner 10
+}
+
+package "Produk & Kategori" {
+  class "category" as Category {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    nama : Text
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "unit" as Unit {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    nama : Text
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+
+  class "product" as Product {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    *categoryId : String
+    *unitId : String
+    sku : String (unique)
+    nama : Text
+    image : Text?
+    hpp : Decimal(10,2)
+    hargaJual : Decimal(10,2)
+    stok : Decimal(10,2)?
+    minStok : Decimal(10,2)?
+    isService : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+}
+
+package "Pelanggan & Pemasok" {
+  class "customer" as Customer {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    nama : Text
+    nomorHp : Text
+    image : Text?
+    createdAt : DateTime
+    updatedAt : DateTime
+    deletedAt : DateTime?
+  }
+
+  class "supplier" as Supplier {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    nama : Text
+    nomorHp : Text
+    email : Text?
+    image : Text?
+    alamat : Text?
+    keterangan : Text?
+    isActive : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+package "Karyawan" {
+  class "karyawan" as Karyawan {
+    <b>id</b> : String ⚪
+    ────────────────────────
+    nama : Text
+    nomorHp : Text?
+    posisi : Text?
+    isActive : Boolean
+    createdAt : DateTime
+    updatedAt : DateTime
+  }
+}
+
+Category "1" -- "0..*" Product : categoryId
+Unit "1" -- "0..*" Product : unitId
+
+@enduml

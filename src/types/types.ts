@@ -47,6 +47,7 @@ export interface Product {
   updatedAt?: Date;
   category: Category;
   unit: Unit;
+  bahanBakuList?: { id?: string; bahanBakuId: string; jumlahButuh: number | string; bahanBaku?: { nama: string; unit?: { nama: string } } }[];
 }
 
 export interface Category {

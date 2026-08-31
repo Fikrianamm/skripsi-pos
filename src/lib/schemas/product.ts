@@ -19,6 +19,10 @@ export const createProductSchema = z
     minStok: z.number().min(0).optional(),
     isService: z.boolean().optional(),
     image: z.string().optional(),
+    bahanBakuList: z.array(z.object({
+      bahanBakuId: z.string().min(1, "Bahan baku wajib diisi"),
+      jumlahButuh: z.number().min(0.0001, "Jumlah butuh harus lebih dari 0"),
+    })).optional(),
   })
   .superRefine((data, ctx) => {
     // Jika bukan jasa (produk fisik), stok dan minStok wajib diisi > 0
@@ -67,6 +71,10 @@ export const editProductSchema = z.object({
   minStok: z.number().min(1, "Stok minimal wajib diisi").optional(),
   isService: z.boolean().optional(),
   image: z.string().optional(),
+  bahanBakuList: z.array(z.object({
+    bahanBakuId: z.string().min(1, "Bahan baku wajib diisi"),
+    jumlahButuh: z.number().min(0.0001, "Jumlah butuh harus lebih dari 0"),
+  })).optional(),
 });
 
 export type CreateProductFormData = z.infer<typeof createProductSchema>;

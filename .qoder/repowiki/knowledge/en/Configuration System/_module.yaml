@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: configuration_system
+title: Configuration System
+scope: []
+source_files:
+    - .env.example
+    - next.config.ts
+    - prisma.config.ts
+    - docker-compose.yaml
+    - src/config/roles.ts
+    - src/config/navigation.ts
+    - src/lib/auth.ts
+    - src/lib/permissions.ts
+depends_on: []
+related_to: []

@@ -8,6 +8,7 @@ import {
   createNotificationForRole,
   createNotification,
 } from "@/lib/notifications";
+import { autoDeductBOM, checkBOMAvailability } from "@/lib/inventory";
 import { JenisNotif } from "../../../../../generated/prisma/enums";
 
 type Params = { params: Promise<{ id: string }> };
@@ -42,7 +43,28 @@ const ORDER_DETAIL_SELECT = {
       harga: true,
       qty: true,
       subtotal: true,
-      product: { select: { id: true, sku: true, nama: true } },
+      statusHarga: true,
+      product: { select: { id: true, sku: true, nama: true, isService: true } },
+      kebutuhanBahanCustom: {
+        select: {
+          id: true,
+          bahanBakuId: true,
+          jumlahDibutuhkan: true,
+          satuan: true,
+          createdAt: true,
+          bahanBaku: {
+            select: {
+              id: true,
+              nama: true,
+              stok: true,
+              unit: { select: { nama: true } },
+            },
+          },
+          dicatatOleh: {
+            select: { id: true, name: true },
+          },
+        },
+      },
     },
     where: { deletedAt: null },
     orderBy: { createdAt: "asc" as const },
@@ -169,6 +191,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             product: { select: { isService: true } },
           },
         },
+        spk: {
+          select: {
+            id: true,
+          },
+        }
       },
     });
     if (!existing) {
@@ -225,6 +252,34 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         { error: "Status produksi tidak valid." },
         { status: 400 },
       );
+    }
+
+    // Cek BOM ketersediaan jika status diubah ke PRODUKSI
+    if (statusProduksi === "PRODUKSI" && existing.statusProduksi !== "PRODUKSI") {
+      const bomCheck = await checkBOMAvailability(id);
+      if (!bomCheck.isAvailable) {
+        const missingList = bomCheck.missingMaterials
+          .map((m) => `${m.nama} (Kurang ${m.shortage})`)
+          .join(", ");
+        
+        const errorMessage = `Bahan baku tidak mencukupi untuk membuat pesanan ini: ${missingList}`;
+        
+        try {
+          await createNotificationForRole(["admin", "gudang"], {
+            title: "Gagal Update Status - Stok Kurang",
+            message: errorMessage,
+            jenis: JenisNotif.STOK_MENIPIS,
+            linkUrl: `/inventory/stock`,
+          });
+        } catch (e) {
+          console.error("Failed to notify low stock for order status update:", e);
+        }
+
+        return NextResponse.json(
+          { error: errorMessage },
+          { status: 400 }
+        );
+      }
     }
 
     const VALID_STATUS_BAYAR = ["BELUM_BAYAR", "DP", "LUNAS"];
@@ -389,9 +444,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           data.isDesignFinal = true;
         }
 
-        // Notif ke desainer yang claim (dengan Pusher real-time)
-        if (existing.designerId) {
-          try {
+        // Notif review decision
+        try {
+          const hasCustomProduct = existing.items.some((i) => i.product?.isService);
+
+          if (existing.designerId) {
             await createNotification({
               userId: existing.designerId,
               title:
@@ -405,18 +462,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
               jenis: JenisNotif.SISTEM,
               linkUrl: `/production/design-queue`,
             });
-            // Jika ACC juga notif ke produksi
-            if (designReviewStatus === "ACC") {
-              await createNotificationForRole(["produksi"], {
-                title: "Desain ACC — Siap Produksi",
-                message: `Desain untuk Order #${existing.nomorOrder} telah di-ACC. Silakan buat SPK.`,
-                jenis: JenisNotif.SISTEM,
-                linkUrl: `/production/design-queue`,
+          }
+
+          if (designReviewStatus === "ACC") {
+            // Notif ke produksi
+            await createNotificationForRole(["produksi"], {
+              title: "Desain ACC — Siap Produksi",
+              message: `Desain untuk Order #${existing.nomorOrder} telah di-ACC. Silakan buat SPK.`,
+              jenis: JenisNotif.SISTEM,
+              linkUrl: `/production/design-queue`,
+            });
+
+            // Khusus produk custom: notif ke kasir & admin bahwa desain di-ACC dan bahan baku ditentukan/siap dinegosiasi
+            if (hasCustomProduct) {
+              await createNotificationForRole(["kasir", "admin"], {
+                title: "Desain ACC & Bahan Baku Ditentukan",
+                message: `Desain untuk pesanan #${existing.nomorOrder} telah di-ACC dan bahan baku telah ditentukan oleh desainer. Silakan lakukan negosiasi dan sepakati harga dengan customer.`,
+                jenis: JenisNotif.STATUS_ORDER_UBAH,
+                linkUrl: `/order/${id}`,
               });
             }
-          } catch (e) {
-            console.error("Failed to notify designer review decision:", e);
           }
+        } catch (e) {
+          console.error("Failed to notify review decision:", e);
         }
       }
     }
@@ -459,6 +527,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ),
         );
       }
+    }
+
+    // ─── Fitur: Potong Stok Bahan Baku (BOM) otomatis saat PRODUKSI ───
+    if (statusProduksi === "PRODUKSI" && existing.statusProduksi !== "PRODUKSI") {
+      await autoDeductBOM(id, existing?.spk?.id, session?.user?.id);
     }
 
     // Notify roles about status change if statusProduksi was updated

@@ -41,7 +41,15 @@ interface Props {
     items: {
       nama: string;
       qty: number;
-      product?: { sku: string } | null;
+      statusHarga?: string;
+      product?: { sku: string; isService?: boolean } | null;
+      kebutuhanBahanCustom?: {
+        id: string;
+        bahanBakuId: string;
+        jumlahDibutuhkan: string | number;
+        satuan: string;
+        bahanBaku?: { nama: string; stok: string | number };
+      }[];
     }[];
   };
   onSuccess: () => void;
@@ -55,6 +63,32 @@ export function SpkFormModal({
   order,
   onSuccess,
 }: Props) {
+  const unagreedCustomItems = useMemo(() => {
+    return (order?.items || []).filter(
+      (item) =>
+        (item.product?.isService || (item.statusHarga && item.statusHarga !== "NA")) &&
+        item.statusHarga !== "DISEPAKATI",
+    );
+  }, [order.items]);
+
+  const hasUnagreedItems = unagreedCustomItems.length > 0;
+
+  const customMaterialsSummary = useMemo(() => {
+    const list: { nama: string; jumlah: number; satuan: string }[] = [];
+    (order?.items || []).forEach((item) => {
+      if (item.kebutuhanBahanCustom && item.kebutuhanBahanCustom.length > 0) {
+        item.kebutuhanBahanCustom.forEach((kbc) => {
+          list.push({
+            nama: kbc.bahanBaku?.nama || "Bahan Baku",
+            jumlah: Number(kbc.jumlahDibutuhkan),
+            satuan: kbc.satuan,
+          });
+        });
+      }
+    });
+    return list;
+  }, [order.items]);
+
   const suggestedModel = useMemo(() => {
     return (order?.items || [])
       .map((item) => `${item.product?.sku || item.nama} x${item.qty}`)
@@ -134,12 +168,12 @@ export function SpkFormModal({
         }
       }}
       placement="center"
-      size="md"
+      size="xl"
       scrollBehavior="inside"
     >
       <ModalContent>
         {(onClose) => (
-          <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="contents" noValidate onSubmit={form.handleSubmit(onSubmit)}>
             <ModalHeader className="flex flex-col gap-0.5 pb-2">
               <span>Buat SPK — Tahap Produksi</span>
               <span className="text-sm font-normal text-default-500 font-mono">
@@ -150,10 +184,51 @@ export function SpkFormModal({
             <ModalBody className="gap-3 pt-0">
               {globalError && <Alert color="danger" title={globalError} />}
 
+              {hasUnagreedItems && (
+                <div className="rounded-lg bg-danger-50 border border-danger-200 p-3 text-xs text-danger-800 space-y-1">
+                  <div className="font-semibold flex items-center gap-1.5">
+                    <span>⚠️ Pembuatan SPK Ditangguhkan</span>
+                  </div>
+                  <p>
+                    Terdapat item custom yang belum disepakati harganya:{" "}
+                    <strong>
+                      {unagreedCustomItems.map((i) => i.nama).join(", ")}
+                    </strong>
+                    . Kasir harus menyepakati harga jual terlebih dahulu sebelum SPK dapat dibuat.
+                  </p>
+                </div>
+              )}
+
+              {customMaterialsSummary.length > 0 && (
+                <div className="rounded-lg bg-secondary-50/70 border border-secondary-200 p-3 text-xs text-secondary-900 space-y-1.5">
+                  <div className="font-semibold flex items-center justify-between">
+                    <span>📦 Bahan Baku Custom (Terkunci Desainer)</span>
+                    <span className="text-[11px] text-secondary-600 font-normal">
+                      {customMaterialsSummary.length} bahan
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {customMaterialsSummary.map((m, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-white/80 border border-secondary-200 px-2 py-0.5 rounded text-[11px] font-medium"
+                      >
+                        {m.nama}: {m.jumlah} {m.satuan}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="rounded-lg bg-warning-50 border border-warning-200 px-3 py-2 text-xs text-warning-700">
-                Mengisi form ini akan memindahkan status pesanan ke{" "}
-                <span className="font-semibold">PRODUKSI</span> sekaligus membuat
-                SPK untuk pekerja yang dipilih.
+                <span className="block mb-1">
+                  Mengisi form ini akan memindahkan status pesanan ke{" "}
+                  <span className="font-semibold">PRODUKSI</span> sekaligus membuat
+                  SPK untuk pekerja yang dipilih.
+                </span>
+                <span className="block">
+                  Sistem juga akan <strong>otomatis memotong stok bahan baku</strong> berdasarkan Resep BOM produk dan bahan custom yang terkunci.
+                </span>
               </div>
 
               <Controller
@@ -259,7 +334,7 @@ export function SpkFormModal({
                 color="primary"
                 type="submit"
                 isLoading={form.formState.isSubmitting}
-                isDisabled={form.formState.isSubmitting}
+                isDisabled={form.formState.isSubmitting || hasUnagreedItems}
                 size="sm"
               >
                 Buat SPK & Lanjut ke Produksi

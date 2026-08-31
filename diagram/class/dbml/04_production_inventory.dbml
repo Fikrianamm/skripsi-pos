@@ -1,0 +1,97 @@
+// ============================================================
+// Modul Produksi & Inventori
+// ============================================================
+
+// --- Cross-module references (defined in other DBML files) ---
+Table user { id varchar [pk] }
+Table order { id varchar [pk] }
+Table unit { id varchar [pk] }
+Table supplier { id varchar [pk] }
+Table karyawan { id varchar [pk] }
+
+Table bahan_baku {
+  id varchar [pk]
+  unitId varchar [not null, ref: > unit.id]
+  nama text [not null]
+  stok decimal(10,2) [default: 0]
+  minStok decimal(10,2)
+  keterangan text
+  isActive boolean [default: true]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'Bahan baku produksi. Stok otomatis bertambah saat penerimaan dan berkurang saat pengeluaran. Notifikasi stok menipis jika stok ≤ minStok.'
+}
+
+Table spk {
+  id varchar [pk]
+  orderId varchar [unique, not null, ref: - order.id]
+  karyawanId varchar [not null, ref: > karyawan.id]
+  userId varchar [ref: > user.id]
+  nomorSpk varchar(50) [unique]
+  tahapProduksi varchar [not null]
+  statusSPK varchar 
+  model text
+  tali text
+  ukuran text
+  jumlah decimal(10,2) [not null]
+  catatan text
+  tanggalSetor datetime
+  accCetak boolean [default: false]
+  accCetakAt datetime
+  accCetakOleh text
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Surat Perintah Kerja untuk produksi. Satu SPK untuk satu pesanan. Status produksi SPK disinkronkan ke pesanan.'
+}
+
+Table penerimaan_barang {
+  id varchar [pk]
+  supplierId varchar [ref: > supplier.id]
+  addedById varchar [ref: > user.id]
+  nomorFaktur varchar(100)
+  tanggal datetime [default: `now()`]
+  keterangan text
+  buktiNota text
+  totalTagihan decimal(12,2) [default: 0]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Mencatat penerimaan bahan baku dari supplier. Meliputi nomor faktur, bukti nota, dan total tagihan. Soft delete dengan deletedAt.'
+}
+
+Table stok_masuk {
+  id varchar [pk]
+  penerimaanId varchar [not null, ref: > penerimaan_barang.id]
+  bahanBakuId varchar [not null, ref: > bahan_baku.id]
+  jumlah decimal(10,2) [not null]
+  hargaBeli decimal(10,2)
+  totalHargaItem decimal(12,2)
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+}
+
+Table pengeluaran_barang {
+  id varchar [pk]
+  spkId varchar [ref: > spk.id]
+  addedById varchar [ref: > user.id]
+  tanggal datetime [default: `now()`]
+  keterangan text
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Mencatat pengeluaran bahan baku untuk produksi. Direferensikan ke SPK tertentu. Soft delete dengan deletedAt.'
+}
+
+Table stok_keluar {
+  id varchar [pk]
+  pengeluaranId varchar [not null, ref: > pengeluaran_barang.id]
+  bahanBakuId varchar [not null, ref: > bahan_baku.id]
+  jumlah decimal(10,2) [not null]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+}

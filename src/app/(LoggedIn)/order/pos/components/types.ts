@@ -5,6 +5,7 @@ export interface CartItem {
   harga: number;
   qty: number;
   unit: string;
+  isService?: boolean;
 }
 
 export type OrderChannel =

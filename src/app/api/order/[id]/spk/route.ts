@@ -2,14 +2,19 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { notifyOrderStatusChange } from "@/lib/notifications";
+import { autoDeductBOM, checkBOMAvailability } from "@/lib/inventory";
+import { notifyOrderStatusChange, createNotificationForRole, JenisNotif } from "@/lib/notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
 async function requireAccess() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: "Unauthorized.", status: 401, session: null };
-  if (session.user.role !== "admin" && session.user.role !== "kasir" && session.user.role !== "produksi")
+  if (
+    session.user.role !== "admin" &&
+    session.user.role !== "kasir" &&
+    session.user.role !== "produksi"
+  )
     return { error: "Forbidden.", status: 403, session: null };
   return { error: null, status: 200, session };
 }
@@ -17,7 +22,7 @@ async function requireAccess() {
 async function generateNomorSpk(): Promise<string> {
   const settings = await prisma.appSetting.findUnique({ where: { id: 1 } });
   const prefix = settings?.prefixSpk || "SPK-";
-  
+
   const lastSpk = await prisma.sPK.findFirst({
     where: { nomorSpk: { startsWith: prefix } },
     orderBy: { nomorSpk: "desc" },
@@ -59,7 +64,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // POST /api/order/[id]/spk — Buat SPK + update status JAHIT (atomic)
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const { error, status } = await requireAccess();
+    const { error, status, session } = await requireAccess();
     if (error) return NextResponse.json({ error }, { status });
 
     const { id: orderId } = await params;
@@ -81,6 +86,57 @@ export async function POST(req: NextRequest, { params }: Params) {
         { error: "SPK untuk pesanan ini sudah ada." },
         { status: 400 },
       );
+
+    // Validasi: Semua item custom harus sudah berstatus 'DISEPAKATI'
+    const orderItems = await prisma.orderItem.findMany({
+      where: { orderId, deletedAt: null },
+      select: {
+        id: true,
+        nama: true,
+        statusHarga: true,
+        product: { select: { isService: true } },
+      },
+    });
+
+    const unagreedCustomItems = orderItems.filter(
+      (item) => item.product?.isService && item.statusHarga !== "DISEPAKATI"
+    );
+
+    if (unagreedCustomItems.length > 0) {
+      const itemNames = unagreedCustomItems.map((i) => i.nama).join(", ");
+      return NextResponse.json(
+        {
+          error: `Pembuatan SPK ditolak: Terdapat item custom yang belum disepakati harganya (${itemNames}).`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Cek ketersediaan BOM sebelum membuat SPK
+    const bomCheck = await checkBOMAvailability(orderId);
+    if (!bomCheck.isAvailable) {
+      const missingList = bomCheck.missingMaterials
+        .map((m) => `${m.nama} (Kurang ${m.shortage})`)
+        .join(", ");
+      
+      const errorMessage = `Bahan baku tidak mencukupi untuk membuat pesanan ini: ${missingList}`;
+      
+      try {
+        await createNotificationForRole(["admin", "gudang"], {
+          title: "Gagal Membuat SPK - Stok Kurang",
+          message: errorMessage,
+          jenis: JenisNotif.STOK_MENIPIS,
+          linkUrl: `/inventory/stock`,
+        });
+      } catch (e) {
+        console.error("Failed to notify low stock for SPK:", e);
+      }
+
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 400 }
+      );
+    }
 
     const body = await req.json();
     const { karyawanId, model, tali, ukuran, jumlah, tanggalSetor, catatan } =
@@ -135,13 +191,19 @@ export async function POST(req: NextRequest, { params }: Params) {
       }),
     ]);
 
+    // Auto-deduct BOM when status is PRODUKSI
+    await autoDeductBOM(orderId, spk.id, session?.user.id);
+
     // Notify status change to PRODUKSI
     if (order?.nomorOrder) {
       await notifyOrderStatusChange(orderId, order.nomorOrder, "PRODUKSI");
     }
 
     return NextResponse.json(
-      { message: "SPK berhasil dibuat dan status diperbarui ke PRODUKSI.", spk },
+      {
+        message: "SPK berhasil dibuat dan status diperbarui ke PRODUKSI.",
+        spk,
+      },
       { status: 201 },
     );
   } catch (err) {
@@ -230,7 +292,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
 
     const session = await auth.api.getSession({ headers: await headers() });
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any = {};
     if (accCetak !== undefined) {
@@ -241,7 +303,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (statusSPK !== undefined) {
       data.statusSPK = statusSPK;
       // sync tahap produksi just to be clean
-      data.tahapProduksi = statusSPK === "SELESAI" ? "PACKING" : existing.tahapProduksi;
+      data.tahapProduksi =
+        statusSPK === "SELESAI" ? "PACKING" : existing.tahapProduksi;
     }
 
     const updated = await prisma.sPK.update({
@@ -253,11 +316,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: { statusProduksi: "PACKING" },
-        select: { nomorOrder: true }
+        select: { nomorOrder: true },
       });
-      
+
       if (updatedOrder) {
-        await notifyOrderStatusChange(orderId, updatedOrder.nomorOrder, "PACKING");
+        await notifyOrderStatusChange(
+          orderId,
+          updatedOrder.nomorOrder,
+          "PACKING",
+        );
       }
     }
 

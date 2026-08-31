@@ -1,0 +1,20 @@
+schema_version: 1
+module_path: error_handling
+title: Error Handling Patterns and Conventions
+scope: []
+source_files:
+    - src/app/error.tsx
+    - src/app/not-found.tsx
+    - src/app/forbidden.tsx
+    - src/app/unauthorized.tsx
+    - src/app/api/auth/error/page.tsx
+    - src/app/api/order/route.ts
+    - src/app/api/finance/jurnal/route.ts
+    - src/app/api/admin/product/route.ts
+    - src/actions/sign-in-email.action.ts
+    - src/actions/sign-up-email.action.ts
+    - src/lib/schemas/auth.ts
+    - src/lib/schemas/product.ts
+    - src/proxy.ts
+depends_on: []
+related_to: []

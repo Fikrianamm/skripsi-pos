@@ -1,0 +1,106 @@
+@startuml penerimaan_barang
+title Sequence Diagram — Penerimaan Barang dari Supplier
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceArrowColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceDividerBackgroundColor Black
+skinparam sequenceDividerFontColor White
+skinparam sequenceGroupBackgroundColor White
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceGroupFontColor Black
+skinparam sequenceNoteBackgroundColor White
+skinparam sequenceNoteBorderColor Black
+
+actor "Gudang" as gudang
+boundary "Aplikasi Web" as app
+control "Server" as server
+database "Penyimpanan File" as storage
+entity "supplier" as tbl_supplier
+entity "bahan_baku" as tbl_bahan
+entity "penerimaan_barang" as tbl_terima
+entity "stok_masuk" as tbl_stok_in
+entity "jurnal_umum" as tbl_jurnal
+entity "notification" as tbl_notif
+
+== Pengambilan Data Awal ==
+
+gudang -> app : Buka form penerimaan barang
+app -> server : Minta daftar supplier & bahan baku
+
+server -> tbl_supplier : Ambil daftar supplier aktif
+tbl_supplier --> server : Daftar supplier
+
+server -> tbl_bahan : Ambil daftar bahan baku
+tbl_bahan --> server : Daftar bahan baku
+
+server --> app : Tampilkan form (supplier, bahan baku, stok)
+app --> gudang : Form siap diisi
+
+== Proses Penerimaan ==
+
+gudang -> app : Isi form (supplier, item bahan baku, jumlah, harga, nomor faktur, upload nota)
+app -> server : Kirim data penerimaan barang
+
+server -> tbl_supplier : Validasi supplier yang dipilih
+tbl_supplier --> server : Data supplier valid
+
+alt Supplier tidak ditemukan
+  server --> app : Tolak — Supplier tidak valid
+end
+
+alt Ada file bukti nota
+  server -> storage : Upload foto/scan nota
+  storage --> server : URL / path file tersimpan
+end
+
+== Penyimpanan Penerimaan ==
+
+server -> tbl_terima : Simpan data penerimaan barang\n(supplierId, nomorFaktur, tanggal, buktiNota, totalTagihan)
+tbl_terima --> server : ID penerimaan baru
+
+loop Setiap bahan baku yang diterima
+  server -> tbl_stok_in : Insert record stok masuk\n(penerimaanId, bahanBakuId, jumlah, hargaBeli)
+  tbl_stok_in --> server : Record tersimpan
+  server -> tbl_bahan : Tambah stok bahan baku\n(stok = stok + jumlah)
+  tbl_bahan --> server : Stok berhasil ditambah
+end
+
+note over server, tbl_bahan
+  Penerimaan + stok masuk + update stok\ndisimpan dalam satu transaksi
+end note
+
+== Pencatatan Jurnal Otomatis ==
+
+alt Ada nilai tagihan (totalTagihan > 0)
+  server -> tbl_bahan : Ambil akun persediaan (debet) dari pengaturan
+  tbl_bahan --> server : Data akun persediaan
+  server -> tbl_jurnal : Ambil akun hutang usaha (kredit)
+  tbl_jurnal --> server : Data akun hutang
+
+  server -> tbl_jurnal : Catat jurnal otomatis\n(Debet: Persediaan, Kredit: Hutang Usaha)
+  tbl_jurnal --> server : Jurnal tersimpan
+
+  note over server, tbl_jurnal
+    Jurnal double-entry:\nPersediaan bertambah, Hutang Usaha bertambah
+  end note
+end
+
+== Notifikasi ==
+
+server -> tbl_notif : Buat notifikasi PENERIMAAN_BARU\nuntuk Admin dan Gudang
+tbl_notif --> server : Notifikasi tersimpan
+
+loop Setiap bahan baku yang diterima
+  server -> tbl_bahan : Cek apakah stok masih di bawah minStok
+  tbl_bahan --> server : Status stok
+  alt Stok masih di bawah batas minimum
+    server -> tbl_notif : Buat notifikasi STOK_MENIPIS\nuntuk Admin dan Gudang
+    tbl_notif --> server : Notifikasi tersimpan
+  end
+end
+
+server --> app : Penerimaan barang berhasil dicatat
+app --> gudang : Tampilkan konfirmasi penerimaan
+
+@enduml

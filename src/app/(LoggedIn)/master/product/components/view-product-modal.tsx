@@ -83,7 +83,7 @@ export default function ViewProductModal({
       placement="bottom-center"
       onOpenChange={onOpenChange}
       scrollBehavior="inside"
-      size="md"
+      size="xl"
     >
       <ModalContent>
         {(onClose) => (
@@ -177,6 +177,26 @@ export default function ViewProductModal({
                     <DetailRow label="Stok Saat Ini" value={stok} />
                     <DetailRow label="Min. Stok" value={minStok} />
                   </div>
+
+                  {product.bahanBakuList && product.bahanBakuList.length > 0 && (
+                    <>
+                      <Divider />
+                      <div>
+                        <p className="text-xs font-semibold text-default-400 uppercase mt-2 mb-1">
+                          Resep Bahan Baku (BOM)
+                        </p>
+                        <div className="flex flex-col gap-0">
+                          {product.bahanBakuList.map((bb, idx) => (
+                            <DetailRow 
+                              key={idx} 
+                              label={bb.bahanBaku?.nama || "-"} 
+                              value={`${Number(bb.jumlahButuh)} ${bb.bahanBaku?.unit?.nama || ""}`} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </ModalBody>

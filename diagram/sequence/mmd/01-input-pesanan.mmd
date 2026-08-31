@@ -1,0 +1,52 @@
+sequenceDiagram
+    actor Kasir
+    participant Website@{ "type" : "boundary" }
+    participant Server@{ "type" : "control" }
+    participant order@{ "type" : "database" }
+    participant order_item@{ "type" : "database" }
+    participant jurnal_umum@{ "type" : "database" }
+    participant notification@{ "type" : "database" }
+    participant app_setting@{ "type" : "database" }
+
+    Kasir->>Website: Buka form pesanan baru
+    Website->>Server: Minta data customer & produk
+
+    Server->>app_setting: Ambil prefix nomor order
+    app_setting-->>Server: Prefix (misal "INV-HQ-")
+
+    Server-->>Website: Data customer, produk & prefix
+    Website-->>Kasir: Form siap diisi
+
+    Kasir->>Website: Pilih customer, tambah item <br/>& qty, pilih channel
+    Website->>Server: Kirim data pesanan
+
+    loop Setiap item produk
+        Server->>order: Cek stok produk tersedia
+        order-->>Server: Nilai stok saat ini
+        alt Stok tidak mencukupi
+            Server-->>Website: Tolak <br/>Stok produk tidak cukup
+        end
+    end
+
+    Server-->>Website: Kirim rincian grand total
+    Website-->>Kasir: Tampilkan ringkasan pesanan
+
+    Kasir->>Website: Klik "Simpan Pesanan"
+    Website->>Server: Kirim data pesanan lengkap
+
+    Server->>order: Simpan pesanan baru
+    order-->>Server: ID pesanan baru
+
+    Server->>order_item: Simpan seluruh item pesanan<br/>(produk, qty, harga, subtotal)
+    order_item-->>Server: Item tersimpan
+
+    Server->>jurnal_umum: Catat jurnal otomatis<br/>(Debet: Piutang/Kas, Kredit: Pendapatan)
+    jurnal_umum-->>Server: Jurnal tersimpan
+
+    Note over Server,jurnal_umum: Semua operasi dalam satu transaksi
+
+    Server->>notification: Buat notifikasi ORDER_BARU<br/>untuk Admin, Produksi, Desainer, Gudang
+    notification-->>Server: Notifikasi tersimpan
+
+    Server-->>Website: Pesanan berhasil disimpan
+    Website-->>Kasir: Tampilkan daftar pesanan <br/>dengan entri baru

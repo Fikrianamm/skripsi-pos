@@ -1,0 +1,88 @@
+classDiagram
+    %% ============================================================
+    %% Modul Keuangan & Akuntansi
+    %% ============================================================
+
+    class Payment {
+        +String id
+        +String orderId
+        +String userId
+        +Decimal nominal
+        +String metodePembayaran
+        +String keterangan
+        +DateTime tanggal
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +generateJurnal() JurnalUmum[]
+        +verify() Boolean
+    }
+
+    class Akun {
+        +String id
+        +String kodeAkun
+        +String namaAkun
+        +String kelompok
+        +String posisiNormal
+        +Boolean isActive
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getSaldo() Decimal
+        +deactivate() void
+    }
+
+    class JurnalUmum {
+        +String id
+        +String ref
+        +DateTime tanggal
+        +String keterangan
+        +String namaBiaya
+        +String buktiNota
+        +String akunDebetId
+        +String akunKreditId
+        +Decimal nominal
+        +String paymentId
+        +String penerimaanId
+        +String createdById
+        +DateTime createdAt
+        +DateTime updatedAt
+        +DateTime deletedAt
+        +isBalanced() Boolean
+    }
+
+    class KasBank {
+        +String id
+        +String namaRekening
+        +String jenisRekening
+        +String nomorRekening
+        +String akunId
+        +Boolean isActive
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getSaldo() Decimal
+        +deactivate() void
+    }
+
+    class AppSetting {
+        +Int id
+        +String namaPerusahaan
+        +String logoUrl
+        +String alamat
+        +String nomorKontak
+        +String email
+        +String prefixOrder
+        +String prefixSpk
+        +Int estimasiHariPengerjaan
+        +String defaultPendapatanAkunId
+        +DateTime createdAt
+        +DateTime updatedAt
+        +getPrefixOrder() String
+        +getAkunPendapatan() Akun
+    }
+
+    Payment "1" --> "0..*" JurnalUmum 
+    PenerimaanBarang "1" --> "0..*" JurnalUmum
+    Akun "1" ..> "0..*" JurnalUmum 
+    Akun "1" ..> "0..*" JurnalUmum 
+    KasBank "0..*" --> "0..1" Akun 
+    AppSetting "1" --> "0..1" Akun 

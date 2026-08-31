@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -7,8 +8,13 @@ import { Product } from "@/types/types";
 import { Input, ScrollShadow, Spinner } from "@heroui/react";
 import { Search, Package, ChevronRight } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
+import { AddNewServiceModal } from "./add-new-service-modal";
 
 interface ProductSearchPanelProps {
+  // catData: any;
+  // catLoading: boolean;
+  // unitData: any;
+  // unitLoading: boolean;
   onAdd: (product: Product) => void;
 }
 
@@ -16,7 +22,7 @@ export function ProductSearchPanel({ onAdd }: ProductSearchPanelProps) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, mutate } = useSWR(
     `/api/admin/product?search=${debouncedSearch}&limit=150`,
     fetcher,
     { keepPreviousData: true },
@@ -26,17 +32,30 @@ export function ProductSearchPanel({ onAdd }: ProductSearchPanelProps) {
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <Input
-        placeholder="Cari produk berdasarkan nama / SKU..."
-        startContent={<Search size={15} className="text-default-400" />}
-        value={search}
-        onValueChange={setSearch}
-        isClearable
-        onClear={() => setSearch("")}
-        variant="bordered"
-        classNames={{ inputWrapper: "border-1" }}
-        autoComplete="off"
-      />
+      <div className="flex gap-2">
+        <Input
+          placeholder="Cari produk / SKU..."
+          startContent={<Search size={15} className="text-default-400" />}
+          value={search}
+          onValueChange={setSearch}
+          isClearable
+          onClear={() => setSearch("")}
+          variant="bordered"
+          classNames={{ inputWrapper: "border-1" }}
+          autoComplete="off"
+          className="flex-1"
+        />
+        <AddNewServiceModal
+          // catData={catData}
+          // catLoading={catLoading}
+          // unitData={unitData}
+          // unitLoading={unitLoading}
+          onServiceAdded={(newService) => {
+            mutate();
+            onAdd(newService);
+          }}
+        />
+      </div>
 
       <ScrollShadow className="flex-1 overflow-y-auto" hideScrollBar>
         {isLoading ? (

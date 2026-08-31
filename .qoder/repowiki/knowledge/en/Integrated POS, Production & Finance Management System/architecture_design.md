@@ -1,0 +1,5 @@
+- Adopts a Next.js App Router architecture with route groups (`(LoggedIn)`) to enforce authentication boundaries via `src/app/(LoggedIn)/layout.tsx`.
+- Implements a modular domain structure within `src/app`, separating concerns into `finance`, `inventory`, `order`, `production`, and `master` data modules.
+- Utilizes a Prisma ORM layer (`prisma/schema.prisma`) backed by MySQL to manage complex relational data including orders, SPK (work orders), and journal entries.
+- Integrates `better-auth` for session management and role-based access control (RBAC) with custom permissions defined in `src/lib/permissions.ts`.
+- Exposes a RESTful API surface under `src/app/api` to handle client-side interactions and background processes like Pusher notifications.

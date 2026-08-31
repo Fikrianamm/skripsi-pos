@@ -6,7 +6,7 @@ skinparam BackgroundColor transparent
 actor "Kasir" as kasir
 actor "Administrator" as admin
 actor "Produksi" as produksi
-actor "Designer" as designer
+actor "Desainer" as designer
 actor "Gudang" as gudang
 
 package "Modul Manajemen Pesanan" {

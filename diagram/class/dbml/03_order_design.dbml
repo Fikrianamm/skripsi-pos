@@ -1,0 +1,87 @@
+// ============================================================
+// Modul Pesanan, Desain, dan Komentar
+// ============================================================
+
+// --- Cross-module references (defined in other DBML files) ---
+Table user { id varchar [pk] }
+Table customer { id varchar [pk] }
+Table product { id varchar [pk] }
+
+Table order {
+  id varchar [pk]
+  customerId varchar [not null, ref: > customer.id]
+  userId varchar [ref: > user.id]
+  designerId varchar [ref: > user.id]
+  nomorOrder varchar(50) [unique, not null]
+  channel varchar
+  statusProduksi varchar
+  statusPembayaran varchar
+  metodePembayaran varchar
+  deadline datetime
+  catatan text
+  subtotal decimal(12,2) [not null]
+  diskon decimal(12,2) [default: 0]
+  ongkir decimal(12,2)
+  grandTotal decimal(12,2) [not null]
+  isDesignFinal boolean [default: false]
+  designReviewStatus varchar
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Entitas utama pesanan. Nomor order otomatis dengan prefix dari pengaturan. Soft delete dengan deletedAt.'
+}
+
+Table order_item {
+  id varchar [pk]
+  orderId varchar [not null, ref: > order.id]
+  productId varchar [not null, ref: > product.id]
+  nama text [not null]
+  harga decimal(12,2) [not null]
+  qty decimal(10,2) [not null]
+  subtotal decimal(12,2) [not null]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Item produk dalam satu pesanan. Harga dan subtotal tersimpan saat pesanan dibuat.'
+}
+
+Table design_file {
+  id varchar [pk]
+  orderId varchar [not null, ref: > order.id]
+  uploadedById varchar [not null, ref: > user.id]
+  nama text [not null]
+  filePath text [not null]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'File desain yang diunggah Desainer. Disimpan di penyimpanan file eksternal.'
+}
+
+Table order_comment {
+  id varchar [pk]
+  orderId varchar [not null, ref: > order.id]
+  userId varchar [not null, ref: > user.id]
+  text text [not null]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'Komentar pada pesanan untuk komunikasi tim (Admin, Desainer, Produksi). Mendukung lampiran file dan penerima spesifik.'
+}
+
+Table comment_recipient {
+  id varchar [pk]
+  commentId varchar [not null, ref: > order_comment.id]
+  userId varchar [not null, ref: > user.id]
+  isRead boolean [default: false]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+}
+
+Table order_comment_file {
+  id varchar [pk]
+  commentId varchar [not null, ref: > order_comment.id]
+  filePath text [not null]
+  createdAt datetime [default: `now()`]
+}

@@ -1,0 +1,94 @@
+@startuml pembayaran_jurnal
+title Sequence Diagram — Pembayaran & Pencatatan Jurnal
+
+skinparam sequenceArrowThickness 2
+skinparam sequenceArrowColor Black
+skinparam sequenceLifeLineBorderColor Black
+skinparam sequenceDividerBackgroundColor Black
+skinparam sequenceDividerFontColor White
+skinparam sequenceGroupBackgroundColor White
+skinparam sequenceGroupBorderColor Black
+skinparam sequenceGroupFontColor Black
+skinparam sequenceNoteBackgroundColor White
+skinparam sequenceNoteBorderColor Black
+
+actor "Kasir" as kasir
+boundary "Aplikasi Web" as app
+control "Server" as server
+entity "order" as tbl_order
+entity "payment" as tbl_payment
+entity "kas_bank" as tbl_kas
+entity "akun" as tbl_akun
+entity "jurnal_umum" as tbl_jurnal
+entity "notification" as tbl_notif
+
+== Pengambilan Data Pembayaran ==
+
+kasir -> app : Buka detail pesanan, klik "Bayar"
+app -> server : Minta data pesanan & daftar rekening
+
+server -> tbl_order : Ambil data pesanan & riwayat pembayaran
+tbl_order --> server : Data order + total sudah dibayar
+
+server -> tbl_kas : Ambil daftar rekening kas/bank aktif
+tbl_kas --> server : Daftar rekening
+
+server --> app : Data pesanan & rekening
+app --> kasir : Form pembayaran siap diisi
+
+== Proses Pembayaran ==
+
+kasir -> app : Input nominal, pilih rekening & metode bayar
+app -> server : Kirim data pembayaran
+
+alt Bukan Kasir atau Admin
+  server --> app : Tolak — Tidak diizinkan
+end
+
+alt Pesanan tidak ditemukan
+  server -> tbl_order : Cek keberadaan pesanan
+  server --> app : Tolak — Pesanan tidak ditemukan
+end
+
+server -> tbl_kas : Validasi rekening yang dipilih
+tbl_kas --> server : Data rekening & akunId
+
+alt Nominal melebihi sisa tagihan
+  server --> app : Tolak — Nominal melebihi sisa tagihan
+end
+
+note over server
+  Hitung total sudah dibayar + nominal baru
+  Tentukan status: DP atau LUNAS
+end note
+
+server -> tbl_payment : Simpan data pembayaran\n(nominal, metode, rekening)
+tbl_payment --> server : Pembayaran tersimpan
+
+server -> tbl_order : Perbarui statusPembayaran (DP / LUNAS)
+tbl_order --> server : Status diperbarui
+
+== Pencatatan Jurnal Otomatis ==
+
+server -> tbl_akun : Ambil akun Kas/Bank via kas_bank.akunId
+tbl_akun --> server : Data akun debet
+
+server -> tbl_order : Ambil akun pendapatan default dari pengaturan
+tbl_order --> server : Data akun kredit (Pendapatan)
+
+server -> tbl_jurnal : Catat jurnal double-entry\n(Debet: Kas/Bank, Kredit: Pendapatan)
+tbl_jurnal --> server : Jurnal tersimpan
+
+note over server, tbl_jurnal
+  Pembayaran + update status + jurnal\ndisimpan dalam satu transaksi
+end note
+
+== Notifikasi ==
+
+server -> tbl_notif : Buat notifikasi PAYMENT_MASUK\nuntuk Admin dan Kasir
+tbl_notif --> server : Notifikasi tersimpan
+
+server --> app : Pembayaran berhasil dicatat
+app --> kasir : Tampilkan konfirmasi & status baru
+
+@enduml

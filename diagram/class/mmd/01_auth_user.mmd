@@ -1,0 +1,141 @@
+classDiagram
+    direction TB
+    %% ============================================================
+    %% Modul Autentikasi & Pengguna
+    %% ============================================================
+
+    class User {
+        +String id
+        +String name
+        +String email
+        +Boolean emailVerified
+        +String image
+        +String role
+        +Boolean banned
+        +DateTime createdAt
+        +DateTime updatedAt
+        +register() User
+        +login() Session
+        +updateProfile() User
+        +getNotifications() Notification[]
+    }
+
+    class Admin {
+        +manageUser() User
+        +ban() void
+        +manageKaryawan() Karyawan
+        +manageCustomer() Customer
+        +manageProduct() Product
+        +manageSupplier() Supplier
+        +manageBahanBaku() BahanBaku
+        +manageInventory() void
+        +manageAkunKeuangan() Akun
+        +deleteOrder() void
+        +manageTrash() void
+        +updateSettings() AppSetting
+    }
+
+    class Kasir {
+        +createOrder() Order
+        +getOrderList() Order[]
+        +getOrderDetail() Order
+        +updateOrderStatus() Order
+        +recordPayment() Payment
+        +getPayments() Payment[]
+        +accDesain() void
+        +revisiDesain() void
+        +finalizeDesain() void
+        +viewDesignQueue() Order[]
+        +viewSPKList() SPK[]
+        +postComment() OrderComment
+        +getComments() OrderComment[]
+    }
+
+    class Desainer {
+        +viewDesignQueue() Order[]
+        +claimDesignQueue() void
+        +uploadDesignFile() DesignFile
+        +deleteDesignFile() void
+        +requestDesignReview() void
+        +viewDesignArchive() DesignFile[]
+        +getOrderDetail() Order
+        +postComment() OrderComment
+        +getComments() OrderComment[]
+    }
+
+    class Produksi {
+        +viewDesignQueue() Order[]
+        +viewSPKList() SPK[]
+        +createSPK() SPK
+        +updateSPK() SPK
+        +toggleAccCetak() void
+        +markSPKSelesai() void
+        +updateOrderStatus() Order
+        +getOrderDetail() Order
+        +postComment() OrderComment
+        +getComments() OrderComment[]
+    }
+
+    class Gudang {
+        +getOrderList() Order[]
+        +getOrderDetail() Order
+        +viewSPKList() SPK[]
+        +createBarangMasuk() InventoryIn
+        +updateBarangMasuk() InventoryIn
+        +createBarangKeluar() InventoryOut
+        +updateBarangKeluar() InventoryOut
+        +manageBahanBaku() BahanBaku
+        +manageSupplier() Supplier
+        +manageProduct() Product
+        +postComment() OrderComment
+        +getComments() OrderComment[]
+    }
+
+    class Session {
+        +String id
+        +String token
+        +DateTime expiresAt
+        +String ipAddress
+        +String userAgent
+        +String userId
+        +DateTime createdAt
+        +DateTime updatedAt
+        +isValid() Boolean
+        +revoke() void
+    }
+
+    class Account {
+        +String id
+        +String providerId
+        +String accountId
+        +String password
+        +String userId
+        +DateTime createdAt
+        +DateTime updatedAt
+        +verifyPassword() Boolean
+        +changePassword() void
+    }
+
+    class Notification {
+        +String id
+        +String userId
+        +String title
+        +String message
+        +String jenis
+        +Boolean isRead
+        +String linkUrl
+        +DateTime createdAt
+        +DateTime updatedAt
+        +markAsRead() void
+    }
+
+    Session "0..*" <-- "1" User
+    Account "0..*" <-- "1" User
+    Notification "0..*" <-- "1" User
+
+    %% Role inheritance
+    User ..|> Admin : inheritance
+    User ..|> Kasir : inheritance
+    User ..|> Desainer : inheritance
+    User ..|> Produksi : inheritance
+    User ..|> Gudang : inheritance

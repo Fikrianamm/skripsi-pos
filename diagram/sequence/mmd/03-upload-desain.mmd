@@ -1,0 +1,55 @@
+sequenceDiagram
+    actor Desainer
+    participant Website@{ "type" : "boundary" }
+    participant Server@{ "type" : "control" }
+    participant Storage@{ "type" : "database" }
+    participant order@{ "type" : "database" }
+    participant design_file@{ "type" : "database" }
+    participant notification@{ "type" : "database" }
+
+    Desainer->>Website: Buka halaman antrean desain
+    Website->>Server: Minta daftar pesanan <br/>berstatus DESAIN
+
+    Server->>order: Ambil pesanan <br/>dengan statusProduksi = DESAIN
+    order-->>Server: Daftar antrean desain
+
+    Server-->>Website: Tampilkan antrean desain
+    Website-->>Desainer: Daftar pesanan yang perlu didesain
+
+    Desainer->>Website: Pilih pesanan, klik "Ambil Antrean"
+    Website->>Server: Tetapkan desainer ke pesanan
+
+    Server->>order: Update designerId = id desainer saat ini
+    order-->>Server: Pesanan berhasil di-assign
+
+    Desainer->>Website: Upload file desain (gambar/vektor)
+    Website->>Server: Kirim file desain beserta orderId
+
+    Server->>Storage: Upload file ke penyimpanan
+    Storage-->>Server: URL / path file tersimpan
+
+    Server->>design_file: Simpan record file desain<br/>(orderId, nama, filePath, uploadedById)
+    design_file-->>Server: Data desain tersimpan
+
+    Server->>order: Update designReviewStatus = PENDING_REVIEW
+    order-->>Server: Status review diperbarui
+
+    Server->>notification: Buat notifikasi untuk Admin<br/>bahwa desain siap di-review
+    notification-->>Server: Notifikasi tersimpan
+
+    Server-->>Website: File desain berhasil diunggah
+    Website-->>Desainer: Tampilkan konfirmasi upload
+
+    Note over Desainer,notification: Admin kemudian melakukan review desain<br/>melalui halaman terpisah
+
+    alt Admin ACC desain
+        Server->>order: Update isDesignFinal = true,<br/>designReviewStatus = ACC
+        order-->>Server: Status diperbarui
+        Server->>notification: Buat notifikasi untuk Produksi<br/>bahwa desain selesai
+        notification-->>Server: Notifikasi tersimpan
+    else Admin minta REVISI
+        Server->>order: Update designReviewStatus = REVISI
+        order-->>Server: Status diperbarui
+        Server->>notification: Buat notifikasi untuk Desainer<br/>agar merevisi desain
+        notification-->>Server: Notifikasi tersimpan
+    end

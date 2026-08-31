@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: build_system
+title: Next.js Build, Dockerization & CI/CD Pipeline
+scope: []
+source_files:
+    - package.json
+    - Dockerfile
+    - docker-compose.yaml
+    - .github/workflows/ci.yml
+    - .github/workflows/deploy.yml
+    - next.config.ts
+depends_on: []
+related_to: []

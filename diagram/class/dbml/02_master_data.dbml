@@ -1,0 +1,78 @@
+// ============================================================
+// Modul Data Master
+// ============================================================
+
+Table category {
+  id varchar [pk]
+  nama text [not null]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'Mengelompokkan produk berdasarkan kategori (misal: kaos, kemeja, jaket).'
+}
+
+Table unit {
+  id varchar [pk]
+  nama text [not null]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'Satuan ukuran untuk produk dan bahan baku (pcs, meter, kilogram, dll).'
+}
+
+Table product {
+  id varchar [pk]
+  categoryId varchar [not null, ref: > category.id]
+  unitId varchar [not null, ref: > unit.id]
+  sku varchar [unique, not null]
+  nama text [not null]
+  image text
+  hpp decimal(10,2) [not null]
+  hargaJual decimal(10,2) [not null]
+  stok decimal(10,2)
+  minStok decimal(10,2)
+  isService boolean [default: false]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Produk bisa berupa barang (isService=false) atau jasa (isService=true). Soft delete dengan deletedAt.'
+}
+
+Table customer {
+  id varchar [pk]
+  nama text [not null]
+  nomorHp text [not null]
+  image text
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+  deletedAt datetime
+
+  Note: 'Data pelanggan yang melakukan pesanan. Soft delete dengan deletedAt.'
+}
+
+Table supplier {
+  id varchar [pk]
+  nama text [not null]
+  nomorHp text [not null]
+  email text
+  alamat text
+  keterangan text
+  isActive boolean [default: true]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'Pemasok bahan baku. Dapat dinonaktifkan tanpa menghapus data historis.'
+}
+
+Table karyawan {
+  id varchar [pk]
+  nama text [not null]
+  nomorHp text
+  posisi text
+  isActive boolean [default: true]
+  createdAt datetime [default: `now()`]
+  updatedAt datetime [not null]
+
+  Note: 'Data karyawan produksi yang ditugaskan melalui SPK.'
+}

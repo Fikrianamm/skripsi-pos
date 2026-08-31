@@ -1,0 +1,61 @@
+sequenceDiagram
+    actor Kasir
+    participant Website@{ "type" : "boundary" }
+    participant Server@{ "type" : "control" }
+    participant order@{ "type" : "database" }
+    participant payment@{ "type" : "database" }
+    participant kas_bank@{ "type" : "database" }
+    participant akun@{ "type" : "database" }
+    participant jurnal_umum@{ "type" : "database" }
+    participant notification@{ "type" : "database" }
+
+    Kasir->>Website: Buka detail pesanan, <br/>klik "Bayar"
+    Website->>Server: Minta data pesanan & <br/>daftar rekening
+
+    Server->>order: Ambil data pesanan & <br/>riwayat pembayaran
+    order-->>Server: Data order + total sudah dibayar
+
+    Server->>kas_bank: Ambil daftar rekening kas/bank aktif
+    kas_bank-->>Server: Daftar rekening
+
+    Server-->>Website: Data pesanan & rekening
+    Website-->>Kasir: Form pembayaran siap diisi
+
+    Kasir->>Website: Input nominal, <br/>pilih rekening & metode bayar
+    Website->>Server: Kirim data pembayaran
+
+    alt Bukan Kasir atau Admin
+        Server-->>Website: Tolak — Tidak diizinkan
+    end
+
+    Server->>kas_bank: Validasi rekening yang dipilih
+    kas_bank-->>Server: Data rekening & akunId
+
+    alt Nominal melebihi sisa tagihan
+        Server-->>Website: Tolak <br/>Nominal melebihi sisa tagihan
+    end
+
+    Note over Server: Hitung total sudah dibayar + nominal baru<br/>Tentukan status: DP atau LUNAS
+
+    Server->>payment: Simpan data pembayaran<br/>(nominal, metode, rekening)
+    payment-->>Server: Pembayaran tersimpan
+
+    Server->>order: Perbarui statusPembayaran
+    order-->>Server: Status diperbarui
+
+    Server->>akun: Ambil akun Kas/Bank (debet) via kas_bank.akunId
+    akun-->>Server: Data akun debet
+
+    Server->>akun: Ambil akun pendapatan default dari pengaturan
+    akun-->>Server: Data akun kredit (Pendapatan)
+
+    Server->>jurnal_umum: Catat jurnal double-entry<br/>(Debet: Kas/Bank, Kredit: Pendapatan)
+    jurnal_umum-->>Server: Jurnal tersimpan
+
+    Note over Server,jurnal_umum: Pembayaran + update status + jurnal<br/>disimpan dalam satu transaksi
+
+    Server->>notification: Buat notifikasi PAYMENT_MASUK<br/>untuk Admin dan Kasir
+    notification-->>Server: Notifikasi tersimpan
+
+    Server-->>Website: Pembayaran berhasil dicatat
+    Website-->>Kasir: Tampilkan konfirmasi & <br/>status baru
